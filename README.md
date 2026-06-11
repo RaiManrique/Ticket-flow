@@ -1,169 +1,182 @@
-# TicketFlow — Capa de Datos
+# TicketFlow — Arquitectura de 3 Capas
 
-Plataforma tecnológica que integra **venta de boletos** y **red social de eventos** culturales y de entretenimiento en el Perú. Este repositorio contiene la **capa de datos** de la arquitectura de tres niveles del proyecto académico UPC (Sistemas Operativos).
+Plataforma de **venta de boletos** y **red social de eventos** en el Perú. Proyecto académico UPC (Sistemas Operativos) con arquitectura de tres niveles desplegada en Docker.
 
-## ¿Qué hace este repositorio?
-
-Despliega **MongoDB 8.3** en un contenedor Docker y crea automáticamente la base de datos `ticketflow_social` con:
-
-- Esquemas validados (JSON Schema)
-- Índices para búsquedas, geolocalización y ventas
-- Datos de ejemplo listos para pruebas y evidencias
-
-## Arquitectura (capa de datos)
+## Arquitectura completa
 
 ```text
-┌─────────────────────────────────────────┐
-│  Aplicación (futuro backend Node.js)    │
-└──────────────────┬──────────────────────┘
-                   │ puerto 27018 (localhost)
-┌──────────────────▼──────────────────────┐
-│  Docker: TicketFlow-Mongo               │
-│  Imagen: mongo:8.3.3-noble              │
-│  Red interna: ticketflow-data           │
-└──────────────────┬──────────────────────┘
-                   │
-┌──────────────────▼──────────────────────┐
-│  Base de datos: ticketflow_social       │
-│  Colecciones documentales (NoSQL)       │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  CAPA DE PRESENTACION                                        │
+│  TicketFlow-Web (Nginx) — http://127.0.0.1:8080              │
+│  HTML/CSS/JS: eventos, compra de boletos, feed social        │
+└────────────────────────────┬─────────────────────────────────┘
+                             │ /api/*
+┌────────────────────────────▼─────────────────────────────────┐
+│  CAPA DE APLICACION                                          │
+│  TicketFlow-API (Node.js + Express) — http://127.0.0.1:3000  │
+│  REST API: eventos, ventas, publicaciones                    │
+└────────────────────────────┬─────────────────────────────────┘
+                             │ mongo:27017 (red interna)
+┌────────────────────────────▼─────────────────────────────────┐
+│  CAPA DE DATOS                                               │
+│  TicketFlow-Mongo (MongoDB 8.3) — 127.0.0.1:27018            │
+│  Base: ticketflow_social (documentos NoSQL)                  │
+└──────────────────────────────────────────────────────────────┘
+         Red Docker aislada: ticketflow-data
 ```
 
 ## Requisitos
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y en ejecución
-- Git (para clonar el repositorio)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) en ejecución
+- Git
 
 ## Inicio rápido
 
-### 1. Clonar el proyecto
+### 1. Configurar credenciales
 
 ```powershell
 git clone <url-del-repositorio> Ticket-flow
 cd Ticket-flow
+Copy-Item .env.example .env
+notepad .env
 ```
 
-### 2. Levantar MongoDB
+### 2. Levantar las 3 capas
 
 ```powershell
-docker compose up -d
+docker compose up -d --build
 ```
 
-La primera vez descargará la imagen `mongo:8.3.3-noble` y ejecutará `init-mongo.js`.
-
-### 3. Verificar el servicio
+### 3. Verificar servicios
 
 ```powershell
 docker compose ps
 ```
 
-Estado esperado: `Up (healthy)` en el puerto `127.0.0.1:27018`.
+| Servicio | URL / Puerto | Contenedor |
+|----------|--------------|------------|
+| **Web** (presentación) | http://127.0.0.1:8080 | TicketFlow-Web |
+| **API** (aplicación) | http://127.0.0.1:3000/api/health | TicketFlow-API |
+| **MongoDB** (datos) | 127.0.0.1:27018 | TicketFlow-Mongo |
 
-### 4. Conectarse a la base de datos
+### 4. Usar la plataforma
 
-```powershell
-docker exec -it TicketFlow-Mongo mongosh -u ticket-flow -p "Ticket_UPC_Flow_2026!" --authenticationDatabase admin ticketflow_social
+Abre en el navegador: **http://127.0.0.1:8080**
+
+- Pestaña **Eventos**: catálogo de conciertos y actividades
+- Pestaña **Boletos**: compra simulada de entradas disponibles
+- Pestaña **Comunidad**: feed social de publicaciones
+
+## API (capa de aplicación)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/health` | Estado del servicio |
+| GET | `/api/eventos` | Listar eventos publicados |
+| GET | `/api/eventos/:id` | Detalle de un evento |
+| GET | `/api/eventos/:id/boletos` | Boletos de un evento |
+| POST | `/api/ventas` | Registrar compra de boletos |
+| GET | `/api/social/publicaciones` | Feed de la comunidad |
+| GET | `/api/social/usuarios` | Usuarios de la plataforma |
+
+Ejemplo de compra:
+
+```json
+POST /api/ventas
+{
+  "usuario_id": "64f0a0010000000000000004",
+  "evento_id": "64f0b0010000000000000001",
+  "boletos_ids": ["..."],
+  "metodo_pago": "yape"
+}
 ```
 
-Consultas útiles dentro de `mongosh`:
+## Seguridad
 
-```javascript
-show collections
-db.usuarios.find().pretty()
-db.eventos.find({ ciudad: "Lima" })
-db.boletos.find({ estado: "disponible" })
-db.ventas.find({ estado: "confirmada" })
-```
+| Rol | Usuario | Acceso |
+|-----|---------|--------|
+| **Admin** | `MONGO_ROOT_USER` | Mantenimiento, mongosh (puerto 27018) |
+| **Aplicación** | `MONGO_APP_USER` | Solo `readWrite` en `ticketflow_social` |
 
-## Credenciales
+La API se conecta a MongoDB por la **red interna Docker** (`mongo:27017`), no expone credenciales al navegador.
 
-| Campo        | Valor                          |
-|--------------|--------------------------------|
-| Host         | `127.0.0.1`                    |
-| Puerto       | `27018`                        |
-| Usuario      | `ticket-flow`                  |
-| Contraseña   | `Ticket_UPC_Flow_2026!`        |
-| Base de datos| `ticketflow_social`            |
-| Auth source  | `admin`                        |
+Variables en `.env`:
 
-### Cadena de conexión (Node.js / Mongoose)
-
-```text
-mongodb://ticket-flow:Ticket_UPC_Flow_2026!@127.0.0.1:27018/ticketflow_social?authSource=admin
-```
-
-## Colecciones
-
-| Colección       | Descripción                                              |
-|-----------------|----------------------------------------------------------|
-| `usuarios`      | Perfiles, roles (`usuario`, `organizador`, `admin`)      |
-| `eventos`       | Catálogo de eventos, ubicación geoespacial, asistentes   |
-| `boletos`       | Inventario de entradas (disponible, reservado, vendido)  |
-| `ventas`        | Registro transaccional de compras                        |
-| `publicaciones` | Feed de la red social                                    |
-| `comentarios`   | Interacciones en publicaciones                           |
-| `follows`       | Relaciones de seguidores                                 |
-
-## Datos de ejemplo incluidos
-
-El script `init-mongo.js` carga datos de demostración:
-
-- **7 usuarios**: admin, 2 organizadores (equipo UPC) y 4 usuarios
-- **3 eventos** en Lima: megaconcierto, festival y teatro
-- **8 boletos** en distintos estados (vendido, reservado, disponible)
-- **3 ventas** confirmadas (tarjeta, Yape, Plin)
-- **3 publicaciones**, **3 comentarios** y **5 follows**
+| Variable | Descripción |
+|----------|-------------|
+| `MONGO_ROOT_USER` / `MONGO_ROOT_PASSWORD` | Admin MongoDB |
+| `MONGO_APP_USER` / `MONGO_APP_PASSWORD` | Usuario del backend |
+| `MONGO_BIND_IP` | IP permitida para MongoDB (`127.0.0.1` = solo esta PC) |
+| `API_PORT` | Puerto de la API (default `3000`) |
+| `WEB_PORT` | Puerto del frontend (default `8080`) |
 
 ## Estructura del proyecto
 
 ```text
 Ticket-flow/
-├── docker-compose.yml   # Orquestación del contenedor MongoDB
-├── init-mongo.js        # Esquema, índices y datos de ejemplo (primera vez)
-├── seed-data.js         # Recarga manual de datos de ejemplo
-├── BD/                  # Volumen persistente (generado al ejecutar)
-├── .gitignore
+├── frontend/            # Capa de presentacion (HTML, CSS, JS)
+├── backend/             # Capa de aplicacion (Node.js + Express)
+├── docker-compose.yml   # Orquestacion de las 3 capas
+├── init-mongo.js        # Esquema e indices MongoDB
+├── seed-data.js         # Datos de ejemplo
+├── z-init-app-user.sh   # Usuario de app con permisos limitados
+├── .env.example
 └── README.md
 ```
 
-> La carpeta `BD/` se crea al iniciar Docker y **no se sube a Git** (contiene los datos locales).
+## Colecciones (capa de datos)
+
+| Colección | Uso |
+|-----------|-----|
+| `usuarios` | Perfiles y roles |
+| `eventos` | Catálogo con geolocalización |
+| `boletos` | Inventario de entradas |
+| `ventas` | Registro de compras |
+| `publicaciones` | Feed social |
+| `comentarios` | Interacciones |
+| `follows` | Seguidores |
 
 ## Comandos útiles
 
 ```powershell
-# Ver logs del contenedor
+# Ver logs de cada capa
+docker logs TicketFlow-Web
+docker logs TicketFlow-API
 docker logs TicketFlow-Mongo
 
-# Detener el servicio
+# Detener todo
 docker compose down
 
-# Reiniciar el servicio
-docker compose restart
+# Reconstruir tras cambios en backend
+docker compose up -d --build api
 
-# Recargar solo los datos de ejemplo (sin borrar el volumen)
+# Recargar datos de ejemplo
 docker cp seed-data.js TicketFlow-Mongo:/tmp/seed-data.js
-docker exec TicketFlow-Mongo mongosh -u ticket-flow -p "Ticket_UPC_Flow_2026!" --authenticationDatabase admin /tmp/seed-data.js
+docker exec TicketFlow-Mongo mongosh -u ticket-flow -p "TU_PASSWORD" --authenticationDatabase admin /tmp/seed-data.js
 
-# Reinicializar base de datos desde cero (borra todos los datos locales)
-docker compose down
-Remove-Item -Recurse -Force .\BD
-docker compose up -d
+# mongosh (admin)
+docker exec -it TicketFlow-Mongo mongosh -u ticket-flow -p "TU_PASSWORD" --authenticationDatabase admin ticketflow_social
 ```
 
-> **Importante:** `init-mongo.js` solo se ejecuta cuando el volumen `BD/` está vacío (primera vez o después de borrarlo). Si necesitas recargar datos sin reiniciar todo, usa `seed-data.js`.
+## Desarrollo local sin Docker (opcional)
 
-## Seguridad
-
-- MongoDB solo se expone en `127.0.0.1:27018` (no accesible desde otras máquinas en la red)
-- El contenedor opera en una red Docker interna (`ticketflow-data`)
-- Las contraseñas de este README son para **desarrollo local**, no para producción
+```powershell
+# Solo API (con MongoDB ya corriendo en Docker)
+cd backend
+npm install
+$env:MONGO_HOST="127.0.0.1"
+$env:MONGO_INTERNAL_PORT="27018"
+$env:MONGO_ROOT_USER="ticket-flow"
+$env:MONGO_ROOT_PASSWORD="TU_PASSWORD"
+npm run dev
+```
 
 ## Equipo
 
-| Código      | Integrante                              |
-|-------------|-----------------------------------------|
-| u202412310  | Victor Piero Arapa Titi                 |
-| u202417405  | Cesar Augusto Quispe Llacsahuanga       |
-| u20241e410  | Rai Jeferson Manrique Anaya             |
+| Código | Integrante |
+|--------|------------|
+| u202412310 | Victor Piero Arapa Titi |
+| u202417405 | Cesar Augusto Quispe Llacsahuanga |
+| u20241e410 | Rai Jeferson Manrique Anaya |
 
 **Curso:** Sistemas Operativos — UPC — Sección 11539

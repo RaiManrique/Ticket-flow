@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TicketFlow — Eventos y Comunidad</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header>
+    <h1>TicketFlow</h1>
+    <p>Venta de boletos + red social de eventos en Peru</p>
+  </header>
+
+  <nav>
+    <button class="active" data-tab="eventos">Eventos</button>
+    <button data-tab="boletos">Boletos</button>
+    <button data-tab="feed">Comunidad</button>
+  </nav>
+
+  <main>
+    <div class="status-bar">
+      <span class="badge" id="status-api">API: verificando...</span>
+      <span class="badge" id="status-db">MongoDB: verificando...</span>
+      <span class="badge">Capa presentacion → aplicacion → datos</span>
+    </div>
+
+    <section id="section-eventos" class="section active">
+      <h2>Eventos disponibles</h2>
+      <div id="eventos-list" class="grid"></div>
+    </section>
+
+    <section id="section-boletos" class="section">
+      <h2 id="boletos-titulo">Comprar boletos</h2>
+      <p style="color: var(--muted); margin-bottom: 1rem;">Selecciona un evento desde la pestana Eventos o elige boletos aqui.</p>
+
+      <div class="form-group">
+        <label for="usuario-select">Comprar como usuario</label>
+        <select id="usuario-select"></select>
+      </div>
+      <div class="form-group">
+        <label for="metodo-pago">Metodo de pago</label>
+        <select id="metodo-pago">
+          <option value="tarjeta">Tarjeta</option>
+          <option value="yape">Yape</option>
+          <option value="plin">Plin</option>
+          <option value="transferencia">Transferencia</option>
+        </select>
+      </div>
+
+      <div id="boletos-list" class="boleto-list"></div>
+      <div id="compra-msg"></div>
+      <button class="btn" id="comprar-btn">Confirmar compra</button>
+    </section>
+
+    <section id="section-feed" class="section">
+      <h2>Feed de la comunidad</h2>
+      <div id="feed-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    TicketFlow — Arquitectura de 3 capas | UPC Sistemas Operativos
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
