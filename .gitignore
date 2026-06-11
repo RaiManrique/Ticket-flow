@@ -1,5 +1,6 @@
 # Ignorar los datos binarios de la base de datos local
 datos_locales/
+BD/
 
 # Ignorar archivos del sistema operativo
 .DS_Store
