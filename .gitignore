@@ -1,0 +1,10 @@
+# Ignorar los datos binarios de la base de datos local
+datos_locales/
+
+# Ignorar archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Para el futuro: ignorar librerías cuando subas el backend/frontend
+node_modules/
+.env

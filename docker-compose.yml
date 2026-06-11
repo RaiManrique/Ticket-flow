@@ -1,0 +1,13 @@
+services:
+  mongo:
+    image: mongo:8.3.3-noble
+    container_name: TicketFlow-Mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ticket-flow
+      MONGO_INITDB_ROOT_PASSWORD: Ticket_UPC_Flow_2026!
+    ports:
+      - "127.0.0.1:27018:27017"
+    volumes:
+      - ./BD:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
