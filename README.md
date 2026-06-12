@@ -7,7 +7,7 @@ Plataforma de **venta de boletos** y **red social de eventos** en el Perú. Proy
 ```text
 ┌──────────────────────────────────────────────────────────────┐
 │  CAPA DE PRESENTACION                                        │
-│  TicketFlow-Web (Nginx) — http://127.0.0.1:8080              │
+│  TicketFlow-Web (Nginx) — http://127.0.0.1:8090              │
 │  HTML/CSS/JS: eventos, compra de boletos, feed social        │
 └────────────────────────────┬─────────────────────────────────┘
                              │ /api/*
@@ -55,13 +55,13 @@ docker compose ps
 
 | Servicio | URL / Puerto | Contenedor |
 |----------|--------------|------------|
-| **Web** (presentación) | http://127.0.0.1:8080 | TicketFlow-Web |
+| **Web** (presentación) | http://127.0.0.1:8090 | TicketFlow-Web |
 | **API** (aplicación) | http://127.0.0.1:3000/api/health | TicketFlow-API |
 | **MongoDB** (datos) | 127.0.0.1:27018 | TicketFlow-Mongo |
 
 ### 4. Usar la plataforma
 
-Abre en el navegador: **http://127.0.0.1:8080**
+Abre en el navegador: **http://127.0.0.1:8090**
 
 - Pestaña **Eventos**: catálogo de conciertos y actividades
 - Pestaña **Boletos**: compra simulada de entradas disponibles
@@ -108,7 +108,7 @@ Variables en `.env`:
 | `MONGO_APP_USER` / `MONGO_APP_PASSWORD` | Usuario del backend |
 | `MONGO_BIND_IP` | IP permitida para MongoDB (`127.0.0.1` = solo esta PC) |
 | `API_PORT` | Puerto de la API (default `3000`) |
-| `WEB_PORT` | Puerto del frontend (default `8080`) |
+| `WEB_PORT` | Puerto del frontend (default `8090`; evita `8080` reservado para DomotiCore) |
 
 ## Estructura del proyecto
 
