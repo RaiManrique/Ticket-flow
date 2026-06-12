@@ -10,7 +10,14 @@ const panelTitles = {
 
 function setupAdminUI() {
   const name = currentUser.nombre_completo || currentUser.username;
-  document.getElementById("admin-avatar").textContent = (currentUser.username || "A").slice(0, 2).toUpperCase();
+  const avatarWrap = document.getElementById("admin-avatar-wrap");
+  const avatarImg = document.getElementById("admin-avatar-img");
+  const initials = (currentUser.username || "A").slice(0, 2).toUpperCase();
+  if (avatarImg && typeof profilePhoto === "function") {
+    avatarImg.src = profilePhoto(currentUser);
+    avatarImg.onerror = () => avatarWrap?.classList.remove("has-photo");
+  }
+  document.getElementById("admin-avatar").textContent = initials;
   document.getElementById("admin-name").textContent = name;
   document.getElementById("admin-role").textContent = roleLabel(currentUser.rol);
   document.getElementById("logout-btn").addEventListener("click", logout);
@@ -104,15 +111,21 @@ async function loadUsuarios() {
   }
 }
 
+function eventThumb(e) {
+  const src = typeof eventFlyer === "function" ? eventFlyer(e) : "/img/eventos/concierto.jpg";
+  return `<img class="event-thumb" src="${src}" alt="" loading="lazy" onerror="this.src='/img/eventos/concierto.jpg'">`;
+}
+
 async function loadEventos() {
   const el = document.getElementById("eventos-table");
   el.innerHTML = "<p class='loading'>Cargando...</p>";
   try {
     const eventos = await fetchAuth(`${API}/admin/eventos`);
-    el.innerHTML = `<table class="data-table"><thead><tr><th>Evento</th><th>Categoria</th><th>Ciudad</th><th>Fecha</th><th>Estado</th><th>Asistentes</th></tr></thead><tbody>
+    el.innerHTML = `<table class="data-table eventos-admin-table"><thead><tr><th></th><th>Evento</th><th>Categoria</th><th>Ciudad</th><th>Fecha</th><th>Estado</th><th>Asistentes</th></tr></thead><tbody>
       ${eventos.map((e) => `<tr>
+        <td class="thumb-cell">${eventThumb(e)}</td>
         <td><strong>${escapeHtml(e.titulo)}</strong></td>
-        <td>${escapeHtml(e.categoria)}</td>
+        <td><span class="role-badge badge-cat-${escapeHtml(e.categoria)}">${escapeHtml(e.categoria)}</span></td>
         <td>${escapeHtml(e.ciudad || "—")}</td>
         <td>${formatDate(e.fecha_evento)}</td>
         <td><span class="role-badge">${escapeHtml(e.estado || "—")}</span></td>

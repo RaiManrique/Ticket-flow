@@ -11,6 +11,8 @@ const views = {
 let allEventos = [];
 let filteredEventos = [];
 let selectedEventoId = null;
+let selectedEventoMeta = null;
+let seatMapInstance = null;
 let activeFilter = "todos";
 let activeSearch = { query: "", ciudad: "", fecha: "" };
 
@@ -237,49 +239,65 @@ async function loadEventos() {
 
 window.openBoletos = function (id, titulo) {
   selectedEventoId = id;
+  selectedEventoMeta = allEventos.find((e) => String(e._id) === String(id)) || null;
   document.getElementById("boletos-titulo").textContent = titulo;
   document.getElementById("panel-evento").textContent = titulo;
   switchTab("boletos");
   loadBoletos(id);
 };
 
-function updateOrderSummary() {
-  const checked = document.querySelectorAll('input[name="boleto"]:checked');
-  let total = 0;
-  checked.forEach((el) => { total += Number(el.dataset.precio) || 0; });
-  document.getElementById("summary-count").textContent = checked.length;
+function seatLabel(b) {
+  if (b.fila && b.asiento) return `${b.zona} · Fila ${b.fila} · Asiento ${b.asiento}`;
+  return `${b.zona} · Entrada general`;
+}
+
+function updateOrderSummary(selectedDetails = []) {
+  const total = selectedDetails.reduce((sum, b) => sum + (Number(b.precio) || 0), 0);
+  document.getElementById("summary-count").textContent = selectedDetails.length;
   document.getElementById("summary-total").textContent = formatMoney(total);
+
+  const detailEl = document.getElementById("selection-detail");
+  const listEl = document.getElementById("selected-seats-list");
+  if (!selectedDetails.length) {
+    detailEl.innerHTML = '<p class="selection-empty">Ningun asiento seleccionado</p>';
+    listEl.innerHTML = "";
+    return;
+  }
+
+  detailEl.innerHTML = selectedDetails.map((b) => `
+    <div class="selection-item">
+      <span>${escapeHtml(seatLabel(b))}</span>
+      <strong>${formatMoney(b.precio)}</strong>
+    </div>`).join("");
+
+  listEl.innerHTML = `
+    <h4>Asientos seleccionados (${selectedDetails.length})</h4>
+    <div class="selected-chips">${selectedDetails.map((b) => `
+      <span class="selected-chip">${escapeHtml(b.fila && b.asiento ? `${b.zona} ${b.fila}-${b.asiento}` : b.zona)}</span>`).join("")}</div>`;
 }
 
 async function loadBoletos(eventoId) {
-  const container = document.getElementById("boletos-list");
-  container.innerHTML = '<p class="loading">Cargando entradas...</p>';
+  const container = document.getElementById("seatmap-container");
+  container.innerHTML = '<p class="loading">Cargando mapa del estadio...</p>';
+  document.getElementById("selected-seats-list").innerHTML = "";
+  document.getElementById("selection-detail").innerHTML = "";
+  seatMapInstance = null;
+
   try {
     const boletos = await fetchJson(`${API}/eventos/${eventoId}/boletos`);
     if (!boletos.length) {
       container.innerHTML = '<div class="empty-state">No hay entradas disponibles.</div>';
+      updateOrderSummary([]);
       return;
     }
-    container.innerHTML = boletos.map((b) => {
-      const seat = b.fila && b.asiento ? `Fila ${b.fila} · Asiento ${b.asiento}` : "Entrada general";
-      const checkbox = b.estado === "disponible"
-        ? `<input type="checkbox" name="boleto" value="${b._id}" data-precio="${b.precio}">`
-        : `<span style="width:20px"></span>`;
-      return `
-      <label class="ticket-card ${b.estado}">
-        ${checkbox}
-        <div class="ticket-info"><strong>${escapeHtml(b.zona)}</strong><small>${seat}</small>
-        <span class="ticket-status ${b.estado}">${b.estado}</span></div>
-        <div class="ticket-price">${formatMoney(b.precio)}</div>
-      </label>`;
-    }).join("");
-    container.querySelectorAll('input[name="boleto"]').forEach((input) => {
-      input.addEventListener("change", () => {
-        input.closest(".ticket-card")?.classList.toggle("selected", input.checked);
-        updateOrderSummary();
-      });
+
+    seatMapInstance = createSeatMap(boletos, {
+      eventTitle: selectedEventoMeta?.titulo || document.getElementById("boletos-titulo").textContent,
+      eventImage: selectedEventoMeta ? eventFlyer(selectedEventoMeta) : "/img/eventos/concierto.jpg",
+      onChange: (_ids, details) => updateOrderSummary(details),
     });
-    updateOrderSummary();
+    seatMapInstance.mount(container);
+    updateOrderSummary([]);
   } catch (err) {
     container.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
   }
@@ -292,7 +310,7 @@ function getMetodoPago() {
 document.getElementById("comprar-btn").addEventListener("click", async () => {
   const msg = document.getElementById("compra-msg");
   msg.innerHTML = "";
-  const checked = [...document.querySelectorAll('input[name="boleto"]:checked')].map((el) => el.value);
+  const checked = seatMapInstance?.getSelected() || [];
 
   if (!selectedEventoId || checked.length === 0) {
     msg.innerHTML = '<div class="alert error">Selecciona al menos una entrada disponible.</div>';

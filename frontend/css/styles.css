@@ -1642,3 +1642,595 @@ body {
   .chip-select, .chip-date, .chip-filter { width: 100%; justify-content: center; }
   .trend-footer .btn-buy { margin-left: 0; width: 100%; text-align: center; }
 }
+
+/* ── Selector de sector (estilo ticketera) ── */
+.seatmap-container { margin-bottom: 1.25rem; }
+
+.venue-picker {
+  background: linear-gradient(165deg, #2a2f1f 0%, #1a1f14 45%, #12161a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.venue-picker-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: 420px;
+}
+
+.venue-map-panel {
+  padding: 1.25rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.04), transparent 55%),
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0, 0, 0, 0.15) 3px, rgba(0, 0, 0, 0.15) 4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.map-caption {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 0.75rem;
+  align-self: flex-start;
+}
+
+.arena-svg {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+}
+
+.arena-bg { fill: #1e2420; }
+
+.arena-stage { fill: url(#stageGrad); stroke: rgba(255, 255, 255, 0.35); stroke-width: 1.5; }
+
+.arena-stage-label {
+  fill: white;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  font-family: var(--font);
+}
+
+.arena-zone-group {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.arena-zone-group.unavailable { cursor: not-allowed; opacity: 0.45; }
+
+.arena-zone-group.available:hover .arena-zone-path,
+.arena-zone-group.active .arena-zone-path {
+  stroke: #fff;
+  stroke-width: 2.5;
+  filter: brightness(1.15);
+}
+
+.arena-zone-group.has-selection .arena-zone-path {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.arena-zone-path {
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 1.5;
+  transition: all 0.2s;
+}
+
+.arena-zone-platinum { fill: #c41e3a; }
+.arena-zone-lateral { fill: #b91c1c; }
+.arena-zone-vip { fill: #d4a017; }
+.arena-zone-pref { fill: #6b7280; }
+.arena-zone-occ { fill: #4b5563; }
+.arena-zone-occ-dim { fill: #374151; }
+.arena-zone-oriente { fill: #4b5563; }
+.arena-zone-oriente-dim { fill: #374151; }
+.arena-zone-norte { fill: #3f4a56; }
+.arena-zone-platea { fill: #d4a017; }
+.arena-zone-balcon { fill: #5c6b4a; }
+.arena-zone-general { fill: #5a5f66; }
+
+.arena-zone-label {
+  fill: white;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  font-family: var(--font);
+  pointer-events: none;
+}
+
+.map-instruction {
+  margin-top: 1rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.sector-panel {
+  padding: 1.25rem 1.35rem;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.package-price-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.package-price-box span {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 0.35rem;
+}
+
+.package-price-box strong {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.sector-panel-head h3 {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin: 0.5rem 0 0.25rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.sector-event {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.4;
+}
+
+.sector-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.sector-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.sector-row.available { cursor: pointer; }
+.sector-row.available:hover,
+.sector-row.active {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.sector-row.has-selection {
+  border-color: rgba(255, 75, 139, 0.5);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.sector-row.unavailable { opacity: 0.65; }
+
+.sector-info strong {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.sector-price {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.sector-badge {
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  border: none;
+  white-space: nowrap;
+}
+
+.sector-badge.disponible {
+  background: #39ff14;
+  color: #0a1a05;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(57, 255, 20, 0.35);
+}
+
+.sector-badge.disponible:hover { filter: brightness(1.08); }
+
+.sector-badge.no-disponible {
+  background: #3d4450;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.sector-notice {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius-sm);
+}
+
+.sector-table-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  padding: 0 0.25rem 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sector-notice.alert-red {
+  background: transparent;
+  border: 2px solid #dc2626;
+  color: #fecaca;
+  font-size: 0.72rem;
+}
+
+.sector-notice.alert-beige {
+  background: #d4c4a0;
+  border: 1px solid #b8a67e;
+  color: #3d3428;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.venue-promo {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background:
+    linear-gradient(135deg, rgba(42, 47, 31, 0.95), rgba(26, 31, 20, 0.98)),
+    url("/img/posts/estadio.jpg") center/cover;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.venue-promo-img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
+  filter: sepia(0.35) contrast(1.05);
+}
+
+.venue-promo-text p {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+  margin-bottom: 1rem;
+}
+
+.promo-cta {
+  font-family: inherit;
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.85rem 1.5rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.45);
+  transition: filter 0.2s;
+}
+
+.promo-cta:hover { filter: brightness(1.1); }
+
+.zone-seats-panel .seat-row-seats {
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0.25rem;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+
+.zone-seats-detail {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.zone-seats-detail .seat-row.wide .seat-row-seats {
+  min-width: max-content;
+}
+
+.zone-seats-panel {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--surface);
+  padding: 1.25rem;
+}
+
+.zone-seats-detail { max-width: 100%; }
+
+.zone-seats-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.zone-seats-head h4 { font-size: 1rem; font-weight: 800; }
+.zone-seats-head p { font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; }
+
+.zone-seats-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.seatmap-legend.compact {
+  border-top: none;
+  padding: 0.75rem 0 0;
+  margin-top: 1rem;
+}
+
+.seat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.45rem;
+}
+
+.row-label {
+  width: 22px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.seat-row-seats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: center;
+  flex: 1;
+}
+
+.seat-row.wide .seat-row-seats { max-width: 100%; }
+
+.seat-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px 7px 3px 3px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  color: white;
+  padding: 0;
+}
+
+.seat-btn.disponible {
+  background: #22c55e;
+  border-color: #16a34a;
+}
+
+.seat-btn.disponible:hover {
+  transform: scale(1.12);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.45);
+}
+
+.seat-btn.selected {
+  background: var(--accent) !important;
+  border-color: #ff6ba3 !important;
+  box-shadow: 0 0 0 2px rgba(255, 75, 139, 0.5);
+  transform: scale(1.1);
+}
+
+.seat-btn.reservado {
+  background: #f59e0b;
+  border-color: #d97706;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.seat-btn.vendido,
+.seat-btn.bloqueado {
+  background: #475569;
+  border-color: #334155;
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ga-pool { margin-top: 0.75rem; }
+
+.ga-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.ga-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ga-btn {
+  font-family: inherit;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 100px;
+  transition: all 0.2s;
+}
+
+.ga-btn span { font-size: 0.78rem; font-weight: 700; }
+.ga-btn small { font-size: 0.72rem; color: var(--muted); }
+
+.ga-btn.disponible:hover { border-color: var(--accent); }
+.ga-btn.selected {
+  border-color: var(--accent);
+  background: rgba(255, 75, 139, 0.15);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.ga-btn.vendido, .ga-btn.reservado {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.seatmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.seatmap-legend span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.seatmap-legend .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.seatmap-legend .dot.disponible { background: #22c55e; }
+.seatmap-legend .dot.selected { background: var(--accent); }
+.seatmap-legend .dot.reservado { background: #f59e0b; }
+.seatmap-legend .dot.vendido { background: #475569; }
+
+.selected-seats-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+}
+
+.selected-seats-panel h4 {
+  font-size: 0.88rem;
+  margin-bottom: 0.65rem;
+}
+
+.selected-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.selected-chip {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(255, 75, 139, 0.15);
+  border: 1px solid rgba(255, 75, 139, 0.35);
+  color: #ffb3d0;
+}
+
+.selection-detail {
+  margin-bottom: 1rem;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.selection-empty {
+  font-size: 0.82rem;
+  color: var(--muted);
+  padding: 0.65rem;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+}
+
+.selection-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.selection-item:last-child { border-bottom: none; }
+
+#view-boletos .checkout-layout {
+  grid-template-columns: 1fr 320px;
+  align-items: start;
+}
+
+#view-boletos .checkout-main .view-header { padding-left: 0; padding-right: 0; }
+
+.checkout-panel-tickets {
+  position: sticky;
+  top: 80px;
+}
+
+.event-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.thumb-cell { width: 60px; }
+
+.badge-cat-concierto { color: #ff6ba3; background: rgba(255, 75, 139, 0.15); }
+.badge-cat-festival { color: #a78bfa; background: rgba(124, 58, 237, 0.15); }
+.badge-cat-teatro { color: #60a5fa; background: rgba(37, 99, 235, 0.15); }
+
+@media (max-width: 1024px) {
+  #view-boletos .checkout-layout { grid-template-columns: 1fr; }
+  .venue-picker-top { grid-template-columns: 1fr; }
+  .venue-map-panel { border-right: none; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+  .checkout-panel-tickets { position: static; }
+  .seat-btn { width: 26px; height: 26px; font-size: 0.58rem; }
+  .venue-promo { grid-template-columns: 1fr; text-align: center; }
+  .venue-promo-img { margin: 0 auto; }
+}

@@ -146,13 +146,15 @@
           <div class="trust-item">Entrada digital</div>
           <div class="trust-item">Anti-estafa</div>
         </div>
-        <div id="boletos-list" class="tickets-grid"></div>
+        <div id="seatmap-container" class="seatmap-container"></div>
+        <div id="selected-seats-list" class="selected-seats-panel"></div>
       </div>
 
-      <aside class="checkout-panel">
+      <aside class="checkout-panel checkout-panel-tickets">
         <h3>Resumen de compra</h3>
         <p class="panel-event" id="panel-evento">Selecciona un evento</p>
         <p class="panel-user">Comprando como: <strong id="panel-user-name">—</strong></p>
+        <div id="selection-detail" class="selection-detail"></div>
 
         <div class="form-group">
           <label>Metodo de pago</label>
@@ -198,6 +200,7 @@
 
   <script src="js/auth.js"></script>
   <script src="js/images.js"></script>
+  <script src="js/seatmap.js"></script>
   <script src="js/usuario.js"></script>
 </body>
 </html>
