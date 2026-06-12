@@ -4,6 +4,8 @@ const { connectDB } = require("./config/db");
 const eventosRouter = require("./routes/eventos");
 const ventasRouter = require("./routes/ventas");
 const socialRouter = require("./routes/social");
+const authRouter = require("./routes/auth");
+const adminRouter = require("./routes/admin");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,9 +22,11 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+app.use("/api/auth", authRouter);
 app.use("/api/eventos", eventosRouter);
 app.use("/api/ventas", ventasRouter);
 app.use("/api/social", socialRouter);
+app.use("/api/admin", adminRouter);
 
 async function start() {
   await connectDB();

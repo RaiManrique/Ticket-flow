@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TicketFlow — Mi experiencia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="usuario.html" class="brand">
+        <span class="brand-icon">TF</span>
+        <div>
+          <strong>TicketFlow</strong>
+          <small>Vista de usuario</small>
+        </div>
+      </a>
+
+      <nav class="main-nav">
+        <button class="nav-link active" data-tab="eventos">Eventos</button>
+        <button class="nav-link" data-tab="boletos">Comprar</button>
+        <button class="nav-link" data-tab="feed">Comunidad</button>
+      </nav>
+
+      <div class="header-actions">
+        <div class="user-menu">
+          <div class="avatar sm" id="user-avatar">U</div>
+          <div class="user-info">
+            <strong id="user-name">Usuario</strong>
+            <small id="user-role">usuario</small>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Salir</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero" id="hero">
+    <div class="hero-content">
+      <span class="hero-badge">Bienvenido · Vista fan</span>
+      <h1>Hola, <span class="gradient-text" id="hero-name">fan</span></h1>
+      <p class="hero-desc">Explora eventos, compra entradas oficiales y conecta con la comunidad TicketFlow.</p>
+      <div class="hero-actions">
+        <button class="btn btn-glow btn-lg" data-tab="eventos">Explorar eventos</button>
+        <button class="btn btn-ghost btn-lg" data-tab="feed">Ver comunidad</button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><strong id="stat-eventos">—</strong><span>Eventos activos</span></div>
+        <div class="stat"><strong id="stat-asistentes">—</strong><span>Fans conectados</span></div>
+        <div class="stat"><strong>100%</strong><span>Venta oficial</span></div>
+      </div>
+    </div>
+    <div class="hero-visual" id="hero-featured">
+      <div class="featured-card skeleton">Cargando destacado...</div>
+    </div>
+  </section>
+
+  <main class="main-content">
+    <section id="section-eventos" class="section active">
+      <div class="section-head">
+        <div>
+          <h2>Proximos eventos</h2>
+          <p>Conciertos, festivales y teatro en Lima</p>
+        </div>
+        <div class="filters">
+          <button class="filter-btn active" data-filter="todos">Todos</button>
+          <button class="filter-btn" data-filter="concierto">Conciertos</button>
+          <button class="filter-btn" data-filter="festival">Festivales</button>
+          <button class="filter-btn" data-filter="teatro">Teatro</button>
+        </div>
+      </div>
+      <div id="eventos-list" class="events-grid"></div>
+    </section>
+
+    <section id="section-boletos" class="section">
+      <div class="checkout-layout">
+        <div class="checkout-main">
+          <div class="section-head">
+            <div>
+              <h2 id="boletos-titulo">Selecciona tus entradas</h2>
+              <p>Compra segura con tu cuenta TicketFlow</p>
+            </div>
+          </div>
+          <div class="trust-row">
+            <div class="trust-item">Pago seguro</div>
+            <div class="trust-item">Entrada digital</div>
+            <div class="trust-item">Anti-estafa</div>
+          </div>
+          <div id="boletos-list" class="tickets-grid"></div>
+        </div>
+
+        <aside class="checkout-panel">
+          <h3>Resumen de compra</h3>
+          <p class="panel-event" id="panel-evento">Selecciona un evento</p>
+          <p class="panel-user">Comprando como: <strong id="panel-user-name">—</strong></p>
+
+          <div class="form-group">
+            <label>Metodo de pago</label>
+            <div class="payment-options">
+              <label class="pay-option"><input type="radio" name="metodo" value="tarjeta" checked><span>Tarjeta</span></label>
+              <label class="pay-option"><input type="radio" name="metodo" value="yape"><span>Yape</span></label>
+              <label class="pay-option"><input type="radio" name="metodo" value="plin"><span>Plin</span></label>
+              <label class="pay-option"><input type="radio" name="metodo" value="transferencia"><span>Transfer.</span></label>
+            </div>
+          </div>
+
+          <div class="order-summary">
+            <div class="summary-row"><span>Entradas</span><span id="summary-count">0</span></div>
+            <div class="summary-row total"><span>Total</span><span id="summary-total">S/ 0.00</span></div>
+          </div>
+
+          <div id="compra-msg"></div>
+          <button class="btn btn-glow btn-block" id="comprar-btn">Confirmar compra</button>
+        </aside>
+      </div>
+    </section>
+
+    <section id="section-feed" class="section">
+      <div class="section-head">
+        <div>
+          <h2>Comunidad TicketFlow</h2>
+          <p>Comparte y coordina con otros asistentes</p>
+        </div>
+      </div>
+      <div class="feed-layout">
+        <div class="feed-sidebar">
+          <div class="info-card">
+            <h4>Tu espacio social</h4>
+            <ul>
+              <li>Compra y comunidad en un solo lugar</li>
+              <li>Sin reventa informal</li>
+              <li>Coordinacion entre fans</li>
+            </ul>
+          </div>
+        </div>
+        <div id="feed-list" class="feed-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <strong>TicketFlow</strong>
+        <p>Vista de usuario · Capa de presentacion</p>
+      </div>
+      <span class="status-pill ok">Usuario autenticado</span>
+    </div>
+  </footer>
+
+  <script src="js/auth.js"></script>
+  <script src="js/usuario.js"></script>
+</body>
+</html>

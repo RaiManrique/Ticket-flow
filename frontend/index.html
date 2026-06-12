@@ -3,66 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TicketFlow — Eventos y Comunidad</title>
+  <title>TicketFlow — Iniciar sesion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
-  <header>
-    <h1>TicketFlow</h1>
-    <p>Venta de boletos + red social de eventos en Peru</p>
-  </header>
+<body class="login-page">
+  <div class="bg-glow"></div>
 
-  <nav>
-    <button class="active" data-tab="eventos">Eventos</button>
-    <button data-tab="boletos">Boletos</button>
-    <button data-tab="feed">Comunidad</button>
-  </nav>
-
-  <main>
-    <div class="status-bar">
-      <span class="badge" id="status-api">API: verificando...</span>
-      <span class="badge" id="status-db">MongoDB: verificando...</span>
-      <span class="badge">Capa presentacion → aplicacion → datos</span>
-    </div>
-
-    <section id="section-eventos" class="section active">
-      <h2>Eventos disponibles</h2>
-      <div id="eventos-list" class="grid"></div>
-    </section>
-
-    <section id="section-boletos" class="section">
-      <h2 id="boletos-titulo">Comprar boletos</h2>
-      <p style="color: var(--muted); margin-bottom: 1rem;">Selecciona un evento desde la pestana Eventos o elige boletos aqui.</p>
-
-      <div class="form-group">
-        <label for="usuario-select">Comprar como usuario</label>
-        <select id="usuario-select"></select>
+  <div class="login-layout">
+    <section class="login-showcase">
+      <span class="hero-badge">TicketFlow Peru</span>
+      <h1>Una plataforma,<br><span class="gradient-text">dos experiencias</span></h1>
+      <p>Los fans compran entradas y viven la comunidad. Los administradores gestionan eventos, ventas y usuarios.</p>
+      <div class="login-roles">
+        <div class="role-card">
+          <strong>Vista Usuario</strong>
+          <span>Eventos, compra de boletos y feed social</span>
+        </div>
+        <div class="role-card admin">
+          <strong>Vista Admin</strong>
+          <span>Panel de control, metricas y ventas</span>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="metodo-pago">Metodo de pago</label>
-        <select id="metodo-pago">
-          <option value="tarjeta">Tarjeta</option>
-          <option value="yape">Yape</option>
-          <option value="plin">Plin</option>
-          <option value="transferencia">Transferencia</option>
-        </select>
+    </section>
+
+    <section class="login-panel">
+      <div class="login-box">
+        <div class="brand" style="margin-bottom:1.5rem;">
+          <span class="brand-icon">TF</span>
+          <div>
+            <strong>TicketFlow</strong>
+            <small>Iniciar sesion</small>
+          </div>
+        </div>
+
+        <form id="login-form">
+          <div class="form-group">
+            <label for="login">Usuario o email</label>
+            <input type="text" id="login" name="login" placeholder="ej. rai_manrique" required autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label for="password">Contrasena</label>
+            <input type="password" id="password" name="password" placeholder="Contrasena" required autocomplete="current-password">
+          </div>
+          <div id="login-error"></div>
+          <button type="submit" class="btn btn-glow btn-block" id="login-btn">Entrar</button>
+        </form>
+
+        <div class="demo-accounts">
+          <p>Cuentas de demostracion (contrasena: <code>TicketFlow2026</code>)</p>
+          <div class="demo-grid">
+            <button type="button" class="demo-btn" data-login="rai_manrique">Usuario</button>
+            <button type="button" class="demo-btn" data-login="victor_arapa">Organizador</button>
+            <button type="button" class="demo-btn" data-login="admin_ticketflow">Admin</button>
+          </div>
+        </div>
       </div>
-
-      <div id="boletos-list" class="boleto-list"></div>
-      <div id="compra-msg"></div>
-      <button class="btn" id="comprar-btn">Confirmar compra</button>
     </section>
+  </div>
 
-    <section id="section-feed" class="section">
-      <h2>Feed de la comunidad</h2>
-      <div id="feed-list"></div>
-    </section>
-  </main>
+  <script src="js/auth.js"></script>
+  <script>
+    const DEMO_PASSWORD = "TicketFlow2026";
 
-  <footer>
-    TicketFlow — Arquitectura de 3 capas | UPC Sistemas Operativos
-  </footer>
+    (function redirectIfLogged() {
+      const user = getUser();
+      if (user && getToken()) {
+        window.location.href = ["admin", "organizador"].includes(user.rol) ? "/admin.html" : "/usuario.html";
+      }
+    })();
 
-  <script src="js/app.js"></script>
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await doLogin(
+        document.getElementById("login").value.trim(),
+        document.getElementById("password").value
+      );
+    });
+
+    document.querySelectorAll(".demo-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.getElementById("login").value = btn.dataset.login;
+        document.getElementById("password").value = DEMO_PASSWORD;
+      });
+    });
+
+    async function doLogin(login, password) {
+      const errEl = document.getElementById("login-error");
+      const btn = document.getElementById("login-btn");
+      errEl.innerHTML = "";
+      btn.disabled = true;
+      btn.textContent = "Ingresando...";
+
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ login, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error de login");
+
+        saveSession({ token: data.token, user: data.user });
+        window.location.href = data.redirect;
+      } catch (err) {
+        errEl.innerHTML = `<div class="alert error">${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Entrar";
+      }
+    }
+  </script>
 </body>
 </html>

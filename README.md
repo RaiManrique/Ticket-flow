@@ -59,13 +59,19 @@ docker compose ps
 | **API** (aplicación) | http://127.0.0.1:3000/api/health | TicketFlow-API |
 | **MongoDB** (datos) | 127.0.0.1:27018 | TicketFlow-Mongo |
 
-### 4. Usar la plataforma
+### 4. Iniciar sesion (dos vistas)
 
-Abre en el navegador: **http://127.0.0.1:8090**
+Abre: **http://127.0.0.1:8090**
 
-- Pestaña **Eventos**: catálogo de conciertos y actividades
-- Pestaña **Boletos**: compra simulada de entradas disponibles
-- Pestaña **Comunidad**: feed social de publicaciones
+| Cuenta demo | Contrasena | Vista |
+|-------------|------------|-------|
+| `rai_manrique` | `TicketFlow2026` | **Usuario** — eventos, compra, comunidad |
+| `victor_arapa` | `TicketFlow2026` | **Admin** — panel organizador |
+| `admin_ticketflow` | `TicketFlow2026` | **Admin** — panel administrador |
+
+Segun el rol, se redirige automaticamente a:
+- **Usuario:** `/usuario.html`
+- **Admin / Organizador:** `/admin.html`
 
 ## API (capa de aplicación)
 

@@ -37,6 +37,7 @@ services:
       MONGO_INTERNAL_PORT: 27017
       MONGO_DATABASE: ticketflow_social
       MONGO_USE_APP_USER: ${MONGO_USE_APP_USER:-false}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-TicketFlow2026}
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
     depends_on:
