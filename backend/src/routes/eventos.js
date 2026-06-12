@@ -8,7 +8,32 @@ router.get("/", async (_req, res) => {
     const eventos = await Evento.find({ estado: "publicado" })
       .sort({ fecha_evento: 1 })
       .lean();
-    res.json(eventos);
+
+    const ids = eventos.map((e) => e._id);
+    const stats = await Boleto.aggregate([
+      { $match: { evento_id: { $in: ids } } },
+      {
+        $group: {
+          _id: "$evento_id",
+          precio_minimo: { $min: "$precio" },
+          boletos_disponibles: {
+            $sum: { $cond: [{ $eq: ["$estado", "disponible"] }, 1, 0] },
+          },
+        },
+      },
+    ]);
+
+    const statsMap = Object.fromEntries(stats.map((s) => [String(s._id), s]));
+    const enriched = eventos.map((e) => {
+      const s = statsMap[String(e._id)] || {};
+      return {
+        ...e,
+        precio_minimo: s.precio_minimo ?? null,
+        boletos_disponibles: s.boletos_disponibles ?? 0,
+      };
+    });
+
+    res.json(enriched);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

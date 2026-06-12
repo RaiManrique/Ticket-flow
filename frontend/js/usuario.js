@@ -1,16 +1,18 @@
 const API = "/api";
 const currentUser = requireRole(["usuario"]);
 
-const sections = {
-  eventos: document.getElementById("section-eventos"),
-  boletos: document.getElementById("section-boletos"),
-  feed: document.getElementById("section-feed"),
+const views = {
+  inicio: document.getElementById("view-inicio"),
+  eventos: document.getElementById("view-eventos"),
+  comunidad: document.getElementById("view-comunidad"),
+  boletos: document.getElementById("view-boletos"),
 };
 
-const hero = document.getElementById("hero");
 let allEventos = [];
+let filteredEventos = [];
 let selectedEventoId = null;
 let activeFilter = "todos";
+let activeSearch = { query: "", ciudad: "", fecha: "" };
 
 const categoryCover = {
   concierto: "cover-concierto",
@@ -18,26 +20,43 @@ const categoryCover = {
   teatro: "cover-teatro",
 };
 
+const categoryLabel = {
+  concierto: "CONCIERTOS",
+  festival: "FESTIVALES",
+  teatro: "TEATRO",
+};
+
 function setupUserUI() {
   const name = currentUser.nombre_completo || currentUser.username;
   const initials = (currentUser.username || "U").slice(0, 2).toUpperCase();
+  const photo = profilePhoto(currentUser);
 
   document.getElementById("user-avatar").textContent = initials;
-  document.getElementById("user-name").textContent = name;
-  document.getElementById("user-role").textContent = roleLabel(currentUser.rol);
-  document.getElementById("hero-name").textContent = currentUser.username;
+  const avatarImg = document.getElementById("user-avatar-img");
+  avatarImg.src = photo;
+  avatarImg.alt = name;
+  avatarImg.onerror = () => document.getElementById("user-avatar-wrap").classList.remove("has-photo");
+  document.getElementById("user-name").textContent = name.split(" ")[0];
   document.getElementById("panel-user-name").textContent = name;
   document.getElementById("logout-btn").addEventListener("click", logout);
 }
 
 function switchTab(tab) {
-  document.querySelectorAll(".nav-link").forEach((el) => {
+  if (tab === "boletos" && !selectedEventoId) {
+    tab = "inicio";
+  }
+
+  document.querySelectorAll(".app-nav-btn, .bottom-nav-btn").forEach((el) => {
     el.classList.toggle("active", el.dataset.tab === tab);
   });
-  Object.values(sections).forEach((s) => s.classList.remove("active"));
-  sections[tab].classList.add("active");
-  if (tab === "feed") loadFeed();
-  hero.style.display = tab === "eventos" ? "" : "none";
+
+  Object.entries(views).forEach(([key, el]) => {
+    el.classList.toggle("active", key === tab);
+  });
+
+  if (tab === "comunidad") loadFeed();
+  if (tab === "inicio") loadFeedPreview();
+
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -50,9 +69,47 @@ document.querySelectorAll(".filter-btn").forEach((btn) => {
     document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     activeFilter = btn.dataset.filter;
-    renderEventos();
+    filterEventos();
   });
 });
+
+document.getElementById("search-btn").addEventListener("click", applySearch);
+document.getElementById("search-query").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") applySearch();
+});
+document.getElementById("search-toggle")?.addEventListener("click", () => {
+  document.getElementById("search-query").focus();
+  switchTab("inicio");
+});
+
+document.getElementById("fab-btn").addEventListener("click", () => switchTab("comunidad"));
+
+function applySearch() {
+  activeSearch = {
+    query: document.getElementById("search-query").value.trim().toLowerCase(),
+    ciudad: document.getElementById("search-ciudad").value,
+    fecha: document.getElementById("search-fecha").value,
+  };
+  filterEventos();
+  switchTab("eventos");
+}
+
+function filterEventos() {
+  filteredEventos = allEventos.filter((e) => {
+    if (activeFilter !== "todos" && e.categoria !== activeFilter) return false;
+    if (activeSearch.ciudad && e.ciudad !== activeSearch.ciudad) return false;
+    if (activeSearch.fecha) {
+      const d = new Date(e.fecha_evento).toISOString().slice(0, 10);
+      if (d !== activeSearch.fecha) return false;
+    }
+    if (activeSearch.query) {
+      const hay = `${e.titulo} ${e.descripcion || ""} ${e.categoria} ${e.ciudad}`.toLowerCase();
+      if (!hay.includes(activeSearch.query)) return false;
+    }
+    return true;
+  });
+  renderEventosList();
+}
 
 async function fetchJson(url, options = {}) {
   const res = await fetch(url, {
@@ -70,9 +127,19 @@ function formatDate(dateStr) {
   });
 }
 
-function formatDateShort(dateStr) {
+function formatDateCard(dateStr) {
   const d = new Date(dateStr);
-  return { day: d.getDate(), month: d.toLocaleDateString("es-PE", { month: "short" }).toUpperCase() };
+  return `${d.toLocaleDateString("es-PE", { month: "short" }).replace(".", "")} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `Hace ${Math.max(1, mins)} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `Hace ${hrs} hora${hrs > 1 ? "s" : ""}`;
+  const days = Math.floor(hrs / 24);
+  return `Hace ${days} dia${days > 1 ? "s" : ""}`;
 }
 
 function formatMoney(amount) {
@@ -88,68 +155,83 @@ function coverClass(categoria) {
   return categoryCover[categoria] || "cover-default";
 }
 
-function renderFeatured(evento) {
-  const container = document.getElementById("hero-featured");
-  if (!evento) {
-    container.innerHTML = '<div class="featured-card"><div class="body"><p class="loading">Sin eventos</p></div></div>';
-    return;
-  }
-  const ds = formatDateShort(evento.fecha_evento);
-  container.innerHTML = `
-    <article class="featured-card">
-      <div class="cover ${coverClass(evento.categoria)}">
-        <div class="cover-content"><span class="tag hot">Destacado</span><h3>${escapeHtml(evento.titulo)}</h3></div>
-      </div>
-      <div class="body">
-        <p class="meta">${ds.day} ${ds.month} · ${escapeHtml(evento.ciudad)}</p>
-        <button class="btn btn-glow btn-sm" onclick="openBoletos('${evento._id}', '${escapeHtml(evento.titulo).replace(/'/g, "\\'")}')">Comprar entradas</button>
-      </div>
-    </article>`;
+function isSoldOut(evento) {
+  return evento.boletos_disponibles === 0;
 }
 
-function updateStats(eventos) {
-  document.getElementById("stat-eventos").textContent = eventos.length;
-  const asistentes = eventos.reduce((sum, e) => sum + (e.asistentes?.length || 0), 0);
-  document.getElementById("stat-asistentes").textContent = asistentes > 0 ? `${asistentes}+` : "0";
+function fansLabel(count) {
+  const n = count || 0;
+  if (n >= 1000) return `${Math.floor(n / 1000)}K+ fans`;
+  return n > 0 ? `${n}+ fans` : "Nuevo evento";
 }
 
-function renderEventos() {
-  const container = document.getElementById("eventos-list");
-  const filtered = activeFilter === "todos" ? allEventos : allEventos.filter((e) => e.categoria === activeFilter);
-  if (!filtered.length) {
-    container.innerHTML = '<div class="empty-state">No hay eventos en esta categoria.</div>';
-    return;
-  }
-  container.innerHTML = filtered.map((e) => {
-    const ds = formatDateShort(e.fecha_evento);
-    return `
-    <article class="event-card">
-      <div class="poster ${coverClass(e.categoria)}">
-        <div class="poster-tags"><span class="tag">${escapeHtml(e.categoria)}</span></div>
-        <span class="poster-date">${ds.day} ${ds.month}</span>
+function eventCardHtml(e, featured = false) {
+  const soldOut = isSoldOut(e);
+  const fans = e.asistentes?.length || 0;
+  const precio = e.precio_minimo != null ? formatMoney(e.precio_minimo) : "Consultar";
+  const cat = categoryLabel[e.categoria] || e.categoria?.toUpperCase();
+  const flyer = eventFlyer(e);
+  const cardClass = featured ? "trend-card featured" : "trend-card";
+
+  return `
+    <article class="${cardClass} ${soldOut ? "sold-out" : ""}">
+      <div class="trend-poster ${coverClass(e.categoria)}">
+        <img class="trend-poster-img" src="${escapeHtml(flyer)}" alt="${escapeHtml(e.titulo)}" loading="lazy">
+        <div class="trend-badges">
+          <span class="badge-cat ${e.categoria}">${escapeHtml(cat)}</span>
+          <span class="badge-fans">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            ${fansLabel(fans)}
+          </span>
+        </div>
+        ${soldOut ? '<div class="sold-out-stamp">SOLD OUT</div>' : ""}
       </div>
-      <div class="content">
+      <div class="trend-body">
         <h3>${escapeHtml(e.titulo)}</h3>
-        <p class="desc">${escapeHtml(e.descripcion || "")}</p>
-        <div class="footer">
-          <span class="attendees"><span class="attendees-dot"></span>${e.asistentes?.length || 0} asistentes</span>
-          <button class="btn btn-glow btn-sm" onclick="openBoletos('${e._id}', '${escapeHtml(e.titulo).replace(/'/g, "\\'")}')">Entradas</button>
+        <p class="trend-meta">${escapeHtml(e.ciudad)} · ${formatDateCard(e.fecha_evento)}</p>
+        <div class="trend-footer">
+          <div class="trend-price">
+            <strong>${precio}</strong>
+            <small>PRECIO BASE</small>
+          </div>
+          ${soldOut
+            ? '<span class="status-live ended">Finalizado</span>'
+            : `<span class="status-live">• VENTA GENERAL</span>
+               <button class="btn btn-buy" onclick="openBoletos('${e._id}', '${escapeHtml(e.titulo).replace(/'/g, "\\'")}')">COMPRAR</button>`}
         </div>
       </div>
     </article>`;
-  }).join("");
+}
+
+function renderTrending() {
+  const container = document.getElementById("trending-list");
+  const trending = allEventos.slice(0, 4);
+  if (!trending.length) {
+    container.innerHTML = '<div class="empty-state">No hay eventos disponibles.</div>';
+    return;
+  }
+  container.innerHTML = trending.map((e, i) => eventCardHtml(e, i === 0)).join("");
+}
+
+function renderEventosList() {
+  const container = document.getElementById("eventos-list");
+  const data = filteredEventos;
+  if (!data.length) {
+    container.innerHTML = '<div class="empty-state">No hay eventos con esos filtros.</div>';
+    return;
+  }
+  container.innerHTML = data.map((e) => eventCardHtml(e)).join("");
 }
 
 async function loadEventos() {
-  const container = document.getElementById("eventos-list");
-  container.innerHTML = '<p class="loading">Cargando eventos...</p>';
+  const trending = document.getElementById("trending-list");
+  trending.innerHTML = '<p class="loading">Cargando eventos...</p>';
   try {
     allEventos = await fetchJson(`${API}/eventos`);
-    updateStats(allEventos);
-    renderFeatured(allEventos[0] || null);
-    renderEventos();
+    filterEventos();
+    renderTrending();
   } catch (err) {
-    container.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+    trending.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
   }
 }
 
@@ -242,6 +324,56 @@ document.getElementById("comprar-btn").addEventListener("click", async () => {
   }
 });
 
+function feedItemHtml(p, index = 0) {
+  const name = p.autor?.nombre_completo || p.autor?.username || "Usuario";
+  const likes = p.total_likes || p.usuarios_likes?.length || 0;
+  const hasMedia = p.media_urls?.length > 0;
+  const isForum = (p.texto || "").includes("?") || (p.texto || "").toLowerCase().includes("grupo");
+  const mediaSrc = hasMedia ? postMedia(p.media_urls[0], index) : null;
+
+  if (isForum && !hasMedia) {
+    return `
+      <article class="feed-item forum">
+        <div class="forum-icon">@</div>
+        <div>
+          <p class="forum-tag">FORO ACTIVO · ${likes} respuestas</p>
+          <p class="forum-text">${escapeHtml(p.texto || "")}</p>
+          <div class="forum-avatars">${avatarHtml(p.autor, "xs")}</div>
+        </div>
+      </article>`;
+  }
+
+  return `
+    <article class="feed-item">
+      <div class="feed-item-header">
+        ${avatarHtml(p.autor, "sm")}
+        <div class="feed-item-meta">
+          <strong>${escapeHtml(name.split(" ")[0])}</strong>
+          <span>${timeAgo(p.fecha_publicacion)}</span>
+        </div>
+      </div>
+      <p class="feed-item-text">${escapeHtml(p.texto || "")}</p>
+      ${mediaSrc ? `<img class="feed-item-media" src="${escapeHtml(mediaSrc)}" alt="Publicacion" loading="lazy">` : ""}
+      <div class="feed-item-stars">${"★".repeat(Math.min(5, Math.max(3, likes % 6)))}</div>
+    </article>`;
+}
+
+async function loadFeedPreview() {
+  const container = document.getElementById("feed-preview");
+  if (!container) return;
+  container.innerHTML = '<p class="loading">Cargando...</p>';
+  try {
+    const publicaciones = await fetchJson(`${API}/social/publicaciones`);
+    if (!publicaciones.length) {
+      container.innerHTML = '<div class="empty-state">Aun no hay publicaciones.</div>';
+      return;
+    }
+    container.innerHTML = publicaciones.slice(0, 4).map((p, i) => feedItemHtml(p, i)).join("");
+  } catch (err) {
+    container.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+  }
+}
+
 async function loadFeed() {
   const container = document.getElementById("feed-list");
   container.innerHTML = '<p class="loading">Cargando comunidad...</p>';
@@ -251,17 +383,7 @@ async function loadFeed() {
       container.innerHTML = '<div class="empty-state">Aun no hay publicaciones.</div>';
       return;
     }
-    container.innerHTML = publicaciones.map((p) => `
-      <article class="feed-card">
-        <div class="feed-header">
-          <div class="avatar">${(p.autor?.username || "U").slice(0, 2).toUpperCase()}</div>
-          <div><div class="name">${escapeHtml(p.autor?.nombre_completo || p.autor?.username || "Usuario")}</div>
-          <div class="handle">@${escapeHtml(p.autor?.username || "usuario")}</div></div>
-          <span class="time">${formatDate(p.fecha_publicacion)}</span>
-        </div>
-        <p class="feed-text">${escapeHtml(p.texto || "")}</p>
-        <div class="feed-actions"><span class="likes">♥ ${p.total_likes} me gusta</span></div>
-      </article>`).join("");
+    container.innerHTML = publicaciones.map((p, i) => feedItemHtml(p, i)).join("");
   } catch (err) {
     container.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
   }
@@ -269,3 +391,4 @@ async function loadFeed() {
 
 setupUserUI();
 loadEventos();
+loadFeedPreview();

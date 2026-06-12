@@ -256,6 +256,7 @@ var usuario4Id = ObjectId("64f0a0010000000000000007");
 var eventoConciertoId = ObjectId("64f0b0010000000000000001");
 var eventoFestivalId = ObjectId("64f0b0010000000000000002");
 var eventoTeatroId = ObjectId("64f0b0010000000000000003");
+var eventoCuscoId = ObjectId("64f0b0010000000000000004");
 
 db.usuarios.insertMany([
   {
@@ -264,7 +265,7 @@ db.usuarios.insertMany([
     password_hash: "$2b$10$EjemploHashSoloDemoNoUsarEnProduccion",
     username: "admin_ticketflow",
     nombre_completo: "Administrador TicketFlow",
-    foto_perfil_url: "https://ticketflow.sfo3.digitaloceanspaces.com/perfiles/admin.webp",
+    foto_perfil_url: "/img/perfiles/admin.jpg",
     fecha_registro: hace30dias,
     rol: "admin"
   },
@@ -274,7 +275,7 @@ db.usuarios.insertMany([
     password_hash: "$2b$10$EjemploHashSoloDemoNoUsarEnProduccion",
     username: "victor_arapa",
     nombre_completo: "Victor Piero Arapa Titi",
-    foto_perfil_url: "https://ticketflow.sfo3.digitaloceanspaces.com/perfiles/victor.webp",
+    foto_perfil_url: "/img/perfiles/victor.jpg",
     fecha_registro: hace30dias,
     rol: "organizador"
   },
@@ -284,7 +285,7 @@ db.usuarios.insertMany([
     password_hash: "$2b$10$EjemploHashSoloDemoNoUsarEnProduccion",
     username: "cesar_quispe",
     nombre_completo: "Cesar Augusto Quispe Llacsahuanga",
-    foto_perfil_url: "https://ticketflow.sfo3.digitaloceanspaces.com/perfiles/cesar.webp",
+    foto_perfil_url: "/img/perfiles/cesar.jpg",
     fecha_registro: hace30dias,
     rol: "organizador"
   },
@@ -294,7 +295,7 @@ db.usuarios.insertMany([
     password_hash: "$2b$10$EjemploHashSoloDemoNoUsarEnProduccion",
     username: "rai_manrique",
     nombre_completo: "Rai Jeferson Manrique Anaya",
-    foto_perfil_url: "https://ticketflow.sfo3.digitaloceanspaces.com/perfiles/rai.webp",
+    foto_perfil_url: "/img/perfiles/rai.jpg",
     fecha_registro: hace7dias,
     rol: "usuario"
   },
@@ -304,7 +305,7 @@ db.usuarios.insertMany([
     password_hash: "$2b$10$EjemploHashSoloDemoNoUsarEnProduccion",
     username: "maria_eventos",
     nombre_completo: "Maria Lopez Fernandez",
-    foto_perfil_url: "https://ticketflow.sfo3.digitaloceanspaces.com/perfiles/maria.webp",
+    foto_perfil_url: "/img/perfiles/maria.jpg",
     fecha_registro: hace7dias,
     rol: "usuario"
   },
@@ -314,6 +315,7 @@ db.usuarios.insertMany([
     password_hash: "$2b$10$EjemploHashSoloDemoNoUsarEnProduccion",
     username: "carlos_ramirez",
     nombre_completo: "Carlos Ramirez Vega",
+    foto_perfil_url: "/img/perfiles/carlos.jpg",
     fecha_registro: hace7dias,
     rol: "usuario"
   },
@@ -323,6 +325,7 @@ db.usuarios.insertMany([
     password_hash: "$2b$10$EjemploHashSoloDemoNoUsarEnProduccion",
     username: "ana_torres",
     nombre_completo: "Ana Torres Mendoza",
+    foto_perfil_url: "/img/perfiles/ana.jpg",
     fecha_registro: hace7dias,
     rol: "usuario"
   }
@@ -337,7 +340,7 @@ db.eventos.insertMany([
     categoria: "concierto",
     ciudad: "Lima",
     fecha_evento: ISODate("2026-08-15T20:00:00Z"),
-    flyer_url: "https://ticketflow.sfo3.digitaloceanspaces.com/eventos/bts-lima-2026.webp",
+    flyer_url: "/img/eventos/concierto.jpg",
     ubicacion: { type: "Point", coordinates: [-77.0353, -12.0919] },
     asistentes: [usuario1Id, usuario2Id, usuario3Id],
     estado: "publicado"
@@ -350,7 +353,7 @@ db.eventos.insertMany([
     categoria: "festival",
     ciudad: "Lima",
     fecha_evento: ISODate("2026-09-20T18:00:00Z"),
-    flyer_url: "https://ticketflow.sfo3.digitaloceanspaces.com/eventos/selva-sonora.webp",
+    flyer_url: "/img/eventos/festival.jpg",
     ubicacion: { type: "Point", coordinates: [-77.0253, -12.1247] },
     asistentes: [usuario2Id, usuario4Id],
     estado: "publicado"
@@ -363,9 +366,22 @@ db.eventos.insertMany([
     categoria: "teatro",
     ciudad: "Lima",
     fecha_evento: ISODate("2026-07-10T19:30:00Z"),
-    flyer_url: "https://ticketflow.sfo3.digitaloceanspaces.com/eventos/hamlet-teatro.webp",
+    flyer_url: "/img/eventos/teatro.jpg",
     ubicacion: { type: "Point", coordinates: [-77.0300, -12.0464] },
     asistentes: [usuario1Id],
+    estado: "publicado"
+  },
+  {
+    _id: eventoCuscoId,
+    creador_id: usuarioOrg2Id,
+    titulo: "Vibra Fest Cusco 2026",
+    descripcion: "Festival electronico en la ciudad imperial. Edicion agotada.",
+    categoria: "festival",
+    ciudad: "Cusco",
+    fecha_evento: ISODate("2026-06-15T16:00:00Z"),
+    flyer_url: "/img/eventos/festival-cusco.jpg",
+    ubicacion: { type: "Point", coordinates: [-71.9675, -13.5319] },
+    asistentes: [usuario1Id, usuario2Id, usuario3Id, usuario4Id],
     estado: "publicado"
   }
 ]);
@@ -456,6 +472,22 @@ db.boletos.insertMany([
     zona: "General",
     precio: 120.0,
     estado: "disponible"
+  },
+  {
+    evento_id: eventoCuscoId,
+    zona: "General",
+    precio: 150.0,
+    estado: "vendido",
+    vendido_a: usuario1Id,
+    fecha_venta: hace7dias
+  },
+  {
+    evento_id: eventoCuscoId,
+    zona: "VIP",
+    precio: 280.0,
+    estado: "vendido",
+    vendido_a: usuario2Id,
+    fecha_venta: hace7dias
   }
 ]);
 
@@ -509,7 +541,7 @@ db.publicaciones.insertMany([
     usuario_id: usuario1Id,
     evento_id: eventoConciertoId,
     texto: "Ya tengo mi entrada VIP para BTS! Alguien del grupo UPC va en la misma fila?",
-    media_urls: ["https://ticketflow.sfo3.digitaloceanspaces.com/posts/bts-entrada.webp"],
+    media_urls: ["/img/posts/entrada.jpg"],
     fecha_publicacion: hace7dias,
     usuarios_likes: [usuario2Id, usuario3Id, usuario4Id]
   },
@@ -518,6 +550,7 @@ db.publicaciones.insertMany([
     usuario_id: usuario2Id,
     evento_id: eventoFestivalId,
     texto: "Selva Sonora va a estar increible. Busco grupo para ir juntos desde San Miguel.",
+    media_urls: ["/img/posts/festival-grupo.jpg"],
     fecha_publicacion: hace7dias,
     usuarios_likes: [usuario1Id]
   },
@@ -527,6 +560,23 @@ db.publicaciones.insertMany([
     texto: "Recordatorio: la preventa del megaconcierto cierra en 48 horas. Eviten reventa informal, compren solo por TicketFlow.",
     fecha_publicacion: ahora,
     usuarios_likes: [usuario1Id, usuario2Id]
+  },
+  {
+    _id: ObjectId("64f0e0010000000000000004"),
+    usuario_id: usuario3Id,
+    evento_id: eventoConciertoId,
+    texto: "Carlos subio una foto en el ensayo del megaconcierto. El estadio se ve enorme!",
+    media_urls: ["/img/posts/estadio.jpg"],
+    fecha_publicacion: hace7dias,
+    usuarios_likes: [usuario1Id, usuario2Id, usuario4Id]
+  },
+  {
+    _id: ObjectId("64f0e0010000000000000005"),
+    usuario_id: usuario4Id,
+    evento_id: eventoFestivalId,
+    texto: "Quien va a Selva Sonora en Lima? Armemos el grupo!",
+    fecha_publicacion: ahora,
+    usuarios_likes: [usuario2Id, usuario3Id]
   }
 ]);
 
