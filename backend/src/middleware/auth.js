@@ -1,27 +1,33 @@
+const jwt = require("jsonwebtoken");
 const { Usuario } = require("../models");
+
+const JWT_SECRET = process.env.JWT_SECRET || "ticketflow-dev-secret-cambiar-en-produccion";
+const JWT_EXPIRES = process.env.JWT_EXPIRES || "24h";
+
+function createToken(user) {
+  return jwt.sign(
+    {
+      id: String(user._id),
+      rol: user.rol,
+      username: user.username,
+    },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES }
+  );
+}
 
 function parseToken(header) {
   if (!header || !header.startsWith("Bearer ")) return null;
   try {
-    return JSON.parse(Buffer.from(header.slice(7), "base64url").toString("utf8"));
+    return jwt.verify(header.slice(7), JWT_SECRET);
   } catch {
     return null;
   }
 }
 
-function createToken(user) {
-  const payload = {
-    id: String(user._id),
-    rol: user.rol,
-    username: user.username,
-    exp: Date.now() + 24 * 60 * 60 * 1000,
-  };
-  return Buffer.from(JSON.stringify(payload)).toString("base64url");
-}
-
 async function requireAuth(req, res, next) {
   const payload = parseToken(req.headers.authorization);
-  if (!payload || !payload.id || payload.exp < Date.now()) {
+  if (!payload?.id) {
     return res.status(401).json({ error: "Sesion invalida o expirada" });
   }
 
@@ -39,4 +45,18 @@ function requireStaff(req, res, next) {
   next();
 }
 
-module.exports = { createToken, parseToken, requireAuth, requireStaff };
+function requireAdmin(req, res, next) {
+  if (req.user.rol !== "admin") {
+    return res.status(403).json({ error: "Acceso solo para administradores" });
+  }
+  next();
+}
+
+module.exports = {
+  createToken,
+  parseToken,
+  requireAuth,
+  requireStaff,
+  requireAdmin,
+  JWT_SECRET,
+};

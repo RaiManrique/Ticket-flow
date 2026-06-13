@@ -1,4 +1,3 @@
-const API = "/api";
 const currentUser = requireRole(["admin", "organizador"]);
 
 const panelTitles = {
@@ -154,5 +153,7 @@ async function loadVentas() {
   }
 }
 
-setupAdminUI();
-loadDashboard();
+if (currentUser) {
+  setupAdminUI();
+  loadDashboard();
+}

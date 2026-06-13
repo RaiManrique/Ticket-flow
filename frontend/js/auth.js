@@ -29,6 +29,30 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function apiUrl(path) {
+  const base = typeof API !== "undefined" ? API : getApiBase();
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+async function validateSession() {
+  const token = getToken();
+  if (!token || !isJwtToken(token)) {
+    clearSession();
+    return false;
+  }
+
+  try {
+    const res = await fetch(apiUrl("/auth/me"), { headers: authHeaders() });
+    if (!res.ok) throw new Error("Sesion invalida");
+    const user = await res.json();
+    saveSession({ token, user });
+    return true;
+  } catch {
+    clearSession();
+    return false;
+  }
+}
+
 async function fetchAuth(url, options = {}) {
   const res = await fetch(url, {
     ...options,
@@ -43,9 +67,15 @@ async function fetchAuth(url, options = {}) {
   return data;
 }
 
+function isJwtToken(token) {
+  return typeof token === "string" && token.split(".").length === 3;
+}
+
 function requireRole(roles, redirect = "/index.html") {
   const user = getUser();
-  if (!user || !getToken()) {
+  const token = getToken();
+  if (!user || !token || !isJwtToken(token)) {
+    clearSession();
     window.location.href = redirect;
     return null;
   }
@@ -63,4 +93,8 @@ function logout() {
 
 function roleLabel(rol) {
   return { admin: "Administrador", organizador: "Organizador", usuario: "Usuario" }[rol] || rol;
+}
+
+function redirectForRole(user) {
+  return ["admin", "organizador"].includes(user?.rol) ? "/admin.html" : "/usuario.html";
 }

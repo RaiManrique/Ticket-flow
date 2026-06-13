@@ -1,4 +1,4 @@
-const API = "/api";
+const API = getApiBase();
 
 const sections = {
   eventos: document.getElementById("section-eventos"),
@@ -66,8 +66,8 @@ async function checkHealth() {
     const health = await fetchJson(`${API}/health`);
     statusApi.textContent = "En linea";
     statusApi.classList.add("ok");
-    statusDb.textContent = "MongoDB OK";
-    statusDb.classList.add("ok");
+    statusDb.textContent = health.mongo === "connected" ? "MongoDB OK" : "MongoDB degradado";
+    statusDb.classList.toggle("ok", health.mongo === "connected");
   } catch {
     statusApi.textContent = "Sin conexion";
     statusDb.textContent = "DB offline";
@@ -266,15 +266,14 @@ async function loadBoletos(eventoId) {
 async function loadUsuarios() {
   const select = document.getElementById("usuario-select");
   try {
-    const usuarios = await fetchJson(`${API}/social/usuarios`);
+    const usuarios = await fetchJson(`${API}/demo/compradores`);
     select.innerHTML =
       '<option value="">Selecciona tu cuenta</option>' +
       usuarios
-        .filter((u) => u.rol === "usuario")
         .map((u) => `<option value="${u._id}">${escapeHtml(u.nombre_completo || u.username)}</option>`)
         .join("");
   } catch {
-    select.innerHTML = '<option value="">Error al cargar usuarios</option>';
+    select.innerHTML = '<option value="">Inicia sesion para comprar</option>';
   }
 }
 
@@ -287,45 +286,14 @@ document.getElementById("comprar-btn").addEventListener("click", async () => {
   const msg = document.getElementById("compra-msg");
   msg.innerHTML = "";
 
-  const usuarioId = document.getElementById("usuario-select").value;
-  const metodo = getMetodoPago();
   const checked = [...document.querySelectorAll('input[name="boleto"]:checked')].map((el) => el.value);
 
-  if (!selectedEventoId || !usuarioId || checked.length === 0) {
-    msg.innerHTML = '<div class="alert error">Selecciona tu cuenta y al menos una entrada disponible.</div>';
+  if (!selectedEventoId || checked.length === 0) {
+    msg.innerHTML = '<div class="alert error">Selecciona al menos una entrada disponible.</div>';
     return;
   }
 
-  const btn = document.getElementById("comprar-btn");
-  btn.disabled = true;
-  btn.textContent = "Procesando...";
-
-  try {
-    const venta = await fetchJson(`${API}/ventas`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        usuario_id: usuarioId,
-        evento_id: selectedEventoId,
-        boletos_ids: checked,
-        metodo_pago: metodo,
-      }),
-    });
-
-    msg.innerHTML = `
-      <div class="alert success">
-        Compra confirmada<br>
-        <strong>${escapeHtml(venta.referencia_pago)}</strong><br>
-        Total: ${formatMoney(venta.monto_total)}
-      </div>`;
-    loadBoletos(selectedEventoId);
-    loadEventos();
-  } catch (err) {
-    msg.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Confirmar compra";
-  }
+  msg.innerHTML = '<div class="alert error">Para comprar debes <a href="index.html" style="color:#ffb3d0">iniciar sesion</a> con tu cuenta TicketFlow.</div>';
 });
 
 async function loadFeed() {

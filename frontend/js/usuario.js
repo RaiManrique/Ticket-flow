@@ -1,12 +1,15 @@
-const API = "/api";
 const currentUser = requireRole(["usuario"]);
 
 const views = {
   inicio: document.getElementById("view-inicio"),
   eventos: document.getElementById("view-eventos"),
   comunidad: document.getElementById("view-comunidad"),
-  boletos: document.getElementById("view-boletos"),
+  billetera: document.getElementById("view-billetera"),
+  checkout: document.getElementById("view-checkout"),
 };
+
+let maxBoletosPorEvento = 4;
+let cupoEventoActual = { maximo: 4, comprados: 0, disponibles: 4 };
 
 let allEventos = [];
 let filteredEventos = [];
@@ -15,6 +18,10 @@ let selectedEventoMeta = null;
 let seatMapInstance = null;
 let activeFilter = "todos";
 let activeSearch = { query: "", ciudad: "", fecha: "" };
+let activeSort = "fecha-asc";
+let showOnlyFavorites = false;
+
+const FAVORITES_KEY = "ticketflow_event_favorites";
 
 const categoryCover = {
   concierto: "cover-concierto",
@@ -40,16 +47,15 @@ function setupUserUI() {
   avatarImg.onerror = () => document.getElementById("user-avatar-wrap").classList.remove("has-photo");
   document.getElementById("user-name").textContent = name.split(" ")[0];
   document.getElementById("panel-user-name").textContent = name;
+  document.getElementById("composer-avatar").textContent = initials;
   document.getElementById("logout-btn").addEventListener("click", logout);
 }
 
 function switchTab(tab) {
-  if (tab === "boletos" && !selectedEventoId) {
-    tab = "inicio";
-  }
+  const navTab = tab === "checkout" ? "billetera" : tab;
 
   document.querySelectorAll(".app-nav-btn, .bottom-nav-btn").forEach((el) => {
-    el.classList.toggle("active", el.dataset.tab === tab);
+    el.classList.toggle("active", el.dataset.tab === navTab);
   });
 
   Object.entries(views).forEach(([key, el]) => {
@@ -58,6 +64,7 @@ function switchTab(tab) {
 
   if (tab === "comunidad") loadFeed();
   if (tab === "inicio") loadFeedPreview();
+  if (tab === "billetera") loadWallet();
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -86,6 +93,22 @@ document.getElementById("search-toggle")?.addEventListener("click", () => {
 
 document.getElementById("fab-btn").addEventListener("click", () => switchTab("comunidad"));
 
+document.getElementById("sort-eventos")?.addEventListener("change", (e) => {
+  activeSort = e.target.value;
+  filterEventos();
+});
+
+document.getElementById("fav-filter-btn")?.addEventListener("click", () => {
+  showOnlyFavorites = !showOnlyFavorites;
+  document.getElementById("fav-filter-btn").classList.toggle("active", showOnlyFavorites);
+  filterEventos();
+});
+
+document.getElementById("clear-filters-btn")?.addEventListener("click", clearEventFilters);
+
+document.getElementById("post-text")?.addEventListener("input", updatePostCounter);
+document.getElementById("post-btn")?.addEventListener("click", createLocalPost);
+
 function applySearch() {
   activeSearch = {
     query: document.getElementById("search-query").value.trim().toLowerCase(),
@@ -96,9 +119,29 @@ function applySearch() {
   switchTab("eventos");
 }
 
+function clearEventFilters() {
+  activeFilter = "todos";
+  activeSearch = { query: "", ciudad: "", fecha: "" };
+  showOnlyFavorites = false;
+  activeSort = "fecha-asc";
+
+  document.getElementById("search-query").value = "";
+  document.getElementById("search-ciudad").value = "";
+  document.getElementById("search-fecha").value = "";
+  document.getElementById("sort-eventos").value = activeSort;
+  document.getElementById("fav-filter-btn")?.classList.remove("active");
+  document.querySelectorAll(".filter-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.filter === "todos");
+  });
+
+  filterEventos();
+}
+
 function filterEventos() {
+  const favorites = getFavoriteIds();
   filteredEventos = allEventos.filter((e) => {
     if (activeFilter !== "todos" && e.categoria !== activeFilter) return false;
+    if (showOnlyFavorites && !favorites.has(String(e._id))) return false;
     if (activeSearch.ciudad && e.ciudad !== activeSearch.ciudad) return false;
     if (activeSearch.fecha) {
       const d = new Date(e.fecha_evento).toISOString().slice(0, 10);
@@ -110,7 +153,38 @@ function filterEventos() {
     }
     return true;
   });
+  sortEventos();
+  updateEventosMeta();
   renderEventosList();
+}
+
+function sortEventos() {
+  const price = (e) => Number(e.precio_minimo ?? Number.MAX_SAFE_INTEGER);
+  const fans = (e) => e.asistentes?.length || 0;
+
+  filteredEventos.sort((a, b) => {
+    if (activeSort === "precio-asc") return price(a) - price(b);
+    if (activeSort === "precio-desc") return price(b) - price(a);
+    if (activeSort === "popularidad") return fans(b) - fans(a);
+    return new Date(a.fecha_evento) - new Date(b.fecha_evento);
+  });
+}
+
+function updateEventosMeta() {
+  const countEl = document.getElementById("eventos-count");
+  const labelEl = document.getElementById("active-search-label");
+  if (!countEl || !labelEl) return;
+
+  const total = filteredEventos.length;
+  const parts = [];
+  if (activeFilter !== "todos") parts.push(categoryLabel[activeFilter] || activeFilter);
+  if (activeSearch.query) parts.push(`"${activeSearch.query}"`);
+  if (activeSearch.ciudad) parts.push(activeSearch.ciudad);
+  if (activeSearch.fecha) parts.push(activeSearch.fecha);
+  if (showOnlyFavorites) parts.push("favoritos");
+
+  countEl.textContent = `${total} evento${total === 1 ? "" : "s"}`;
+  labelEl.textContent = parts.length ? `Filtro activo: ${parts.join(" · ")}` : "Mostrando todos los eventos";
 }
 
 async function fetchJson(url, options = {}) {
@@ -148,6 +222,30 @@ function formatMoney(amount) {
   return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(amount);
 }
 
+function readJsonStorage(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJsonStorage(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function getFavoriteIds() {
+  return new Set(readJsonStorage(FAVORITES_KEY, []));
+}
+
+function saveFavoriteIds(ids) {
+  writeJsonStorage(FAVORITES_KEY, [...ids]);
+}
+
+function isFavorite(eventoId) {
+  return getFavoriteIds().has(String(eventoId));
+}
+
 function escapeHtml(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -174,9 +272,11 @@ function eventCardHtml(e, featured = false) {
   const cat = categoryLabel[e.categoria] || e.categoria?.toUpperCase();
   const flyer = eventFlyer(e);
   const cardClass = featured ? "trend-card featured" : "trend-card";
+  const fav = isFavorite(e._id);
+  const safeTitle = escapeHtml(e.titulo).replace(/'/g, "\\'");
 
   return `
-    <article class="${cardClass} ${soldOut ? "sold-out" : ""}">
+    <article class="${cardClass} ${soldOut ? "sold-out" : ""}" id="evento-${escapeHtml(e._id)}">
       <div class="trend-poster ${coverClass(e.categoria)}">
         <img class="trend-poster-img" src="${escapeHtml(flyer)}" alt="${escapeHtml(e.titulo)}" loading="lazy">
         <div class="trend-badges">
@@ -186,11 +286,19 @@ function eventCardHtml(e, featured = false) {
             ${fansLabel(fans)}
           </span>
         </div>
+        <button class="event-fav-btn ${fav ? "active" : ""}" type="button" onclick="toggleFavorite('${e._id}')" aria-label="Guardar favorito">
+          ${fav ? "★" : "☆"}
+        </button>
         ${soldOut ? '<div class="sold-out-stamp">SOLD OUT</div>' : ""}
       </div>
       <div class="trend-body">
         <h3>${escapeHtml(e.titulo)}</h3>
         <p class="trend-meta">${escapeHtml(e.ciudad)} · ${formatDateCard(e.fecha_evento)}</p>
+        <p class="trend-desc">${escapeHtml(e.descripcion || "Evento disponible en TicketFlow.")}</p>
+        <div class="event-actions">
+          <button class="link-btn" type="button" onclick="showEventDetail('${e._id}')">Ver detalle</button>
+          <button class="link-btn" type="button" onclick="shareEvent('${e._id}')">Compartir</button>
+        </div>
         <div class="trend-footer">
           <div class="trend-price">
             <strong>${precio}</strong>
@@ -199,7 +307,7 @@ function eventCardHtml(e, featured = false) {
           ${soldOut
             ? '<span class="status-live ended">Finalizado</span>'
             : `<span class="status-live">• VENTA GENERAL</span>
-               <button class="btn btn-buy" onclick="openBoletos('${e._id}', '${escapeHtml(e.titulo).replace(/'/g, "\\'")}')">COMPRAR</button>`}
+               <button class="btn btn-buy" onclick="openBoletos('${e._id}', '${safeTitle}')">COMPRAR</button>`}
         </div>
       </div>
     </article>`;
@@ -225,6 +333,48 @@ function renderEventosList() {
   container.innerHTML = data.map((e) => eventCardHtml(e)).join("");
 }
 
+window.toggleFavorite = function (eventoId) {
+  const favorites = getFavoriteIds();
+  const id = String(eventoId);
+  if (favorites.has(id)) favorites.delete(id);
+  else favorites.add(id);
+  saveFavoriteIds(favorites);
+  renderTrending();
+  filterEventos();
+};
+
+window.showEventDetail = function (eventoId) {
+  const evento = allEventos.find((e) => String(e._id) === String(eventoId));
+  if (!evento) return;
+
+  const details = [
+    evento.titulo,
+    `${evento.ciudad} · ${formatDate(evento.fecha_evento)}`,
+    evento.descripcion || "Sin descripcion adicional.",
+    `Categoria: ${categoryLabel[evento.categoria] || evento.categoria}`,
+    `Precio desde: ${evento.precio_minimo != null ? formatMoney(evento.precio_minimo) : "Consultar"}`,
+  ];
+  alert(details.join("\n\n"));
+};
+
+window.shareEvent = async function (eventoId) {
+  const evento = allEventos.find((e) => String(e._id) === String(eventoId));
+  if (!evento) return;
+
+  const url = `${window.location.origin}${window.location.pathname}#evento-${eventoId}`;
+  const text = `${evento.titulo} en ${evento.ciudad} - ${formatDate(evento.fecha_evento)}`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: evento.titulo, text, url });
+      return;
+    }
+    await navigator.clipboard.writeText(`${text}\n${url}`);
+    alert("Enlace del evento copiado al portapapeles.");
+  } catch {
+    alert("No se pudo compartir el evento en este navegador.");
+  }
+};
+
 async function loadEventos() {
   const trending = document.getElementById("trending-list");
   trending.innerHTML = '<p class="loading">Cargando eventos...</p>';
@@ -242,9 +392,133 @@ window.openBoletos = function (id, titulo) {
   selectedEventoMeta = allEventos.find((e) => String(e._id) === String(id)) || null;
   document.getElementById("boletos-titulo").textContent = titulo;
   document.getElementById("panel-evento").textContent = titulo;
-  switchTab("boletos");
+  switchTab("checkout");
   loadBoletos(id);
 };
+
+function ticketQrData(boleto, evento) {
+  return [
+    boleto.codigo_entrada || String(boleto._id),
+    evento?.titulo || "",
+    boleto.zona || "",
+    boleto.fila || "",
+    boleto.asiento || "",
+  ].join("|");
+}
+
+function walletTicketHtml(b) {
+  const evento = b.evento;
+  const titulo = evento?.titulo || "Evento";
+  const ciudad = evento?.ciudad || "";
+  const fecha = evento?.fecha_evento ? formatDate(evento.fecha_evento) : "";
+  const qrData = ticketQrData(b, evento);
+  const seat = seatLabel(b);
+
+  return `
+    <article class="wallet-ticket">
+      <div class="wallet-ticket-head">
+        <div>
+          <h3>${escapeHtml(titulo)}</h3>
+          <p class="wallet-ticket-meta">${escapeHtml(ciudad)} · ${escapeHtml(fecha)}</p>
+        </div>
+        <span class="wallet-ticket-status">VALIDO</span>
+      </div>
+      <div class="wallet-ticket-body">
+        <div class="wallet-ticket-info">
+          <p><strong>${escapeHtml(seat)}</strong></p>
+          <p class="wallet-ticket-code">${escapeHtml(b.codigo_entrada || "—")}</p>
+          <p class="wallet-ticket-ref">Ref: ${escapeHtml(b.venta?.referencia_pago || "—")}</p>
+          <p class="wallet-ticket-price">${formatMoney(b.precio)}</p>
+        </div>
+        <div class="wallet-ticket-qr" title="QR simulado de acceso">
+          ${qrSvg(qrData)}
+          <small>QR simulado</small>
+        </div>
+      </div>
+    </article>`;
+}
+
+async function loadWallet() {
+  const list = document.getElementById("wallet-list");
+  const hint = document.getElementById("wallet-hint");
+  list.innerHTML = "<p class='loading'>Cargando tus boletos...</p>";
+  hint.textContent = "";
+
+  try {
+    const boletos = await fetchJson(`${API}/ventas/mis-boletos`);
+    maxBoletosPorEvento = cupoEventoActual.maximo || maxBoletosPorEvento;
+    hint.textContent = `Limite de compra: maximo ${maxBoletosPorEvento} boletos por evento por persona.`;
+
+    if (!boletos.length) {
+      list.innerHTML = `
+        <div class="empty-state">
+          Aun no tienes entradas.<br>
+          <button class="link-btn" type="button" data-tab="eventos">Explorar eventos</button>
+        </div>`;
+      list.querySelector("[data-tab]")?.addEventListener("click", () => switchTab("eventos"));
+      return;
+    }
+
+    list.innerHTML = boletos.map(walletTicketHtml).join("");
+  } catch (err) {
+    list.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function showTicketModal(result) {
+  const modal = document.getElementById("ticket-modal");
+  const refEl = document.getElementById("ticket-modal-ref");
+  const container = document.getElementById("ticket-modal-tickets");
+  const venta = result.venta || result;
+  const boletos = result.boletos || [];
+  const evento = result.evento || selectedEventoMeta;
+
+  refEl.textContent = `Referencia ${venta.referencia_pago} · Total ${formatMoney(venta.monto_total)}`;
+  container.innerHTML = boletos.map((b) => {
+    const qrData = ticketQrData(b, evento);
+    return `
+      <div class="ticket-confirm-card">
+        <div>
+          <strong>${escapeHtml(seatLabel(b))}</strong>
+          <p>${escapeHtml(b.codigo_entrada || "")}</p>
+        </div>
+        <div class="wallet-ticket-qr">${qrSvg(qrData)}</div>
+      </div>`;
+  }).join("");
+
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
+}
+
+function closeTicketModal() {
+  const modal = document.getElementById("ticket-modal");
+  modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
+  switchTab("billetera");
+}
+
+document.querySelectorAll("[data-close-modal]").forEach((el) => {
+  el.addEventListener("click", closeTicketModal);
+});
+
+async function loadCupoEvento(eventoId) {
+  try {
+    cupoEventoActual = await fetchJson(`${API}/ventas/cupo/${eventoId}`);
+    maxBoletosPorEvento = cupoEventoActual.maximo || 4;
+    const note = document.getElementById("checkout-limit-note");
+    if (note) {
+      if (cupoEventoActual.disponibles === 0) {
+        note.innerHTML = `<span class="alert error">Ya compraste el maximo de ${cupoEventoActual.maximo} boletos para este evento.</span>`;
+      } else {
+        note.textContent = `Puedes seleccionar hasta ${cupoEventoActual.disponibles} entrada(s) mas (maximo ${cupoEventoActual.maximo} por evento · ya tienes ${cupoEventoActual.comprados}).`;
+      }
+    }
+    return cupoEventoActual;
+  } catch {
+    cupoEventoActual = { maximo: 4, comprados: 0, disponibles: 4 };
+    return cupoEventoActual;
+  }
+}
 
 function seatLabel(b) {
   if (b.fila && b.asiento) return `${b.zona} · Fila ${b.fila} · Asiento ${b.asiento}`;
@@ -283,6 +557,10 @@ async function loadBoletos(eventoId) {
   document.getElementById("selection-detail").innerHTML = "";
   seatMapInstance = null;
 
+  const cupo = await loadCupoEvento(eventoId);
+  const comprarBtn = document.getElementById("comprar-btn");
+  if (comprarBtn) comprarBtn.disabled = cupo.disponibles === 0;
+
   try {
     const boletos = await fetchJson(`${API}/eventos/${eventoId}/boletos`);
     if (!boletos.length) {
@@ -291,9 +569,16 @@ async function loadBoletos(eventoId) {
       return;
     }
 
+    if (cupo.disponibles === 0) {
+      container.innerHTML = '<div class="empty-state">Ya alcanzaste el limite de boletos para este evento. Revisa tu billetera.</div>';
+      updateOrderSummary([]);
+      return;
+    }
+
     seatMapInstance = createSeatMap(boletos, {
       eventTitle: selectedEventoMeta?.titulo || document.getElementById("boletos-titulo").textContent,
       eventImage: selectedEventoMeta ? eventFlyer(selectedEventoMeta) : "/img/eventos/concierto.jpg",
+      maxSelection: cupo.disponibles,
       onChange: (_ids, details) => updateOrderSummary(details),
     });
     seatMapInstance.mount(container);
@@ -317,21 +602,26 @@ document.getElementById("comprar-btn").addEventListener("click", async () => {
     return;
   }
 
+  if (checked.length > cupoEventoActual.disponibles) {
+    msg.innerHTML = `<div class="alert error">Solo puedes comprar ${cupoEventoActual.disponibles} entrada(s) mas para este evento.</div>`;
+    return;
+  }
+
   const btn = document.getElementById("comprar-btn");
   btn.disabled = true;
   btn.textContent = "Procesando...";
 
   try {
-    const venta = await fetchJson(`${API}/ventas`, {
+    const result = await fetchJson(`${API}/ventas`, {
       method: "POST",
       body: JSON.stringify({
-        usuario_id: currentUser._id,
         evento_id: selectedEventoId,
         boletos_ids: checked,
         metodo_pago: getMetodoPago(),
       }),
     });
-    msg.innerHTML = `<div class="alert success">Compra confirmada<br><strong>${escapeHtml(venta.referencia_pago)}</strong><br>Total: ${formatMoney(venta.monto_total)}</div>`;
+    msg.innerHTML = `<div class="alert success">Compra confirmada. Tus entradas ya estan en tu billetera.</div>`;
+    showTicketModal(result);
     loadBoletos(selectedEventoId);
     loadEventos();
   } catch (err) {
@@ -376,6 +666,42 @@ function feedItemHtml(p, index = 0) {
     </article>`;
 }
 
+function updatePostCounter() {
+  const text = document.getElementById("post-text")?.value || "";
+  const counter = document.getElementById("post-counter");
+  if (counter) counter.textContent = `${text.length}/180`;
+}
+
+async function createLocalPost() {
+  const input = document.getElementById("post-text");
+  const msg = document.getElementById("post-msg");
+  const btn = document.getElementById("post-btn");
+  const text = input.value.trim();
+  msg.innerHTML = "";
+
+  if (text.length < 5) {
+    msg.innerHTML = '<div class="alert error">Escribe al menos 5 caracteres.</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  try {
+    await fetchJson(`${API}/social/publicaciones`, {
+      method: "POST",
+      body: JSON.stringify({ texto: text }),
+    });
+    input.value = "";
+    updatePostCounter();
+    msg.innerHTML = '<div class="alert success">Publicacion publicada en la comunidad.</div>';
+    await loadFeed();
+    await loadFeedPreview();
+  } catch (err) {
+    msg.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function loadFeedPreview() {
   const container = document.getElementById("feed-preview");
   if (!container) return;
@@ -407,6 +733,9 @@ async function loadFeed() {
   }
 }
 
-setupUserUI();
-loadEventos();
-loadFeedPreview();
+if (currentUser) {
+  setupUserUI();
+  updatePostCounter();
+  loadEventos();
+  loadFeedPreview();
+}

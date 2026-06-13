@@ -1,6 +1,7 @@
 const express = require("express");
 const { Usuario } = require("../models");
 const { createToken, requireAuth } = require("../middleware/auth");
+const { verifyPassword, hashPassword, isLegacyHash } = require("../utils/passwords");
 
 const router = express.Router();
 const DEMO_PASSWORD = process.env.DEMO_USER_PASSWORD || "TicketFlow2026";
@@ -12,19 +13,25 @@ router.post("/login", async (req, res) => {
     return res.status(400).json({ error: "Usuario y contrasena requeridos" });
   }
 
-  if (password !== DEMO_PASSWORD) {
-    return res.status(401).json({ error: "Contrasena incorrecta" });
-  }
-
   try {
     const user = await Usuario.findOne({
       $or: [{ email: login.toLowerCase() }, { username: login }],
-    })
-      .select("-password_hash")
-      .lean();
+    }).lean();
 
     if (!user) {
       return res.status(401).json({ error: "Usuario no encontrado" });
+    }
+
+    const valid = await verifyPassword(password, user.password_hash, DEMO_PASSWORD);
+    if (!valid) {
+      return res.status(401).json({ error: "Contrasena incorrecta" });
+    }
+
+    if (isLegacyHash(user.password_hash)) {
+      await Usuario.updateOne(
+        { _id: user._id },
+        { $set: { password_hash: await hashPassword(password) } }
+      );
     }
 
     const token = createToken(user);

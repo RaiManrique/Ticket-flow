@@ -130,7 +130,10 @@ function createSeatMap(boletos, options = {}) {
     const b = boletos.find((x) => String(x._id) === id);
     if (!b || b.estado !== "disponible") return;
     if (selected.has(id)) selected.delete(id);
-    else selected.add(id);
+    else {
+      if (options.maxSelection && selected.size >= options.maxSelection) return;
+      selected.add(id);
+    }
     syncDom();
     options.onChange?.(getSelected(), getSelectedDetails());
   }

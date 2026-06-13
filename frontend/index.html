@@ -68,14 +68,14 @@
     </section>
   </div>
 
+  <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script>
     const DEMO_PASSWORD = "TicketFlow2026";
 
-    (function redirectIfLogged() {
-      const user = getUser();
-      if (user && getToken()) {
-        window.location.href = ["admin", "organizador"].includes(user.rol) ? "/admin.html" : "/usuario.html";
+    (async function initLoginPage() {
+      if (await validateSession()) {
+        window.location.href = redirectForRole(getUser());
       }
     })();
 
@@ -88,9 +88,10 @@
     });
 
     document.querySelectorAll(".demo-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         document.getElementById("login").value = btn.dataset.login;
         document.getElementById("password").value = DEMO_PASSWORD;
+        await doLogin(btn.dataset.login, DEMO_PASSWORD);
       });
     });
 
@@ -102,18 +103,21 @@
       btn.textContent = "Ingresando...";
 
       try {
-        const res = await fetch("/api/auth/login", {
+        const res = await fetch(apiUrl("/auth/login"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ login, password }),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || "Error de login");
 
         saveSession({ token: data.token, user: data.user });
-        window.location.href = data.redirect;
+        window.location.href = data.redirect || redirectForRole(data.user);
       } catch (err) {
-        errEl.innerHTML = `<div class="alert error">${err.message}</div>`;
+        const hint = err.message === "Failed to fetch"
+          ? "No se pudo conectar con la API. Abre la app en <strong>http://127.0.0.1:8090</strong> y verifica que Docker este corriendo."
+          : err.message;
+        errEl.innerHTML = `<div class="alert error">${hint}</div>`;
       } finally {
         btn.disabled = false;
         btn.textContent = "Entrar";

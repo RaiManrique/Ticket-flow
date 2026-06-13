@@ -32,7 +32,7 @@
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
         <span>Comunidad</span>
       </button>
-      <button class="app-nav-btn" data-tab="boletos">
+      <button class="app-nav-btn" data-tab="billetera">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
         <span>Billetera</span>
       </button>
@@ -121,6 +121,22 @@
       <button class="filter-btn" data-filter="festival">Festivales</button>
       <button class="filter-btn" data-filter="teatro">Teatro</button>
     </div>
+    <div class="events-toolbar">
+      <div>
+        <strong id="eventos-count">0 eventos</strong>
+        <span id="active-search-label">Mostrando todos los eventos</span>
+      </div>
+      <div class="events-toolbar-actions">
+        <select id="sort-eventos" class="toolbar-select" aria-label="Ordenar eventos">
+          <option value="fecha-asc">Mas cercanos</option>
+          <option value="precio-asc">Menor precio</option>
+          <option value="precio-desc">Mayor precio</option>
+          <option value="popularidad">Mas populares</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="fav-filter-btn" type="button">Favoritos</button>
+        <button class="btn btn-ghost btn-sm" id="clear-filters-btn" type="button">Limpiar</button>
+      </div>
+    </div>
     <div id="eventos-list" class="trending-list"></div>
   </div>
 
@@ -130,11 +146,32 @@
       <h2>Comunidad Live</h2>
       <p>Comparte y coordina con otros asistentes</p>
     </div>
+    <section class="community-composer" aria-label="Crear publicacion">
+      <div class="composer-avatar" id="composer-avatar">U</div>
+      <div class="composer-body">
+        <textarea id="post-text" rows="3" maxlength="180" placeholder="Comparte una duda, punto de encuentro o emocion del evento..."></textarea>
+        <div class="composer-actions">
+          <small id="post-counter">0/180</small>
+          <button class="btn btn-glow btn-sm" id="post-btn" type="button">Publicar</button>
+        </div>
+        <div id="post-msg"></div>
+      </div>
+    </section>
     <div id="feed-list" class="feed-full"></div>
   </div>
 
-  <!-- Vista Boletos / Compra -->
-  <div id="view-boletos" class="app-view">
+  <!-- Vista Billetera -->
+  <div id="view-billetera" class="app-view">
+    <div class="view-header">
+      <h2>Mi billetera</h2>
+      <p>Entradas confirmadas y codigos QR para el acceso</p>
+    </div>
+    <div id="wallet-hint" class="wallet-hint"></div>
+    <div id="wallet-list" class="wallet-list"></div>
+  </div>
+
+  <!-- Vista Checkout / Compra -->
+  <div id="view-checkout" class="app-view">
     <div class="checkout-layout">
       <div class="checkout-main">
         <div class="view-header">
@@ -146,6 +183,7 @@
           <div class="trust-item">Entrada digital</div>
           <div class="trust-item">Anti-estafa</div>
         </div>
+        <p id="checkout-limit-note" class="checkout-limit-note"></p>
         <div id="seatmap-container" class="seatmap-container"></div>
         <div id="selected-seats-list" class="selected-seats-panel"></div>
       </div>
@@ -177,6 +215,17 @@
     </div>
   </div>
 
+  <div id="ticket-modal" class="ticket-modal" hidden aria-hidden="true">
+    <div class="ticket-modal-backdrop" data-close-modal></div>
+    <div class="ticket-modal-card" role="dialog" aria-labelledby="ticket-modal-title">
+      <button type="button" class="ticket-modal-close" data-close-modal aria-label="Cerrar">&times;</button>
+      <h3 id="ticket-modal-title">Compra confirmada</h3>
+      <p class="ticket-modal-ref" id="ticket-modal-ref"></p>
+      <div id="ticket-modal-tickets" class="ticket-modal-tickets"></div>
+      <button type="button" class="btn btn-glow btn-block" data-close-modal>Ver en mi billetera</button>
+    </div>
+  </div>
+
   <button class="fab" id="fab-btn" title="Nueva publicacion" aria-label="Nueva publicacion">+</button>
 
   <nav class="bottom-nav" aria-label="Navegacion movil">
@@ -192,14 +241,16 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
       <span>Comunidad</span>
     </button>
-    <button class="bottom-nav-btn" data-tab="boletos">
+    <button class="bottom-nav-btn" data-tab="billetera">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
       <span>Billetera</span>
     </button>
   </nav>
 
+  <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/images.js"></script>
+  <script src="js/qr.js"></script>
   <script src="js/seatmap.js"></script>
   <script src="js/usuario.js"></script>
 </body>
