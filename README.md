@@ -32,22 +32,24 @@ Plataforma de **venta de boletos** y **red social de eventos** en el Perú. Proy
 
 ## Inicio rápido
 
-### 1. Configurar credenciales
+Clona el repo, levanta Docker y prueba todo (web, API y MongoDB en **127.0.0.1:27018**):
 
 ```powershell
 git clone <url-del-repositorio> Ticket-flow
 cd Ticket-flow
+docker compose up -d --build
+```
+
+La primera vez crea la carpeta `BD/`, ejecuta `init-mongo.js` (esquema + datos demo) y `z-init-app-user.sh` (usuario de aplicacion).
+
+Opcional: copia `.env.example` a `.env` si quieres cambiar contraseñas o puertos.
+
+```powershell
 Copy-Item .env.example .env
 notepad .env
 ```
 
-### 2. Levantar las 3 capas
-
-```powershell
-docker compose up -d --build
-```
-
-### 3. Verificar servicios
+### Verificar servicios
 
 ```powershell
 docker compose ps
@@ -59,7 +61,13 @@ docker compose ps
 | **API** (aplicación) | http://127.0.0.1:3000/api/health | TicketFlow-API |
 | **MongoDB** (datos) | 127.0.0.1:27018 | TicketFlow-Mongo |
 
-### 4. Iniciar sesion (dos vistas)
+Probar MongoDB desde tu PC (credenciales por defecto si no usas `.env`):
+
+```powershell
+docker exec -it TicketFlow-Mongo mongosh -u ticketflow_admin -p "TicketFlow2026DevMongo!" --authenticationDatabase admin ticketflow_social
+```
+
+### Iniciar sesion (dos vistas)
 
 Abre: **http://127.0.0.1:8090**
 
