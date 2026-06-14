@@ -2564,6 +2564,232 @@ body {
   margin-top: 0.25rem;
 }
 
+.app-footer {
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  margin-top: 2rem;
+  background: var(--bg-elevated);
+}
+
+.app-footer-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.app-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.checkout-terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.checkout-terms input {
+  margin-top: 0.2rem;
+}
+
+.event-detail-card,
+.policies-card {
+  width: min(720px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.event-detail-hero {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.event-detail-img {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.event-detail-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 0.35rem;
+}
+
+.event-detail-meta {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.event-detail-official {
+  font-size: 0.78rem;
+  color: var(--accent);
+  margin-top: 0.35rem;
+}
+
+.event-detail-desc {
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.event-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.event-detail-block h4 {
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.event-detail-list {
+  list-style: none;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.event-detail-list li {
+  margin-bottom: 0.35rem;
+}
+
+.event-detail-table {
+  width: 100%;
+  font-size: 0.8rem;
+  border-collapse: collapse;
+}
+
+.event-detail-table th,
+.event-detail-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.event-detail-price-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+
+.event-detail-policy {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.event-detail-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.policies-vendor {
+  font-size: 0.88rem;
+  margin-bottom: 1rem;
+  color: var(--muted);
+}
+
+.policies-section {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.policies-section.highlight {
+  background: rgba(var(--accent-rgb, 99, 102, 241), 0.08);
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.policies-section h4 {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.policies-section ul {
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.policies-plazo {
+  font-size: 0.8rem;
+  color: var(--accent);
+  margin-top: 0.5rem;
+}
+
+.refund-ticket-info {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.wallet-section-title {
+  margin: 1.5rem 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.wallet-ticket-status.refunded {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.wallet-ticket.is-refunded {
+  opacity: 0.85;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.wallet-refund-btn {
+  margin-top: 0.5rem;
+}
+
+.wallet-refund-note,
+.wallet-refund-status {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.35rem;
+}
+
+.wallet-qr-void {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 108px;
+  height: 108px;
+  font-size: 0.75rem;
+  color: #f87171;
+  border: 1px dashed rgba(239, 68, 68, 0.4);
+  border-radius: var(--radius-sm);
+}
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+}
+
 @media (max-width: 1024px) {
   #view-checkout .checkout-layout { grid-template-columns: 1fr; }
   .venue-picker-top { grid-template-columns: 1fr; }
@@ -2572,4 +2798,7 @@ body {
   .seat-btn { width: 26px; height: 26px; font-size: 0.58rem; }
   .venue-promo { grid-template-columns: 1fr; text-align: center; }
   .venue-promo-img { margin: 0 auto; }
+  .event-detail-grid { grid-template-columns: 1fr; }
+  .event-detail-hero { grid-template-columns: 1fr; }
+  .event-detail-img { width: 100%; height: 180px; }
 }

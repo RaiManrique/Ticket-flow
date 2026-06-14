@@ -1,8 +1,21 @@
+# Uso: git clone → docker compose up -d --build
+# Si el login falla con 502: docker compose up -d --force-recreate
+
+name: ticket-flow
+
+x-ticketflow-labels: &ticketflow-labels
+  com.ticketflow.project: ticketflow
+  com.ticketflow.environment: development
+
 services:
   mongo:
     image: mongo:8.3.3-noble
     container_name: TicketFlow-Mongo
-    restart: always
+    restart: unless-stopped
+    labels:
+      <<: *ticketflow-labels
+      com.ticketflow.layer: datos
+      com.ticketflow.service: mongodb
     env_file:
       - path: .env
         required: false
@@ -29,7 +42,11 @@ services:
   api:
     build: ./backend
     container_name: TicketFlow-API
-    restart: always
+    restart: unless-stopped
+    labels:
+      <<: *ticketflow-labels
+      com.ticketflow.layer: aplicacion
+      com.ticketflow.service: api
     env_file:
       - path: .env
         required: false
@@ -45,8 +62,17 @@ services:
       JWT_SECRET: ${JWT_SECRET:-ticketflow-dev-secret-cambiar-en-produccion}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://127.0.0.1:8090,http://localhost:8090}
       MAX_BOLETOS_POR_EVENTO: ${MAX_BOLETOS_POR_EVENTO:-4}
+      TICKET_VENDOR: ${TICKET_VENDOR:-TicketFlow Perú}
+      REFUND_MAX_DAYS: ${REFUND_MAX_DAYS:-30}
+      REFUND_MIN_HOURS_BEFORE_EVENT: ${REFUND_MIN_HOURS_BEFORE_EVENT:-48}
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
     depends_on:
       mongo:
         condition: service_healthy
@@ -56,17 +82,23 @@ services:
   web:
     image: nginx:1.27-alpine
     container_name: TicketFlow-Web
-    restart: always
+    restart: unless-stopped
+    labels:
+      <<: *ticketflow-labels
+      com.ticketflow.layer: presentacion
+      com.ticketflow.service: frontend
     ports:
       - "127.0.0.1:${WEB_PORT:-8090}:80"
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     networks:
       - ticketflow-data
 
 networks:
   ticketflow-data:
     driver: bridge
+    name: ticketflow-data

@@ -210,8 +210,55 @@
         </div>
 
         <div id="compra-msg"></div>
+        <label class="checkout-terms">
+          <input type="checkbox" id="accept-terms">
+          <span>Acepto las <button type="button" class="link-btn" id="open-politicas-checkout">condiciones de compra y reembolsos</button></span>
+        </label>
         <button class="btn btn-glow btn-block" id="comprar-btn">Confirmar compra</button>
       </aside>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="app-footer-inner">
+      <span>TicketFlow Perú — venta oficial simulada</span>
+      <div class="app-footer-links">
+        <button type="button" class="link-btn" id="footer-politicas">Politicas</button>
+        <button type="button" class="link-btn" id="footer-reembolso">Reembolsos</button>
+        <button type="button" class="link-btn" data-tab="billetera">Mi billetera</button>
+      </div>
+    </div>
+  </footer>
+
+  <div id="event-detail-modal" class="ticket-modal" hidden aria-hidden="true">
+    <div class="ticket-modal-backdrop" data-close-event-detail></div>
+    <div class="ticket-modal-card event-detail-card" role="dialog" aria-labelledby="event-detail-title">
+      <button type="button" class="ticket-modal-close" data-close-event-detail aria-label="Cerrar">&times;</button>
+      <div id="event-detail-content" class="event-detail-content"></div>
+    </div>
+  </div>
+
+  <div id="policies-modal" class="ticket-modal" hidden aria-hidden="true">
+    <div class="ticket-modal-backdrop" data-close-policies></div>
+    <div class="ticket-modal-card policies-card" role="dialog" aria-labelledby="policies-title">
+      <button type="button" class="ticket-modal-close" data-close-policies aria-label="Cerrar">&times;</button>
+      <h3 id="policies-title">Politicas TicketFlow</h3>
+      <div id="policies-content" class="policies-content"></div>
+    </div>
+  </div>
+
+  <div id="refund-modal" class="ticket-modal" hidden aria-hidden="true">
+    <div class="ticket-modal-backdrop" data-close-refund></div>
+    <div class="ticket-modal-card" role="dialog" aria-labelledby="refund-title">
+      <button type="button" class="ticket-modal-close" data-close-refund aria-label="Cerrar">&times;</button>
+      <h3 id="refund-title">Solicitar reembolso</h3>
+      <p id="refund-ticket-info" class="refund-ticket-info"></p>
+      <div class="form-group">
+        <label for="refund-motivo">Motivo (min. 10 caracteres)</label>
+        <textarea id="refund-motivo" rows="4" maxlength="300" placeholder="Ej: No podre asistir por viaje de trabajo..."></textarea>
+      </div>
+      <div id="refund-msg"></div>
+      <button type="button" class="btn btn-glow btn-block" id="refund-submit-btn">Confirmar solicitud</button>
     </div>
   </div>
 

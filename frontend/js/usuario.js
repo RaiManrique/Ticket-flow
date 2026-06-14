@@ -15,7 +15,9 @@ let allEventos = [];
 let filteredEventos = [];
 let selectedEventoId = null;
 let selectedEventoMeta = null;
-let seatMapInstance = null;
+let walletBoletos = [];
+let politicasCache = null;
+let refundBoletoId = null;
 let activeFilter = "todos";
 let activeSearch = { query: "", ciudad: "", fecha: "" };
 let activeSort = "fecha-asc";
@@ -343,19 +345,194 @@ window.toggleFavorite = function (eventoId) {
   filterEventos();
 };
 
-window.showEventDetail = function (eventoId) {
-  const evento = allEventos.find((e) => String(e._id) === String(eventoId));
-  if (!evento) return;
+window.showEventDetail = async function (eventoId) {
+  const modal = document.getElementById("event-detail-modal");
+  const content = document.getElementById("event-detail-content");
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
+  content.innerHTML = "<p class='loading'>Cargando detalle del evento...</p>";
 
-  const details = [
-    evento.titulo,
-    `${evento.ciudad} · ${formatDate(evento.fecha_evento)}`,
-    evento.descripcion || "Sin descripcion adicional.",
-    `Categoria: ${categoryLabel[evento.categoria] || evento.categoria}`,
-    `Precio desde: ${evento.precio_minimo != null ? formatMoney(evento.precio_minimo) : "Consultar"}`,
-  ];
-  alert(details.join("\n\n"));
+  try {
+    const data = await fetchJson(`${API}/eventos/${eventoId}/detalle`);
+    content.innerHTML = eventDetailHtml(data);
+    content.querySelector("[data-buy-event]")?.addEventListener("click", () => {
+      closeEventDetailModal();
+      openBoletos(data._id, data.titulo);
+    });
+    content.querySelector("[data-open-politicas]")?.addEventListener("click", () => openPoliciesModal("reembolso"));
+  } catch (err) {
+    content.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+  }
 };
+
+function eventDetailHtml(data) {
+  const info = data.info_comercial || {};
+  const stats = data.estadisticas || {};
+  const zonas = stats.zonas || [];
+  const flyer = eventFlyer(data);
+
+  const zonasHtml = zonas.length
+    ? zonas.map((z) => `
+      <tr>
+        <td>${escapeHtml(z.zona)}</td>
+        <td>${formatMoney(z.precio_min)}${z.precio_max !== z.precio_min ? ` – ${formatMoney(z.precio_max)}` : ""}</td>
+        <td>${z.disponibles} / ${z.total}</td>
+      </tr>`).join("")
+    : "<tr><td colspan='3'>Sin tarifas publicadas</td></tr>";
+
+  const restricciones = (info.restricciones || [])
+    .map((r) => `<li>${escapeHtml(r)}</li>`).join("");
+
+  return `
+    <div class="event-detail-hero">
+      <img class="event-detail-img" src="${flyer}" alt="" loading="lazy" onerror="this.src='/img/eventos/concierto.jpg'">
+      <div class="event-detail-head">
+        <span class="event-detail-badge">${escapeHtml(categoryLabel[data.categoria] || data.categoria || "EVENTO")}</span>
+        <h2 id="event-detail-title">${escapeHtml(data.titulo)}</h2>
+        <p class="event-detail-meta">${escapeHtml(data.ciudad || "")} · ${formatDate(data.fecha_evento)}</p>
+        ${info.venta_oficial ? '<p class="event-detail-official">Venta oficial TicketFlow</p>' : ""}
+      </div>
+    </div>
+    <p class="event-detail-desc">${escapeHtml(data.descripcion || "Sin descripcion adicional.")}</p>
+    <div class="event-detail-grid">
+      <section class="event-detail-block">
+        <h4>Recinto y acceso</h4>
+        <ul class="event-detail-list">
+          <li><strong>${escapeHtml(info.recinto || "Recinto")}</strong></li>
+          <li>${escapeHtml(info.direccion || "")}</li>
+          <li>Apertura puertas: ${escapeHtml(info.hora_apertura || "—")}</li>
+          <li>Inicio show: ${escapeHtml(info.hora_inicio || "—")}</li>
+          <li>Edad minima: ${escapeHtml(info.edad_minima || "—")}</li>
+        </ul>
+      </section>
+      <section class="event-detail-block">
+        <h4>Tarifas por zona</h4>
+        <table class="event-detail-table">
+          <thead><tr><th>Zona</th><th>Precio</th><th>Disponibles</th></tr></thead>
+          <tbody>${zonasHtml}</tbody>
+        </table>
+        <p class="event-detail-price-hint">Desde ${stats.precio_minimo != null ? formatMoney(stats.precio_minimo) : "consultar"}</p>
+      </section>
+    </div>
+    ${restricciones ? `<section class="event-detail-block"><h4>Restricciones</h4><ul class="event-detail-list">${restricciones}</ul></section>` : ""}
+    <p class="event-detail-policy">
+      ${escapeHtml(info.politica_reembolso_resumen || "")}
+      <button type="button" class="link-btn" data-open-politicas>Ver politicas completas</button>
+    </p>
+    <div class="event-detail-actions">
+      <button type="button" class="btn btn-glow" data-buy-event>Comprar entradas</button>
+      <button type="button" class="btn btn-ghost" data-close-event-detail>Cerrar</button>
+    </div>`;
+}
+
+function closeEventDetailModal() {
+  const modal = document.getElementById("event-detail-modal");
+  modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
+}
+
+async function loadPoliticas() {
+  if (!politicasCache) politicasCache = await fetchJson(`${API}/politicas`);
+  return politicasCache;
+}
+
+function policiesSectionHtml(key, section) {
+  if (!section) return "";
+  const items = (section.items || []).map((i) => `<li>${escapeHtml(i)}</li>`).join("");
+  const plazo = section.plazo_procesamiento
+    ? `<p class="policies-plazo">Plazo: ${escapeHtml(section.plazo_procesamiento)}</p>`
+    : "";
+  return `
+    <section class="policies-section" id="policy-${escapeHtml(key)}">
+      <h4>${escapeHtml(section.titulo || key)}</h4>
+      <ul>${items}</ul>
+      ${plazo}
+    </section>`;
+}
+
+async function openPoliciesModal(highlightKey) {
+  const modal = document.getElementById("policies-modal");
+  const content = document.getElementById("policies-content");
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
+  content.innerHTML = "<p class='loading'>Cargando politicas...</p>";
+
+  try {
+    const data = await loadPoliticas();
+    const secciones = data.secciones || {};
+    const keys = ["compra", "reembolso", "acceso", "menores"];
+    content.innerHTML = `
+      <p class="policies-vendor">Vendedor oficial: <strong>${escapeHtml(data.vendedor || "TicketFlow")}</strong></p>
+      ${keys.map((k) => policiesSectionHtml(k, secciones[k])).join("")}`;
+    if (highlightKey) {
+      const el = content.querySelector(`#policy-${highlightKey}`);
+      el?.classList.add("highlight");
+      el?.scrollIntoView({ block: "nearest" });
+    }
+  } catch (err) {
+    content.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function closePoliciesModal() {
+  const modal = document.getElementById("policies-modal");
+  modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
+}
+
+window.openRefundModal = function (boletoId) {
+  const b = walletBoletos.find((x) => String(x._id) === String(boletoId));
+  if (!b) return;
+
+  refundBoletoId = boletoId;
+  const modal = document.getElementById("refund-modal");
+  const info = document.getElementById("refund-ticket-info");
+  const motivo = document.getElementById("refund-motivo");
+  const msg = document.getElementById("refund-msg");
+
+  info.textContent = `${b.evento?.titulo || "Evento"} · ${seatLabel(b)} · ${formatMoney(b.precio)}`;
+  motivo.value = "";
+  msg.innerHTML = "";
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
+};
+
+function closeRefundModal() {
+  const modal = document.getElementById("refund-modal");
+  modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
+  refundBoletoId = null;
+}
+
+async function submitRefund() {
+  const msg = document.getElementById("refund-msg");
+  const btn = document.getElementById("refund-submit-btn");
+  const motivo = document.getElementById("refund-motivo").value.trim();
+
+  if (!refundBoletoId) return;
+  if (motivo.length < 10) {
+    msg.innerHTML = "<div class='alert error'>El motivo debe tener al menos 10 caracteres.</div>";
+    return;
+  }
+
+  btn.disabled = true;
+  msg.innerHTML = "";
+  try {
+    const result = await fetchJson(`${API}/ventas/reembolso`, {
+      method: "POST",
+      body: JSON.stringify({ boleto_id: refundBoletoId, motivo }),
+    });
+    msg.innerHTML = `<div class="alert success">${escapeHtml(result.mensaje || "Reembolso procesado.")}</div>`;
+    setTimeout(() => {
+      closeRefundModal();
+      loadWallet();
+    }, 1500);
+  } catch (err) {
+    msg.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
 
 window.shareEvent = async function (eventoId) {
   const evento = allEventos.find((e) => String(e._id) === String(eventoId));
@@ -413,15 +590,27 @@ function walletTicketHtml(b) {
   const fecha = evento?.fecha_evento ? formatDate(evento.fecha_evento) : "";
   const qrData = ticketQrData(b, evento);
   const seat = seatLabel(b);
+  const isRefunded = Boolean(b.reembolso);
+  const statusLabel = isRefunded ? "REEMBOLSADO" : "VALIDO";
+  const statusClass = isRefunded ? "wallet-ticket-status refunded" : "wallet-ticket-status";
+
+  let refundHtml = "";
+  if (b.reembolso) {
+    refundHtml = `<p class="wallet-refund-status">Reembolso ${escapeHtml(b.reembolso.estado)} · Ref ${escapeHtml(b.reembolso.referencia || "—")}</p>`;
+  } else if (b.reembolso_elegible) {
+    refundHtml = `<button class="btn btn-ghost btn-sm wallet-refund-btn" type="button" onclick="openRefundModal('${b._id}')">Solicitar reembolso</button>`;
+  } else if (b.reembolso_motivo) {
+    refundHtml = `<p class="wallet-refund-note">${escapeHtml(b.reembolso_motivo)}</p>`;
+  }
 
   return `
-    <article class="wallet-ticket">
+    <article class="wallet-ticket${isRefunded ? " is-refunded" : ""}">
       <div class="wallet-ticket-head">
         <div>
           <h3>${escapeHtml(titulo)}</h3>
           <p class="wallet-ticket-meta">${escapeHtml(ciudad)} · ${escapeHtml(fecha)}</p>
         </div>
-        <span class="wallet-ticket-status">VALIDO</span>
+        <span class="${statusClass}">${statusLabel}</span>
       </div>
       <div class="wallet-ticket-body">
         <div class="wallet-ticket-info">
@@ -429,10 +618,33 @@ function walletTicketHtml(b) {
           <p class="wallet-ticket-code">${escapeHtml(b.codigo_entrada || "—")}</p>
           <p class="wallet-ticket-ref">Ref: ${escapeHtml(b.venta?.referencia_pago || "—")}</p>
           <p class="wallet-ticket-price">${formatMoney(b.precio)}</p>
+          ${refundHtml}
         </div>
         <div class="wallet-ticket-qr" title="QR simulado de acceso">
-          ${qrSvg(qrData)}
-          <small>QR simulado</small>
+          ${isRefunded ? "<span class='wallet-qr-void'>Anulado</span>" : qrSvg(qrData)}
+          <small>${isRefunded ? "Entrada invalida" : "QR simulado"}</small>
+        </div>
+      </div>
+    </article>`;
+}
+
+function refundHistoryHtml(r) {
+  const titulo = r.evento?.titulo || "Evento";
+  const fecha = r.fecha_solicitud ? formatDate(r.fecha_solicitud) : "";
+  return `
+    <article class="wallet-ticket is-refunded">
+      <div class="wallet-ticket-head">
+        <div>
+          <h3>${escapeHtml(titulo)}</h3>
+          <p class="wallet-ticket-meta">Reembolso · ${escapeHtml(fecha)}</p>
+        </div>
+        <span class="wallet-ticket-status refunded">REEMBOLSADO</span>
+      </div>
+      <div class="wallet-ticket-body">
+        <div class="wallet-ticket-info">
+          <p><strong>${formatMoney(r.monto)}</strong></p>
+          <p class="wallet-ticket-ref">Ref reembolso: ${escapeHtml(r.referencia || "—")}</p>
+          <p class="wallet-refund-note">${escapeHtml(r.motivo || "")}</p>
         </div>
       </div>
     </article>`;
@@ -445,21 +657,30 @@ async function loadWallet() {
   hint.textContent = "";
 
   try {
-    const boletos = await fetchJson(`${API}/ventas/mis-boletos`);
+    const [boletos, reembolsos] = await Promise.all([
+      fetchJson(`${API}/ventas/mis-boletos`),
+      fetchJson(`${API}/ventas/mis-reembolsos`),
+    ]);
     maxBoletosPorEvento = cupoEventoActual.maximo || maxBoletosPorEvento;
     hint.textContent = `Limite de compra: maximo ${maxBoletosPorEvento} boletos por evento por persona.`;
 
-    if (!boletos.length) {
+    if (!boletos.length && !reembolsos.length) {
       list.innerHTML = `
         <div class="empty-state">
           Aun no tienes entradas.<br>
           <button class="link-btn" type="button" data-tab="eventos">Explorar eventos</button>
         </div>`;
       list.querySelector("[data-tab]")?.addEventListener("click", () => switchTab("eventos"));
+      walletBoletos = [];
       return;
     }
 
-    list.innerHTML = boletos.map(walletTicketHtml).join("");
+    walletBoletos = boletos;
+    const activos = boletos.map(walletTicketHtml).join("");
+    const historial = reembolsos.length
+      ? `<h3 class="wallet-section-title">Historial de reembolsos</h3>${reembolsos.map(refundHistoryHtml).join("")}`
+      : "";
+    list.innerHTML = activos + historial;
   } catch (err) {
     list.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
   }
@@ -595,6 +816,11 @@ function getMetodoPago() {
 document.getElementById("comprar-btn").addEventListener("click", async () => {
   const msg = document.getElementById("compra-msg");
   msg.innerHTML = "";
+  const terms = document.getElementById("accept-terms");
+  if (terms && !terms.checked) {
+    msg.innerHTML = '<div class="alert error">Debes aceptar las condiciones de compra y reembolsos.</div>';
+    return;
+  }
   const checked = seatMapInstance?.getSelected() || [];
 
   if (!selectedEventoId || checked.length === 0) {
@@ -738,4 +964,12 @@ if (currentUser) {
   updatePostCounter();
   loadEventos();
   loadFeedPreview();
+
+  document.querySelectorAll("[data-close-event-detail]").forEach((el) => el.addEventListener("click", closeEventDetailModal));
+  document.querySelectorAll("[data-close-policies]").forEach((el) => el.addEventListener("click", closePoliciesModal));
+  document.querySelectorAll("[data-close-refund]").forEach((el) => el.addEventListener("click", closeRefundModal));
+  document.getElementById("open-politicas-checkout")?.addEventListener("click", () => openPoliciesModal("compra"));
+  document.getElementById("footer-politicas")?.addEventListener("click", () => openPoliciesModal());
+  document.getElementById("footer-reembolso")?.addEventListener("click", () => openPoliciesModal("reembolso"));
+  document.getElementById("refund-submit-btn")?.addEventListener("click", submitRefund);
 }

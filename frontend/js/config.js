@@ -1,14 +1,20 @@
 /**
  * Resuelve la URL base de la API.
- * Con Docker usa /api (nginx en :8090). En otros puertos apunta al stack Docker.
+ * Prioriza el proxy nginx (/api) en :8090; si abres otro puerto local, apunta al stack Docker.
  */
 function getApiBase() {
+  const hostname = window.location.hostname || "127.0.0.1";
   const port = window.location.port;
-  if (port === "8090" || port === "") {
+
+  if (port === "8090") {
     return "/api";
   }
-  const host = window.location.hostname || "127.0.0.1";
-  return `http://${host}:8090/api`;
+
+  if ((hostname === "127.0.0.1" || hostname === "localhost") && port !== "3000") {
+    return `http://${hostname}:8090/api`;
+  }
+
+  return "/api";
 }
 
 const API = getApiBase();

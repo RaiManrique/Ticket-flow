@@ -10,6 +10,7 @@ const ventasRouter = require("./routes/ventas");
 const socialRouter = require("./routes/social");
 const authRouter = require("./routes/auth");
 const adminRouter = require("./routes/admin");
+const politicasRouter = require("./routes/politicas");
 const demoRouter = require("./routes/demo");
 
 const app = express();
@@ -58,6 +59,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/eventos", eventosRouter);
 app.use("/api/ventas", ventasRouter);
 app.use("/api/social", socialRouter);
+app.use("/api/politicas", politicasRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/demo", demoRouter);
 

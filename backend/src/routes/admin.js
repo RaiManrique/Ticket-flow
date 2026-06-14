@@ -1,6 +1,6 @@
 const express = require("express");
 const { requireAuth, requireStaff } = require("../middleware/auth");
-const { Usuario, Evento, Boleto, Venta, Publicacion } = require("../models");
+const { Usuario, Evento, Boleto, Venta, Publicacion, Reembolso } = require("../models");
 
 const router = express.Router();
 
@@ -8,12 +8,13 @@ router.use(requireAuth, requireStaff);
 
 router.get("/dashboard", async (_req, res) => {
   try {
-    const [usuarios, eventos, boletos, ventas, publicaciones] = await Promise.all([
+    const [usuarios, eventos, boletos, ventas, publicaciones, reembolsos] = await Promise.all([
       Usuario.countDocuments(),
       Evento.countDocuments(),
       Boleto.countDocuments(),
       Venta.countDocuments({ estado: "confirmada" }),
       Publicacion.countDocuments(),
+      Reembolso.countDocuments({ estado: "procesado" }),
     ]);
 
     const boletosPorEstado = await Boleto.aggregate([
@@ -48,6 +49,7 @@ router.get("/dashboard", async (_req, res) => {
         boletos,
         ventas,
         publicaciones,
+        reembolsos,
         ingresos: ingresos[0]?.total || 0,
       },
       boletosPorEstado: Object.fromEntries(boletosPorEstado.map((b) => [b._id, b.total])),
@@ -87,6 +89,29 @@ router.get("/ventas", async (_req, res) => {
   try {
     const ventas = await Venta.find().sort({ fecha_venta: -1 }).limit(50).lean();
     res.json(ventas);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/reembolsos", async (_req, res) => {
+  try {
+    const reembolsos = await Reembolso.find().sort({ fecha_solicitud: -1 }).limit(50).lean();
+    const usuarioIds = [...new Set(reembolsos.map((r) => String(r.usuario_id)))];
+    const eventoIds = [...new Set(reembolsos.map((r) => String(r.evento_id)))];
+    const [usuarios, eventos] = await Promise.all([
+      Usuario.find({ _id: { $in: usuarioIds } }).select("username nombre_completo").lean(),
+      Evento.find({ _id: { $in: eventoIds } }).select("titulo").lean(),
+    ]);
+    const uMap = Object.fromEntries(usuarios.map((u) => [String(u._id), u]));
+    const eMap = Object.fromEntries(eventos.map((e) => [String(e._id), e]));
+    res.json(
+      reembolsos.map((r) => ({
+        ...r,
+        usuario: uMap[String(r.usuario_id)],
+        evento: eMap[String(r.evento_id)],
+      }))
+    );
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

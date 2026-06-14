@@ -1,7 +1,8 @@
 const express = require("express");
-const { Boleto, Venta, Evento } = require("../models");
+const { Boleto, Venta, Evento, Reembolso } = require("../models");
 const { requireAuth } = require("../middleware/auth");
 const { requireObjectId } = require("../utils/validate");
+const { evaluarReembolso } = require("../data/ticketing");
 
 const router = express.Router();
 
@@ -27,6 +28,30 @@ router.get("/cupo/:eventoId", requireAuth, async (req, res) => {
     });
   } catch (error) {
     res.status(error.status || 500).json({ error: error.message });
+  }
+});
+
+router.get("/mis-reembolsos", requireAuth, async (req, res) => {
+  try {
+    const reembolsos = await Reembolso.find({ usuario_id: req.user._id })
+      .sort({ fecha_solicitud: -1 })
+      .limit(30)
+      .lean();
+
+    if (!reembolsos.length) return res.json([]);
+
+    const eventoIds = [...new Set(reembolsos.map((r) => String(r.evento_id)))];
+    const eventos = await Evento.find({ _id: { $in: eventoIds } }).lean();
+    const eventosMap = Object.fromEntries(eventos.map((e) => [String(e._id), e]));
+
+    res.json(
+      reembolsos.map((r) => ({
+        ...r,
+        evento: eventosMap[String(r.evento_id)] || null,
+      }))
+    );
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -57,12 +82,28 @@ router.get("/mis-boletos", requireAuth, async (req, res) => {
       });
     });
 
+    const boletoIds = boletos.map((b) => b._id);
+    const reembolsos = await Reembolso.find({
+      boleto_id: { $in: boletoIds },
+      estado: { $in: ["procesado", "pendiente"] },
+    }).lean();
+    const reembolsoMap = Object.fromEntries(reembolsos.map((r) => [String(r.boleto_id), r]));
+
     res.json(
-      boletos.map((b) => ({
-        ...b,
-        evento: eventosMap[String(b.evento_id)] || null,
-        venta: ventaPorBoleto[String(b._id)] || null,
-      }))
+      boletos.map((b) => {
+        const evento = eventosMap[String(b.evento_id)] || null;
+        const venta = ventaPorBoleto[String(b._id)] || null;
+        const reembolso = reembolsoMap[String(b._id)];
+        const politica = evaluarReembolso(b, evento, venta);
+        return {
+          ...b,
+          evento,
+          venta,
+          reembolso,
+          reembolso_elegible: politica.elegible && !reembolso,
+          reembolso_motivo: reembolso ? "Reembolso ya solicitado" : politica.motivo,
+        };
+      })
     );
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -178,6 +219,105 @@ router.post("/", requireAuth, async (req, res) => {
   } catch (error) {
     if (vendidos.length) await rollbackBoletos(vendidos);
     res.status(409).json({ error: error.message });
+  }
+});
+
+router.post("/reembolso", requireAuth, async (req, res) => {
+  const { boleto_id, motivo } = req.body;
+  const usuario_id = String(req.user._id);
+
+  if (!boleto_id) {
+    return res.status(400).json({ error: "boleto_id requerido" });
+  }
+
+  try {
+    requireObjectId(boleto_id, "boleto_id");
+  } catch (error) {
+    return res.status(error.status || 400).json({ error: error.message });
+  }
+
+  const motivoTxt = String(motivo || "").trim();
+  if (motivoTxt.length < 10) {
+    return res.status(400).json({ error: "Describe el motivo del reembolso (min. 10 caracteres)" });
+  }
+
+  try {
+    const boleto = await Boleto.findOne({
+      _id: boleto_id,
+      vendido_a: usuario_id,
+      estado: "vendido",
+    });
+
+    if (!boleto) {
+      return res.status(404).json({ error: "Entrada no encontrada o no pertenece a tu cuenta" });
+    }
+
+    const existente = await Reembolso.findOne({
+      boleto_id,
+      estado: { $in: ["pendiente", "procesado"] },
+    });
+    if (existente) {
+      return res.status(409).json({ error: "Ya existe una solicitud de reembolso para esta entrada" });
+    }
+
+    const evento = await Evento.findById(boleto.evento_id).lean();
+    const venta = await Venta.findOne({
+      usuario_id,
+      boletos_ids: boleto._id,
+      estado: "confirmada",
+    }).lean();
+
+    if (!venta) {
+      return res.status(404).json({ error: "Venta asociada no encontrada" });
+    }
+
+    const politica = evaluarReembolso(boleto, evento, venta);
+    if (!politica.elegible) {
+      return res.status(400).json({ error: politica.motivo });
+    }
+
+    const ahora = new Date();
+    const referencia = `REF-${Date.now()}`;
+    const monto = Number(boleto.precio) || 0;
+
+    const reembolso = await Reembolso.create({
+      usuario_id,
+      venta_id: venta._id,
+      boleto_id: boleto._id,
+      evento_id: boleto.evento_id,
+      motivo: motivoTxt,
+      monto,
+      estado: "procesado",
+      referencia,
+      fecha_solicitud: ahora,
+      fecha_procesado: ahora,
+    });
+
+    await Boleto.updateOne(
+      { _id: boleto._id },
+      {
+        $set: { estado: "disponible" },
+        $unset: { vendido_a: "", fecha_venta: "", codigo_entrada: "" },
+      }
+    );
+
+    const boletosVenta = await Boleto.find({
+      _id: { $in: venta.boletos_ids },
+      vendido_a: usuario_id,
+      estado: "vendido",
+    });
+
+    if (!boletosVenta.length) {
+      await Venta.updateOne({ _id: venta._id }, { $set: { estado: "reembolsada" } });
+    }
+
+    res.status(201).json({
+      reembolso: reembolso.toObject(),
+      mensaje: `Reembolso simulado procesado. Referencia ${referencia}. Monto: S/ ${monto.toFixed(2)}`,
+      plazo: politica.plazo,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

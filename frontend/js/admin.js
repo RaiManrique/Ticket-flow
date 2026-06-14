@@ -5,6 +5,7 @@ const panelTitles = {
   usuarios: ["Usuarios", "Gestion de cuentas registradas"],
   eventos: ["Eventos", "Catalogo completo de eventos"],
   ventas: ["Ventas", "Historial transaccional"],
+  reembolsos: ["Reembolsos", "Solicitudes procesadas en la plataforma"],
 };
 
 function setupAdminUI() {
@@ -33,6 +34,7 @@ function switchPanel(panel) {
   if (panel === "usuarios") loadUsuarios();
   if (panel === "eventos") loadEventos();
   if (panel === "ventas") loadVentas();
+  if (panel === "reembolsos") loadReembolsos();
 }
 
 document.querySelectorAll(".admin-nav-btn").forEach((btn) => {
@@ -67,7 +69,8 @@ async function loadDashboard() {
       <div class="metric-card"><span class="metric-label">Boletos</span><strong class="metric-value">${r.boletos}</strong></div>
       <div class="metric-card accent"><span class="metric-label">Ingresos</span><strong class="metric-value">${formatMoney(r.ingresos)}</strong></div>
       <div class="metric-card"><span class="metric-label">Ventas</span><strong class="metric-value">${r.ventas}</strong></div>
-      <div class="metric-card"><span class="metric-label">Publicaciones</span><strong class="metric-value">${r.publicaciones}</strong></div>`;
+      <div class="metric-card"><span class="metric-label">Publicaciones</span><strong class="metric-value">${r.publicaciones}</strong></div>
+      <div class="metric-card"><span class="metric-label">Reembolsos</span><strong class="metric-value">${r.reembolsos || 0}</strong></div>`;
 
     const estados = data.boletosPorEstado || {};
     const max = Math.max(...Object.values(estados), 1);
@@ -129,6 +132,30 @@ async function loadEventos() {
         <td>${formatDate(e.fecha_evento)}</td>
         <td><span class="role-badge">${escapeHtml(e.estado || "—")}</span></td>
         <td>${e.asistentes?.length || 0}</td>
+      </tr>`).join("")}</tbody></table>`;
+  } catch (err) {
+    el.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function loadReembolsos() {
+  const el = document.getElementById("reembolsos-table");
+  el.innerHTML = "<p class='loading'>Cargando...</p>";
+  try {
+    const reembolsos = await fetchAuth(`${API}/admin/reembolsos`);
+    if (!reembolsos.length) {
+      el.innerHTML = "<p class='loading'>No hay reembolsos registrados.</p>";
+      return;
+    }
+    el.innerHTML = `<table class="data-table"><thead><tr><th>Referencia</th><th>Usuario</th><th>Evento</th><th>Monto</th><th>Estado</th><th>Fecha</th><th>Motivo</th></tr></thead><tbody>
+      ${reembolsos.map((r) => `<tr>
+        <td><code>${escapeHtml(r.referencia || "—")}</code></td>
+        <td>${escapeHtml(r.usuario?.username || "—")}</td>
+        <td>${escapeHtml(r.evento?.titulo || "—")}</td>
+        <td>${formatMoney(r.monto)}</td>
+        <td>${escapeHtml(r.estado)}</td>
+        <td>${formatDate(r.fecha_solicitud)}</td>
+        <td>${escapeHtml((r.motivo || "").slice(0, 80))}</td>
       </tr>`).join("")}</tbody></table>`;
   } catch (err) {
     el.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;

@@ -82,6 +82,22 @@ const comentarioSchema = new mongoose.Schema(
   { collection: "comentarios" }
 );
 
+const reembolsoSchema = new mongoose.Schema(
+  {
+    usuario_id: mongoose.Schema.Types.ObjectId,
+    venta_id: mongoose.Schema.Types.ObjectId,
+    boleto_id: mongoose.Schema.Types.ObjectId,
+    evento_id: mongoose.Schema.Types.ObjectId,
+    motivo: String,
+    monto: Number,
+    estado: String,
+    referencia: String,
+    fecha_solicitud: Date,
+    fecha_procesado: Date,
+  },
+  { collection: "reembolsos" }
+);
+
 module.exports = {
   Usuario: mongoose.model("Usuario", usuarioSchema),
   Evento: mongoose.model("Evento", eventoSchema),
@@ -89,4 +105,5 @@ module.exports = {
   Venta: mongoose.model("Venta", ventaSchema),
   Publicacion: mongoose.model("Publicacion", publicacionSchema),
   Comentario: mongoose.model("Comentario", comentarioSchema),
+  Reembolso: mongoose.model("Reembolso", reembolsoSchema),
 };

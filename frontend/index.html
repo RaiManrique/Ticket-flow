@@ -57,8 +57,8 @@
         </form>
 
         <div class="demo-accounts">
-          <p>Cuentas de demostracion (contrasena: <code>TicketFlow2026</code>)</p>
-          <div class="demo-grid">
+          <p>Cuentas de demostracion (contrasena: <code id="demo-password-label">TicketFlow2026</code>)</p>
+          <div class="demo-grid" id="demo-grid">
             <button type="button" class="demo-btn" data-login="rai_manrique">Usuario</button>
             <button type="button" class="demo-btn" data-login="victor_arapa">Organizador</button>
             <button type="button" class="demo-btn" data-login="admin_ticketflow">Admin</button>
@@ -71,9 +71,56 @@
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script>
-    const DEMO_PASSWORD = "TicketFlow2026";
+    let DEMO_PASSWORD = "TicketFlow2026";
+
+    async function loadDemoInfo() {
+      try {
+        const res = await fetch(apiUrl("/demo/login-info"));
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.password) {
+          DEMO_PASSWORD = data.password;
+          const label = document.getElementById("demo-password-label");
+          if (label) label.textContent = data.password;
+        }
+        const grid = document.getElementById("demo-grid");
+        if (grid && data.accounts?.length) {
+          grid.innerHTML = data.accounts.map((a) =>
+            `<button type="button" class="demo-btn" data-login="${a.login}">${a.label || a.login}</button>`
+          ).join("");
+          bindDemoButtons();
+        }
+      } catch {
+        /* API no disponible: se muestra hint en checkApiHealth */
+      }
+    }
+
+    async function checkApiHealth() {
+      const errEl = document.getElementById("login-error");
+      try {
+        const res = await fetch(apiUrl("/health"), { cache: "no-store" });
+        if (res.ok) return;
+        if (res.status === 502) {
+          errEl.innerHTML = `<div class="alert error">El frontend no puede contactar la API (502). Ejecuta: <code>docker compose up -d --force-recreate</code></div>`;
+        }
+      } catch {
+        errEl.innerHTML = `<div class="alert error">API no disponible. Abre <strong>http://127.0.0.1:8090</strong> y ejecuta <code>docker compose up -d</code>.</div>`;
+      }
+    }
+
+    function bindDemoButtons() {
+      document.querySelectorAll(".demo-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          document.getElementById("login").value = btn.dataset.login;
+          document.getElementById("password").value = DEMO_PASSWORD;
+          await doLogin(btn.dataset.login, DEMO_PASSWORD);
+        });
+      });
+    }
 
     (async function initLoginPage() {
+      await checkApiHealth();
+      await loadDemoInfo();
       if (await validateSession()) {
         window.location.href = redirectForRole(getUser());
       }
@@ -87,13 +134,7 @@
       );
     });
 
-    document.querySelectorAll(".demo-btn").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        document.getElementById("login").value = btn.dataset.login;
-        document.getElementById("password").value = DEMO_PASSWORD;
-        await doLogin(btn.dataset.login, DEMO_PASSWORD);
-      });
-    });
+    bindDemoButtons();
 
     async function doLogin(login, password) {
       const errEl = document.getElementById("login-error");
@@ -109,14 +150,24 @@
           body: JSON.stringify({ login, password }),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || "Error de login");
+        if (!res.ok) {
+          if (res.status === 502) {
+            throw new Error("API no responde (502). Reinicia Docker: docker compose up -d --force-recreate");
+          }
+          throw new Error(data.error || `Error de login (${res.status})`);
+        }
+
+        if (!data.token || !isJwtToken(data.token)) {
+          throw new Error("Respuesta de login invalida. Limpia el almacenamiento del sitio e intenta de nuevo.");
+        }
 
         saveSession({ token: data.token, user: data.user });
         window.location.href = data.redirect || redirectForRole(data.user);
       } catch (err) {
-        const hint = err.message === "Failed to fetch"
-          ? "No se pudo conectar con la API. Abre la app en <strong>http://127.0.0.1:8090</strong> y verifica que Docker este corriendo."
-          : err.message;
+        let hint = err.message;
+        if (err.message === "Failed to fetch") {
+          hint = "No se pudo conectar con la API. Abre la app en <strong>http://127.0.0.1:8090</strong> y verifica que Docker este corriendo.";
+        }
         errEl.innerHTML = `<div class="alert error">${hint}</div>`;
       } finally {
         btn.disabled = false;
