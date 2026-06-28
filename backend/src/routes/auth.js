@@ -46,7 +46,7 @@ router.post("/login", async (req, res) => {
         rol: user.rol,
         foto_perfil_url: user.foto_perfil_url,
       },
-      redirect: ["admin", "organizador"].includes(user.rol) ? "/admin.html" : "/usuario.html",
+      redirect: ["admin", "organizador"].includes(user.rol) ? "/admin" : "/usuario",
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -7,14 +7,14 @@ Plataforma de **venta de boletos** y **red social de eventos** en el Perú. Proy
 ```text
 ┌──────────────────────────────────────────────────────────────┐
 │  CAPA DE PRESENTACION                                        │
-│  TicketFlow-Web (Nginx) — http://127.0.0.1:8090              │
-│  HTML/CSS/JS: eventos, compra de boletos, feed social        │
+│  TicketFlow-Web (Angular 19 + Nginx) — http://127.0.0.1:8090 │
+│  Login, eventos, checkout, billetera, comunidad, panel admin │
 └────────────────────────────┬─────────────────────────────────┘
                              │ /api/*
 ┌────────────────────────────▼─────────────────────────────────┐
 │  CAPA DE APLICACION                                          │
 │  TicketFlow-API (Node.js + Express) — http://127.0.0.1:3000  │
-│  REST API: eventos, ventas, publicaciones                    │
+│  REST API: auth JWT, eventos, ventas, reembolsos, social    │
 └────────────────────────────┬─────────────────────────────────┘
                              │ mongo:27017 (red interna)
 ┌────────────────────────────▼─────────────────────────────────┐
@@ -27,12 +27,16 @@ Plataforma de **venta de boletos** y **red social de eventos** en el Perú. Proy
 
 ## Requisitos
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) en ejecución
-- Git
+| Modo | Necesitas |
+|------|-----------|
+| **Docker (recomendado)** | [Docker Desktop](https://www.docker.com/products/docker-desktop/) + Git |
+| **Desarrollo Angular local** | Node.js 20+ y npm, además de Docker para Mongo/API |
 
-## Inicio rápido
+---
 
-Clona el repo, levanta Docker y prueba todo (web, API y MongoDB en **127.0.0.1:27018**):
+## Compilar y ejecutar (Docker — recomendado)
+
+Levanta las **3 capas** (Mongo, API y frontend Angular compilado):
 
 ```powershell
 git clone <url-del-repositorio> Ticket-flow
@@ -40,9 +44,9 @@ cd Ticket-flow
 docker compose up -d --build
 ```
 
-La primera vez crea la carpeta `BD/`, ejecuta `init-mongo.js` (esquema + datos demo) y `z-init-app-user.sh` (usuario de aplicacion).
+La primera vez crea la carpeta `BD/`, ejecuta `init-mongo.js` (esquema + datos demo) y `z-init-app-user.sh`.
 
-Opcional: copia `.env.example` a `.env` si quieres cambiar contraseñas o puertos.
+Opcional — personalizar contraseñas o puertos:
 
 ```powershell
 Copy-Item .env.example .env
@@ -57,53 +61,164 @@ docker compose ps
 
 | Servicio | URL / Puerto | Contenedor |
 |----------|--------------|------------|
-| **Web** (presentación) | http://127.0.0.1:8090 | TicketFlow-Web |
-| **API** (aplicación) | http://127.0.0.1:3000/api/health | TicketFlow-API |
-| **MongoDB** (datos) | 127.0.0.1:27018 | TicketFlow-Mongo |
+| **Web** (Angular) | http://127.0.0.1:8090 | TicketFlow-Web |
+| **API** | http://127.0.0.1:3000/api/health | TicketFlow-API |
+| **MongoDB** | 127.0.0.1:27018 | TicketFlow-Mongo |
 
-Probar MongoDB desde tu PC (credenciales por defecto si no usas `.env`):
-
-```powershell
-docker exec -it TicketFlow-Mongo mongosh -u ticketflow_admin -p "TicketFlow2026DevMongo!" --authenticationDatabase admin ticketflow_social
-```
-
-### Iniciar sesion (dos vistas)
+### Iniciar sesión
 
 Abre: **http://127.0.0.1:8090**
 
-| Cuenta demo | Contrasena | Vista |
+| Cuenta demo | Contraseña | Vista |
 |-------------|------------|-------|
-| `rai_manrique` | `TicketFlow2026` | **Usuario** — eventos, compra, comunidad |
-| `victor_arapa` | `TicketFlow2026` | **Admin** — panel organizador |
-| `admin_ticketflow` | `TicketFlow2026` | **Admin** — panel administrador |
+| `rai_manrique` | `TicketFlow2026` | Usuario — eventos, compra, billetera, comunidad |
+| `victor_arapa` | `TicketFlow2026` | Admin — panel organizador |
+| `admin_ticketflow` | `TicketFlow2026` | Admin — panel administrador |
 
-Segun el rol, se redirige automaticamente a:
-- **Usuario:** `/usuario.html`
-- **Admin / Organizador:** `/admin.html`
+Rutas Angular según rol:
+
+| Rol | Ruta |
+|-----|------|
+| Usuario | `/usuario/inicio` |
+| Admin / Organizador | `/admin` |
+
+> Si el login falla con **502**, recrea los contenedores en la misma red:
+> `docker compose up -d --force-recreate`
+
+---
+
+## Compilar y ejecutar (desarrollo local)
+
+### 1. Backend + MongoDB (Docker)
+
+```powershell
+docker compose up -d mongo api
+```
+
+### 2. Frontend Angular (modo desarrollo)
+
+```powershell
+cd frontend-angular
+npm install
+npm start
+```
+
+Abre **http://localhost:4200** — el proxy redirige `/api` al stack Docker (puerto 8090 o API directa según `proxy.conf.json`).
+
+### 3. Compilar Angular para producción (sin Docker web)
+
+```powershell
+cd frontend-angular
+npm install
+npm run build
+```
+
+Salida en: `frontend-angular/dist/ticketflow-web/browser/`
+
+Para servir ese build localmente necesitas un servidor estático con proxy a la API, o usar Docker:
+
+```powershell
+cd ..
+docker compose up -d --build web
+```
+
+### 4. Backend sin Docker (opcional)
+
+Con MongoDB ya corriendo en Docker (`127.0.0.1:27018`):
+
+```powershell
+cd backend
+npm install
+$env:MONGO_HOST="127.0.0.1"
+$env:MONGO_INTERNAL_PORT="27018"
+$env:MONGO_ROOT_USER="ticketflow_admin"
+$env:MONGO_ROOT_PASSWORD="TicketFlow2026DevMongo!"
+$env:DEMO_USER_PASSWORD="TicketFlow2026"
+npm run dev
+```
+
+Health check manual de la API:
+
+```powershell
+cd backend
+npm run health
+```
+
+---
+
+## Comandos útiles
+
+```powershell
+# Logs por capa
+docker logs TicketFlow-Web
+docker logs TicketFlow-API
+docker logs TicketFlow-Mongo
+
+# Detener todo
+docker compose down
+
+# Reconstruir solo API (tras cambios en backend)
+docker compose up -d --build api
+
+# Reconstruir solo frontend Angular (tras cambios en frontend-angular)
+docker compose up -d --build web
+
+# Reconstruir todo
+docker compose up -d --build
+
+# mongosh (admin)
+docker exec -it TicketFlow-Mongo mongosh -u ticketflow_admin -p "TicketFlow2026DevMongo!" --authenticationDatabase admin ticketflow_social
+```
+
+### Resetear base de datos
+
+```powershell
+docker compose down
+Remove-Item -Recurse -Force BD
+docker compose up -d --build
+```
+
+---
 
 ## API (capa de aplicación)
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
 | GET | `/api/health` | Estado del servicio |
-| GET | `/api/eventos` | Listar eventos publicados |
-| GET | `/api/eventos/:id` | Detalle de un evento |
-| GET | `/api/eventos/:id/boletos` | Boletos de un evento |
-| POST | `/api/ventas` | Registrar compra de boletos |
-| GET | `/api/social/publicaciones` | Feed de la comunidad |
-| GET | `/api/social/usuarios` | Usuarios de la plataforma |
+| POST | `/api/auth/login` | Login (JWT) |
+| GET | `/api/auth/me` | Usuario en sesión |
+| GET | `/api/eventos` | Listar eventos |
+| GET | `/api/eventos/:id/detalle` | Detalle + zonas/precios |
+| GET | `/api/eventos/:id/boletos` | Boletos disponibles |
+| POST | `/api/ventas` | Comprar (requiere auth) |
+| GET | `/api/ventas/mis-boletos` | Billetera del usuario |
+| POST | `/api/ventas/reembolso` | Solicitar reembolso |
+| GET | `/api/politicas` | Condiciones de compra/reembolso |
+| GET | `/api/social/publicaciones` | Feed social |
+| GET | `/api/admin/dashboard` | Métricas (staff) |
 
-Ejemplo de compra:
+---
 
-```json
-POST /api/ventas
-{
-  "usuario_id": "64f0a0010000000000000004",
-  "evento_id": "64f0b0010000000000000001",
-  "boletos_ids": ["..."],
-  "metodo_pago": "yape"
-}
+## Estructura del proyecto
+
+```text
+Ticket-flow/
+├── frontend-angular/    # Capa de presentacion (Angular 19)
+│   ├── src/app/         # componentes, servicios, guards
+│   ├── public/img/      # assets estaticos
+│   ├── Dockerfile       # build Angular + nginx
+│   └── nginx.conf       # proxy /api → TicketFlow-API
+├── backend/             # Capa de aplicacion (Node.js + Express)
+├── frontend/            # (legacy) HTML/JS antiguo — ya no usa Docker
+├── docker-compose.yml   # Orquestacion de las 3 capas
+├── init-mongo.js        # Esquema e indices MongoDB
+├── seed-data.js         # Datos de ejemplo
+├── z-init-app-user.sh   # Usuario de app con permisos limitados
+├── .env.example
+└── README.md
 ```
+
+---
 
 ## Seguridad
 
@@ -112,31 +227,20 @@ POST /api/ventas
 | **Admin** | `MONGO_ROOT_USER` | Mantenimiento, mongosh (puerto 27018) |
 | **Aplicación** | `MONGO_APP_USER` | Solo `readWrite` en `ticketflow_social` |
 
-La API se conecta a MongoDB por la **red interna Docker** (`mongo:27017`), no expone credenciales al navegador.
+La API se conecta a MongoDB por la **red interna Docker** (`mongo:27017`). El frontend usa JWT en `Authorization: Bearer`.
 
-Variables en `.env`:
+Variables principales en `.env`:
 
 | Variable | Descripción |
 |----------|-------------|
 | `MONGO_ROOT_USER` / `MONGO_ROOT_PASSWORD` | Admin MongoDB |
-| `MONGO_APP_USER` / `MONGO_APP_PASSWORD` | Usuario del backend |
-| `MONGO_BIND_IP` | IP permitida para MongoDB (`127.0.0.1` = solo esta PC) |
-| `API_PORT` | Puerto de la API (default `3000`) |
-| `WEB_PORT` | Puerto del frontend (default `8090`; evita `8080` reservado para DomotiCore) |
+| `DEMO_USER_PASSWORD` | Contraseña cuentas demo |
+| `JWT_SECRET` | Firma de tokens |
+| `WEB_PORT` | Puerto web (default `8090`) |
+| `API_PORT` | Puerto API (default `3000`) |
+| `CORS_ORIGINS` | Origenes permitidos (incluye `:4200` para ng serve) |
 
-## Estructura del proyecto
-
-```text
-Ticket-flow/
-├── frontend/            # Capa de presentacion (HTML, CSS, JS)
-├── backend/             # Capa de aplicacion (Node.js + Express)
-├── docker-compose.yml   # Orquestacion de las 3 capas
-├── init-mongo.js        # Esquema e indices MongoDB
-├── seed-data.js         # Datos de ejemplo
-├── z-init-app-user.sh   # Usuario de app con permisos limitados
-├── .env.example
-└── README.md
-```
+---
 
 ## Colecciones (capa de datos)
 
@@ -146,44 +250,12 @@ Ticket-flow/
 | `eventos` | Catálogo con geolocalización |
 | `boletos` | Inventario de entradas |
 | `ventas` | Registro de compras |
+| `reembolsos` | Solicitudes de reembolso |
 | `publicaciones` | Feed social |
 | `comentarios` | Interacciones |
 | `follows` | Seguidores |
 
-## Comandos útiles
-
-```powershell
-# Ver logs de cada capa
-docker logs TicketFlow-Web
-docker logs TicketFlow-API
-docker logs TicketFlow-Mongo
-
-# Detener todo
-docker compose down
-
-# Reconstruir tras cambios en backend
-docker compose up -d --build api
-
-# Recargar datos de ejemplo
-docker cp seed-data.js TicketFlow-Mongo:/tmp/seed-data.js
-docker exec TicketFlow-Mongo mongosh -u ticket-flow -p "TU_PASSWORD" --authenticationDatabase admin /tmp/seed-data.js
-
-# mongosh (admin)
-docker exec -it TicketFlow-Mongo mongosh -u ticket-flow -p "TU_PASSWORD" --authenticationDatabase admin ticketflow_social
-```
-
-## Desarrollo local sin Docker (opcional)
-
-```powershell
-# Solo API (con MongoDB ya corriendo en Docker)
-cd backend
-npm install
-$env:MONGO_HOST="127.0.0.1"
-$env:MONGO_INTERNAL_PORT="27018"
-$env:MONGO_ROOT_USER="ticket-flow"
-$env:MONGO_ROOT_PASSWORD="TU_PASSWORD"
-npm run dev
-```
+---
 
 ## Equipo
 

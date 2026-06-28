@@ -1,0 +1,42 @@
+<div id="view-comunidad" class="app-view active">
+  <div class="view-header">
+    <h2>Comunidad Live</h2>
+    <p>Comparte y coordina con otros asistentes</p>
+  </div>
+
+  <section class="community-composer">
+    <div class="composer-avatar">{{ (auth.getUser()?.username || 'U').slice(0, 2).toUpperCase() }}</div>
+    <div class="composer-body">
+      <textarea [(ngModel)]="text" rows="3" maxlength="180" placeholder="¿Que estas planeando ver?"></textarea>
+      <div class="composer-actions">
+        <span>{{ text.length }}/180</span>
+        <button class="btn btn-glow btn-sm" type="button" [disabled]="loading" (click)="publish()">Publicar</button>
+      </div>
+      @if (msg) { <div class="alert success">{{ msg }}</div> }
+    </div>
+  </section>
+
+  <div id="feed-list" class="feed-list">
+    @if (error) {
+      <div class="alert error">{{ error }}</div>
+    } @else if (!posts.length) {
+      <div class="empty-state">Aun no hay publicaciones.</div>
+    } @else {
+      @for (p of posts; track p._id; let i = $index) {
+        <article class="feed-item">
+          <div class="feed-item-header">
+            <img class="avatar sm" [src]="profilePhoto(p.autor)" alt="">
+            <div class="feed-item-meta">
+              <strong>{{ p.autor?.nombre_completo || p.autor?.username }}</strong>
+              <span>{{ timeAgo(p.fecha_publicacion) }}</span>
+            </div>
+          </div>
+          <p class="feed-item-text">{{ p.texto }}</p>
+          @if (p.media_urls?.length) {
+            <img class="feed-item-media" [src]="postMedia(p.media_urls![0], i)" alt="">
+          }
+        </article>
+      }
+    }
+  </div>
+</div>

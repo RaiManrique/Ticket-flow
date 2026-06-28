@@ -1,0 +1,62 @@
+<div id="view-inicio" class="app-view active">
+  <section class="app-hero">
+    <div class="hero-text">
+      <p class="hero-kicker">TicketFlow Peru</p>
+      <h1>VIVE LA EMOCION</h1>
+      <p class="hero-sub">Encuentra tu proximo latido</p>
+    </div>
+    <div class="search-panel">
+      <div class="search-input-wrap">
+        <input type="search" [(ngModel)]="query" placeholder="¿A quien quieres ver?">
+      </div>
+      <div class="search-filters">
+        <select [(ngModel)]="ciudad" class="chip-select">
+          <option value="">Ciudad</option>
+          <option value="Lima">Lima</option>
+          <option value="Cusco">Cusco</option>
+          <option value="Arequipa">Arequipa</option>
+        </select>
+        <input type="date" [(ngModel)]="fecha" class="chip-date">
+      </div>
+      <button class="btn btn-search" type="button" (click)="search()">BUSCAR TICKET</button>
+    </div>
+  </section>
+
+  <div class="app-layout">
+    <div class="app-main-col">
+      <section class="section-block">
+        <div class="section-title-row">
+          <h2>Eventos en Tendencia</h2>
+          <a routerLink="/usuario/eventos" class="link-btn">Ver todos</a>
+        </div>
+        <div class="trending-list">
+          @if (state.loading()) {
+            <p class="loading">Cargando eventos...</p>
+          } @else {
+            @for (e of trending(); track e._id; let i = $index) {
+              <app-event-card [evento]="e" [featured]="i === 0" [favorite]="isFav(e)"
+                (buy)="buy($event)" (detail)="detail($event)" (share)="share($event)" (toggleFavorite)="toggleFav($event)" />
+            }
+          }
+        </div>
+      </section>
+    </div>
+    <aside class="app-side-col">
+      <section class="section-block community-block">
+        <h2>Comunidad Live</h2>
+        <div class="feed-preview">
+          @if (feedError) {
+            <div class="alert error">{{ feedError }}</div>
+          } @else {
+            @for (p of feed; track p._id) {
+              <article class="feed-item">
+                <p class="feed-item-text">{{ p.texto }}</p>
+                <span>{{ timeAgo(p.fecha_publicacion) }}</span>
+              </article>
+            }
+          }
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>

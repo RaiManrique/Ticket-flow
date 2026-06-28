@@ -1,0 +1,78 @@
+<div id="view-billetera" class="app-view active">
+  <div class="view-header">
+    <h2>Mi billetera</h2>
+    <p>{{ hint }}</p>
+  </div>
+
+  @if (error) {
+    <div class="alert error">{{ error }}</div>
+  } @else if (!boletos.length && !reembolsos.length) {
+    <div class="empty-state">
+      Aun no tienes entradas.<br>
+      <a routerLink="/usuario/eventos" class="link-btn">Explorar eventos</a>
+    </div>
+  } @else {
+    <div class="wallet-list">
+      @for (b of boletos; track b._id) {
+        <article class="wallet-ticket" [class.is-refunded]="b.reembolso">
+          <div class="wallet-ticket-head">
+            <div>
+              <h3>{{ b.evento?.titulo || 'Evento' }}</h3>
+              <p class="wallet-ticket-meta">{{ b.evento?.ciudad }} · {{ b.evento?.fecha_evento ? formatDate(b.evento!.fecha_evento!) : '' }}</p>
+            </div>
+            <span class="wallet-ticket-status" [class.refunded]="b.reembolso">VALIDO</span>
+          </div>
+          <div class="wallet-ticket-body">
+            <div class="wallet-ticket-info">
+              <p><strong>{{ seatLabel(b) }}</strong></p>
+              <p class="wallet-ticket-code">{{ b.codigo_entrada || '—' }}</p>
+              <p class="wallet-ticket-price">{{ formatMoney(b.precio) }}</p>
+              @if (b.reembolso_elegible) {
+                <button class="btn btn-ghost btn-sm wallet-refund-btn" type="button" (click)="openRefund(b)">Solicitar reembolso</button>
+              } @else if (b.reembolso_motivo) {
+                <p class="wallet-refund-note">{{ b.reembolso_motivo }}</p>
+              }
+            </div>
+            <div class="wallet-ticket-qr" [innerHTML]="qr(b)"></div>
+          </div>
+        </article>
+      }
+
+      @if (reembolsos.length) {
+        <h3 class="wallet-section-title">Historial de reembolsos</h3>
+        @for (r of reembolsos; track r._id) {
+          <article class="wallet-ticket is-refunded">
+            <h3>{{ r.evento?.titulo }}</h3>
+            <p>{{ formatMoney(r.monto) }} · Ref {{ r.referencia }}</p>
+          </article>
+        }
+      }
+    </div>
+  }
+
+  <p class="app-footer-links" style="margin-top:1rem;">
+    <button type="button" class="link-btn" (click)="openPolicies()">Politicas y reembolsos</button>
+  </p>
+</div>
+
+@if (showRefund && refundBoleto) {
+  <div class="ticket-modal">
+    <div class="ticket-modal-backdrop" (click)="showRefund = false"></div>
+    <div class="ticket-modal-card">
+      <h3>Solicitar reembolso</h3>
+      <p>{{ refundBoleto.evento?.titulo }} · {{ seatLabel(refundBoleto) }}</p>
+      <textarea [(ngModel)]="refundMotivo" rows="4" placeholder="Motivo..."></textarea>
+      @if (refundMsg) { <div class="alert">{{ refundMsg }}</div> }
+      <button class="btn btn-glow btn-block" type="button" (click)="submitRefund()">Confirmar</button>
+    </div>
+  </div>
+}
+
+@if (showPolicies) {
+  <div class="ticket-modal">
+    <div class="ticket-modal-backdrop" (click)="showPolicies = false"></div>
+    <div class="ticket-modal-card policies-card">
+      <div [innerHTML]="policiesHtml"></div>
+    </div>
+  </div>
+}

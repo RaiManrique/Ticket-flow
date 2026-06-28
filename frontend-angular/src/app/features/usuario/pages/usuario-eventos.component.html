@@ -1,0 +1,95 @@
+<div id="view-eventos" class="app-view active">
+  <div class="view-header">
+    <h2>Todos los eventos</h2>
+    <p>Conciertos, festivales y teatro en Peru</p>
+  </div>
+
+  <div class="category-pills">
+    @for (f of ['todos', 'concierto', 'festival', 'teatro']; track f) {
+      <button class="filter-btn" [class.active]="state.filter() === f" type="button" (click)="setFilter(f)">
+        {{ f === 'todos' ? 'Todos' : f.charAt(0).toUpperCase() + f.slice(1) }}
+      </button>
+    }
+  </div>
+
+  <div class="events-toolbar">
+    <div>
+      <strong>{{ list().length }} eventos</strong>
+    </div>
+    <div class="events-toolbar-actions">
+      <select class="toolbar-select" [ngModel]="state.sort()" (ngModelChange)="state.sort.set($event)">
+        <option value="fecha-asc">Mas cercanos</option>
+        <option value="precio-asc">Menor precio</option>
+        <option value="precio-desc">Mayor precio</option>
+        <option value="popularidad">Mas populares</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" [class.active]="state.favoritesOnly()" type="button" (click)="toggleFavFilter()">Favoritos</button>
+      <button class="btn btn-ghost btn-sm" type="button" (click)="clearFilters()">Limpiar</button>
+    </div>
+  </div>
+
+  <div class="trending-list">
+    @if (state.loading()) {
+      <p class="loading">Cargando...</p>
+    } @else if (!list().length) {
+      <div class="empty-state">No hay eventos con esos filtros.</div>
+    } @else {
+      @for (e of list(); track e._id) {
+        <app-event-card [evento]="e" [favorite]="isFav(e)"
+          (buy)="buy($event)" (detail)="openDetail($event._id)" (share)="share($event)" (toggleFavorite)="toggleFav($event)" />
+      }
+    }
+  </div>
+</div>
+
+@if (detailEvento || detailLoading || detailError) {
+  <div class="ticket-modal">
+    <div class="ticket-modal-backdrop" (click)="closeDetail()"></div>
+    <div class="ticket-modal-card event-detail-card">
+      <button type="button" class="ticket-modal-close" (click)="closeDetail()">&times;</button>
+      @if (detailLoading) {
+        <p class="loading">Cargando detalle...</p>
+      } @else if (detailError) {
+        <div class="alert error">{{ detailError }}</div>
+      } @else if (detailEvento) {
+        <div class="event-detail-hero">
+          <img class="event-detail-img" [src]="eventFlyer(detailEvento)" [alt]="detailEvento.titulo">
+          <div class="event-detail-head">
+            <h2>{{ detailEvento.titulo }}</h2>
+            <p class="event-detail-meta">{{ detailEvento.ciudad }} · {{ formatDate(detailEvento.fecha_evento) }}</p>
+          </div>
+        </div>
+        <p class="event-detail-desc">{{ detailEvento.descripcion }}</p>
+        @if (detailEvento.estadisticas?.zonas?.length) {
+          <table class="event-detail-table">
+            <thead><tr><th>Zona</th><th>Precio</th><th>Disponibles</th></tr></thead>
+            <tbody>
+              @for (z of detailEvento.estadisticas!.zonas!; track z.zona) {
+                <tr>
+                  <td>{{ z.zona }}</td>
+                  <td>{{ formatMoney(z.precio_min) }}</td>
+                  <td>{{ z.disponibles }} / {{ z.total }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+        <div class="event-detail-actions">
+          <button class="btn btn-glow" type="button" (click)="buy(detailEvento); closeDetail()">Comprar entradas</button>
+          <button class="link-btn" type="button" (click)="openPolicies('reembolso')">Politicas</button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+@if (showPolicies) {
+  <div class="ticket-modal">
+    <div class="ticket-modal-backdrop" (click)="showPolicies = false"></div>
+    <div class="ticket-modal-card policies-card">
+      <button type="button" class="ticket-modal-close" (click)="showPolicies = false">&times;</button>
+      <h3>Politicas TicketFlow</h3>
+      <div class="policies-content" [innerHTML]="policiesHtml"></div>
+    </div>
+  </div>
+}

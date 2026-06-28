@@ -1,0 +1,36 @@
+<article class="trend-card" [class.featured]="featured" [class.sold-out]="soldOut(evento)">
+  <div class="trend-poster" [ngClass]="coverClass(evento.categoria)">
+    <img class="trend-poster-img" [src]="flyer(evento)" [alt]="evento.titulo" loading="lazy">
+    <div class="trend-badges">
+      <span class="badge-cat" [ngClass]="evento.categoria">{{ categoryLabel[evento.categoria] || evento.categoria }}</span>
+      <span class="badge-fans">{{ fansLabel(evento.asistentes?.length || 0) }}</span>
+    </div>
+    <button class="event-fav-btn" [class.active]="favorite" type="button" (click)="toggleFavorite.emit(evento)" aria-label="Favorito">
+      {{ favorite ? '★' : '☆' }}
+    </button>
+    @if (soldOut(evento)) {
+      <div class="sold-out-stamp">SOLD OUT</div>
+    }
+  </div>
+  <div class="trend-body">
+    <h3>{{ evento.titulo }}</h3>
+    <p class="trend-meta">{{ evento.ciudad }} · {{ formatDateCard(evento.fecha_evento) }}</p>
+    <p class="trend-desc">{{ evento.descripcion || 'Evento disponible en TicketFlow.' }}</p>
+    <div class="event-actions">
+      <button class="link-btn" type="button" (click)="detail.emit(evento)">Ver detalle</button>
+      <button class="link-btn" type="button" (click)="share.emit(evento)">Compartir</button>
+    </div>
+    <div class="trend-footer">
+      <div class="trend-price">
+        <strong>{{ evento.precio_minimo != null ? formatMoney(evento.precio_minimo) : 'Consultar' }}</strong>
+        <small>PRECIO BASE</small>
+      </div>
+      @if (soldOut(evento)) {
+        <span class="status-live ended">Finalizado</span>
+      } @else {
+        <span class="status-live">• VENTA GENERAL</span>
+        <button class="btn btn-buy" type="button" (click)="buy.emit(evento)">COMPRAR</button>
+      }
+    </div>
+  </div>
+</article>

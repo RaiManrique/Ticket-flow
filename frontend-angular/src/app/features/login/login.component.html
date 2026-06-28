@@ -1,0 +1,52 @@
+<div class="login-page">
+<div class="bg-glow"></div>
+<div class="login-layout">
+  <section class="login-showcase">
+    <span class="hero-badge">TicketFlow Peru</span>
+    <h1>Una plataforma,<br><span class="gradient-text">dos experiencias</span></h1>
+    <p>Los fans compran entradas y viven la comunidad. Los administradores gestionan eventos, ventas y usuarios.</p>
+    <div class="login-roles">
+      <div class="role-card"><strong>Vista Usuario</strong><span>Eventos, compra de boletos y feed social</span></div>
+      <div class="role-card admin"><strong>Vista Admin</strong><span>Panel de control, metricas y ventas</span></div>
+    </div>
+    <div class="login-hero-img"><img src="/img/hero-concierto.jpg" alt="Concierto" loading="lazy"></div>
+  </section>
+
+  <section class="login-panel">
+    <div class="login-box">
+      <a routerLink="/login" class="brand" style="margin-bottom:1.5rem;">
+        <img src="/img/logo.png" alt="TicketFlow" width="48" height="48" style="border-radius:12px;">
+        <div><strong>TicketFlow</strong><small>Iniciar sesion</small></div>
+      </a>
+
+      @if (apiError) {
+        <div class="alert error">{{ apiError }}</div>
+      }
+
+      <form (ngSubmit)="submit()">
+        <div class="form-group">
+          <label for="login">Usuario o email</label>
+          <input id="login" type="text" [(ngModel)]="login" name="login" placeholder="ej. rai_manrique" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Contrasena</label>
+          <input id="password" type="password" [(ngModel)]="password" name="password" required autocomplete="current-password">
+        </div>
+        @if (error) {
+          <div class="alert error">{{ error }}</div>
+        }
+        <button type="submit" class="btn btn-glow btn-block" [disabled]="loading">{{ loading ? 'Ingresando...' : 'Entrar' }}</button>
+      </form>
+
+      <div class="demo-accounts">
+        <p>Cuentas demo (contrasena: <code>{{ demoPassword }}</code>)</p>
+        <div class="demo-grid">
+          @for (a of demoAccounts; track a.login) {
+            <button type="button" class="demo-btn" (click)="demo(a.login)">{{ a.label || a.login }}</button>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</div>

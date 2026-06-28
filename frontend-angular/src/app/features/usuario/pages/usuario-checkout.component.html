@@ -1,0 +1,70 @@
+<div id="view-checkout" class="app-view active">
+  <div class="view-header checkout-header">
+    <button class="link-btn" type="button" routerLink="/usuario/eventos">← Volver a eventos</button>
+    <h2 id="boletos-titulo">{{ evento?.titulo || 'Comprar entradas' }}</h2>
+  </div>
+
+  @if (cupo.disponibles === 0) {
+    <p class="checkout-limit-note alert error">Ya compraste el maximo de {{ cupo.maximo }} boletos para este evento.</p>
+  } @else {
+    <p class="checkout-limit-note">Puedes seleccionar hasta {{ cupo.disponibles }} entrada(s) mas.</p>
+  }
+
+  <div class="checkout-layout">
+    <div class="checkout-panel-map">
+      @if (boletos.length && cupo.disponibles > 0) {
+        <app-seatmap [boletos]="boletos" [eventTitle]="evento?.titulo || ''" [eventImage]="flyer()"
+          [maxSelection]="cupo.disponibles" (selectionChange)="onSelection($event)" />
+      } @else if (!boletos.length) {
+        <p class="loading">Cargando mapa...</p>
+      } @else {
+        <div class="empty-state">Limite alcanzado. Revisa tu billetera.</div>
+      }
+    </div>
+
+    <aside class="checkout-panel-tickets">
+      <h3>Resumen</h3>
+      <p>Entradas: <strong>{{ selected.length }}</strong></p>
+      <p>Total: <strong>{{ formatMoney(total()) }}</strong></p>
+      <div id="selection-detail">
+        @for (b of selected; track b._id) {
+          <div class="selection-item">
+            <span>{{ seatLabel(b) }}</span>
+            <strong>{{ formatMoney(b.precio) }}</strong>
+          </div>
+        }
+      </div>
+      <div class="form-group">
+        <label><input type="radio" name="metodo" value="tarjeta" [(ngModel)]="metodoPago"> Tarjeta</label>
+        <label><input type="radio" name="metodo" value="yape" [(ngModel)]="metodoPago"> Yape</label>
+      </div>
+      <label class="checkout-terms">
+        <input type="checkbox" [(ngModel)]="acceptTerms">
+        <span>Acepto las <button type="button" class="link-btn" (click)="openPolicies()">condiciones</button></span>
+      </label>
+      @if (msg) {
+        <div class="alert" [class.error]="msg.includes('Debes') || msg.includes('Selecciona')" [class.success]="msg.includes('confirmada')">{{ msg }}</div>
+      }
+      <button class="btn btn-glow btn-block" type="button" [disabled]="loading || cupo.disponibles === 0" (click)="comprar()">
+        {{ loading ? 'Procesando...' : 'Confirmar compra' }}
+      </button>
+    </aside>
+  </div>
+</div>
+
+@if (showTicket && compraResult) {
+  <div class="ticket-modal">
+    <div class="ticket-modal-backdrop" (click)="goBilletera()"></div>
+    <div class="ticket-modal-card">
+      <h3>Compra confirmada</h3>
+      <p class="ticket-modal-ref">Ref {{ compraResult.venta.referencia_pago }} · {{ formatMoney(compraResult.venta.monto_total) }}</p>
+      @for (b of compraResult.boletos; track b._id) {
+        <div class="ticket-confirm-card">
+          <div><strong>{{ seatLabel(b) }}</strong><p>{{ b.codigo_entrada }}</p></div>
+          <div class="wallet-ticket-qr" [innerHTML]="qr(b)"></div>
+        </div>
+      }
+      <button class="btn btn-glow btn-block" routerLink="/usuario/billetera">Ir a billetera</button>
+    </div>
+  </div>
+}
