@@ -32,7 +32,7 @@ export class UsuarioEventosComponent implements OnInit {
   policyHighlight = '';
 
   ngOnInit(): void {
-    if (!this.state.all().length) this.state.load();
+    this.state.load();
     this.route.queryParams.subscribe((p) => {
       if (p['detalle']) this.openDetail(String(p['detalle']));
     });

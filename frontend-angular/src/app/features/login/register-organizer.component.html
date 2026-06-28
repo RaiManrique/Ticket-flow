@@ -1,0 +1,75 @@
+<div class="login-page">
+  <div class="bg-glow"></div>
+  <div class="login-layout">
+    <section class="login-showcase">
+      <span class="hero-badge">TicketFlow Peru</span>
+      <h1>Publica tus<br><span class="gradient-text">eventos</span></h1>
+      <p>Crea tu cuenta de organizador para gestionar eventos, ventas y reembolsos de forma independiente.</p>
+      <div class="login-roles">
+        <div class="role-card admin">
+          <strong>Cuenta organizador</strong>
+          <span>Cada organizador ve solo sus eventos, ventas y metricas. Los datos no se comparten entre cuentas.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="login-panel">
+      <div class="login-box">
+        <a routerLink="/login" class="brand" style="margin-bottom:1.5rem;">
+          <img src="/img/logo.png" alt="TicketFlow" width="48" height="48" style="border-radius:12px;">
+          <div><strong>TicketFlow</strong><small>Registro organizador</small></div>
+        </a>
+
+        @if (apiError) {
+          <div class="alert error">{{ apiError }}</div>
+        }
+
+        <form (ngSubmit)="submit()">
+          <div class="form-group">
+            <label for="nombre">Nombre completo / empresa</label>
+            <input id="nombre" type="text" [(ngModel)]="nombreCompleto" name="nombre" required minlength="3" autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input id="email" type="email" [(ngModel)]="email" name="email" required autocomplete="email" placeholder="promotor@email.com">
+          </div>
+          <div class="form-group">
+            <label for="username">Usuario</label>
+            <input id="username" type="text" [(ngModel)]="username" name="username" required minlength="3" maxlength="24" autocomplete="username" placeholder="ej. mi_productora">
+            <small class="field-hint">Solo letras, numeros y _. Minimo 3 caracteres.</small>
+          </div>
+          <div class="form-group">
+            <label for="password">Contrasena</label>
+            <input id="password" type="password" [(ngModel)]="password" name="password" required minlength="8" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="confirm">Confirmar contrasena</label>
+            <input id="confirm" type="password" [(ngModel)]="confirmPassword" name="confirm" required minlength="8" autocomplete="new-password">
+          </div>
+          <label class="checkout-terms">
+            <input type="checkbox" [(ngModel)]="acceptTerms" name="terms">
+            <span>Acepto las condiciones de uso de TicketFlow</span>
+          </label>
+
+          @if (error) {
+            <div class="alert error">{{ error }}</div>
+          }
+          @if (success) {
+            <div class="alert success">{{ success }}</div>
+          }
+
+          <button type="submit" class="btn btn-glow btn-block" [disabled]="loading">
+            {{ loading ? 'Creando cuenta...' : 'Crear cuenta de organizador' }}
+          </button>
+        </form>
+
+        <p class="auth-switch">
+          ¿Eres fan?
+          <a routerLink="/registro" class="link-btn">Registro de usuario</a>
+          ·
+          <a routerLink="/login" class="link-btn">Iniciar sesion</a>
+        </p>
+      </div>
+    </section>
+  </div>
+</div>

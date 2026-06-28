@@ -30,7 +30,8 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     this.auth.checkHealth().subscribe((ok) => {
       if (!ok) {
-        this.apiError = 'API no disponible. Abre http://127.0.0.1:8090 y ejecuta docker compose up -d.';
+        this.apiError =
+          'API no disponible. 1) Abre Docker Desktop. 2) En la raiz del proyecto: docker compose up -d mongo api. 3) Reinicia ng serve y usa http://localhost:4200';
       }
     });
     this.auth.getDemoInfo().subscribe({
@@ -60,7 +61,10 @@ export class LoginComponent implements OnInit {
     this.auth.login(user, pass).subscribe({
       next: (data) => this.router.navigateByUrl(data.redirect || this.auth.redirectForRole(data.user)),
       error: (err) => {
-        this.error = err.error?.error || err.message || 'Error de login';
+        const msg = err.error?.error || err.message || 'Error de login';
+        this.error = msg.includes('Http failure') || msg.includes('0 Unknown')
+          ? 'No hay conexion con la API. Verifica que Docker este corriendo y ejecuta: docker compose up -d mongo api'
+          : msg;
         this.loading = false;
       },
       complete: () => { this.loading = false; },

@@ -15,6 +15,7 @@ import { roleLabel } from '../../core/utils/format.util';
 export class AdminLayoutComponent {
   readonly auth = inject(AuthService);
   readonly user = this.auth.getUser()!;
+  readonly isAdmin = this.user.rol === 'admin';
   roleLabel = roleLabel;
   profilePhoto = profilePhoto;
 

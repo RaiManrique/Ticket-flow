@@ -67,4 +67,10 @@ export class EventosStateService {
   findById(id: string): Evento | undefined {
     return this.all().find((e) => String(e._id) === String(id));
   }
+
+  resetUserPreferences(): void {
+    this.favoritesOnly.set(false);
+    this.filter.set('todos');
+    this.search.set({ query: '', ciudad: '', fecha: '' });
+  }
 }

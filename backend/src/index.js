@@ -54,7 +54,17 @@ app.get("/api/health", async (_req, res) => {
   });
 });
 
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Demasiados registros desde esta IP. Intenta mas tarde." },
+});
+
 app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth/register", registerLimiter);
+app.use("/api/auth/register-organizer", registerLimiter);
 app.use("/api/auth", authRouter);
 app.use("/api/eventos", eventosRouter);
 app.use("/api/ventas", ventasRouter);

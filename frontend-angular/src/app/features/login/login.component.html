@@ -38,8 +38,17 @@
         <button type="submit" class="btn btn-glow btn-block" [disabled]="loading">{{ loading ? 'Ingresando...' : 'Entrar' }}</button>
       </form>
 
+      <p class="auth-switch">
+        ¿No tienes cuenta?
+        <a routerLink="/registro" class="link-btn">Registrate gratis</a>
+      </p>
+      <p class="auth-switch">
+        ¿Organizas eventos?
+        <a routerLink="/registro-organizador" class="link-btn">Crear cuenta de organizador</a>
+      </p>
+
       <div class="demo-accounts">
-        <p>Cuentas demo (contrasena: <code>{{ demoPassword }}</code>)</p>
+        <p>Cuentas demo para probar (contrasena: <code>{{ demoPassword }}</code>)</p>
         <div class="demo-grid">
           @for (a of demoAccounts; track a.login) {
             <button type="button" class="demo-btn" (click)="demo(a.login)">{{ a.label || a.login }}</button>

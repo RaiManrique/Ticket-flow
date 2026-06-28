@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const { Boleto, Venta, Evento, Reembolso } = require("../models");
 const { requireAuth } = require("../middleware/auth");
 const { requireObjectId } = require("../utils/validate");
@@ -8,10 +9,14 @@ const router = express.Router();
 
 const MAX_BOLETOS_POR_EVENTO = Number(process.env.MAX_BOLETOS_POR_EVENTO || 4);
 
+function userObjectId(user) {
+  return new mongoose.Types.ObjectId(String(user._id));
+}
+
 async function countBoletosUsuarioEvento(usuarioId, eventoId) {
   return Boleto.countDocuments({
     evento_id: eventoId,
-    vendido_a: usuarioId,
+    vendido_a: userObjectId({ _id: usuarioId }),
     estado: "vendido",
   });
 }
@@ -19,7 +24,7 @@ async function countBoletosUsuarioEvento(usuarioId, eventoId) {
 router.get("/cupo/:eventoId", requireAuth, async (req, res) => {
   try {
     requireObjectId(req.params.eventoId, "evento_id");
-    const comprados = await countBoletosUsuarioEvento(req.user._id, req.params.eventoId);
+    const comprados = await countBoletosUsuarioEvento(userObjectId(req.user), req.params.eventoId);
     const disponibles = Math.max(0, MAX_BOLETOS_POR_EVENTO - comprados);
     res.json({
       maximo: MAX_BOLETOS_POR_EVENTO,
@@ -33,7 +38,8 @@ router.get("/cupo/:eventoId", requireAuth, async (req, res) => {
 
 router.get("/mis-reembolsos", requireAuth, async (req, res) => {
   try {
-    const reembolsos = await Reembolso.find({ usuario_id: req.user._id })
+    const usuarioId = userObjectId(req.user);
+    const reembolsos = await Reembolso.find({ usuario_id: usuarioId })
       .sort({ fecha_solicitud: -1 })
       .limit(30)
       .lean();
@@ -57,8 +63,9 @@ router.get("/mis-reembolsos", requireAuth, async (req, res) => {
 
 router.get("/mis-boletos", requireAuth, async (req, res) => {
   try {
+    const usuarioId = userObjectId(req.user);
     const boletos = await Boleto.find({
-      vendido_a: req.user._id,
+      vendido_a: usuarioId,
       estado: "vendido",
     })
       .sort({ fecha_venta: -1 })
@@ -71,7 +78,7 @@ router.get("/mis-boletos", requireAuth, async (req, res) => {
     const eventosMap = Object.fromEntries(eventos.map((e) => [String(e._id), e]));
 
     const ventas = await Venta.find({
-      usuario_id: req.user._id,
+      usuario_id: usuarioId,
       estado: "confirmada",
     }).lean();
 
@@ -112,7 +119,7 @@ router.get("/mis-boletos", requireAuth, async (req, res) => {
 
 router.get("/mias", requireAuth, async (req, res) => {
   try {
-    const ventas = await Venta.find({ usuario_id: req.user._id })
+    const ventas = await Venta.find({ usuario_id: userObjectId(req.user) })
       .sort({ fecha_venta: -1 })
       .limit(30)
       .lean();
@@ -134,7 +141,7 @@ async function rollbackBoletos(boletoIds) {
 
 router.post("/", requireAuth, async (req, res) => {
   const { evento_id, boletos_ids, metodo_pago } = req.body;
-  const usuario_id = String(req.user._id);
+  const usuario_id = userObjectId(req.user);
 
   if (!evento_id || !Array.isArray(boletos_ids) || boletos_ids.length === 0) {
     return res.status(400).json({ error: "Datos de venta incompletos" });
@@ -224,7 +231,7 @@ router.post("/", requireAuth, async (req, res) => {
 
 router.post("/reembolso", requireAuth, async (req, res) => {
   const { boleto_id, motivo } = req.body;
-  const usuario_id = String(req.user._id);
+  const usuario_id = userObjectId(req.user);
 
   if (!boleto_id) {
     return res.status(400).json({ error: "boleto_id requerido" });

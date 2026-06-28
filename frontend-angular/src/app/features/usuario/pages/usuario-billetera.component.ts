@@ -1,8 +1,10 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { VentasService, PoliticasService } from '../../../core/services/api.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Boleto, Reembolso } from '../../../core/models/ticketflow.models';
 import { formatDate, formatMoney, seatLabel } from '../../../core/utils/format.util';
 import { qrSvg, ticketQrData } from '../../../core/utils/qr.util';
@@ -13,9 +15,11 @@ import { qrSvg, ticketQrData } from '../../../core/utils/qr.util';
   imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './usuario-billetera.component.html',
 })
-export class UsuarioBilleteraComponent implements OnInit {
+export class UsuarioBilleteraComponent implements OnInit, OnDestroy {
   private readonly ventas = inject(VentasService);
   private readonly politicas = inject(PoliticasService);
+  private readonly auth = inject(AuthService);
+  private sessionSub?: Subscription;
 
   boletos: Boleto[] = [];
   reembolsos: Reembolso[] = [];
@@ -29,6 +33,18 @@ export class UsuarioBilleteraComponent implements OnInit {
   policiesHtml = '';
 
   ngOnInit(): void {
+    this.load();
+    this.sessionSub = this.auth.onSessionChange().subscribe(() => this.resetAndLoad());
+  }
+
+  ngOnDestroy(): void {
+    this.sessionSub?.unsubscribe();
+  }
+
+  private resetAndLoad(): void {
+    this.boletos = [];
+    this.reembolsos = [];
+    this.error = '';
     this.load();
   }
 

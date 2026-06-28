@@ -34,7 +34,180 @@ Plataforma de **venta de boletos** y **red social de eventos** en el Perú. Proy
 
 ---
 
-## Compilar y ejecutar (Docker — recomendado)
+## Guia paso a paso (lee esto primero)
+
+Si es la primera vez o te sale **"API no disponible"**, sigue estos pasos **en orden**. No saltes ninguno.
+
+### Antes de empezar — checklist
+
+- [ ] Tienes el repo clonado en tu PC (ej. `C:\Users\User\Documents\GitHub\Ticket-flow`)
+- [ ] **Docker Desktop esta abierto** y dice *Running* (no solo instalado)
+- [ ] Tienes **Node.js 20+** si vas a usar `npm start` (modo desarrollo)
+- [ ] Sabes en que carpeta estas: los comandos `docker compose` se ejecutan desde la **raiz** del proyecto (`Ticket-flow`), no desde `frontend-angular`
+
+### Elige UN modo de uso
+
+| Modo | Para quien | URL final | Que levantas |
+|------|------------|-----------|--------------|
+| **A — Docker completo** | Demo, entrega, sin tocar codigo Angular | http://127.0.0.1:8090 | Todo con Docker |
+| **B — Desarrollo Angular** | Programar el frontend con recarga en vivo | http://localhost:4200 | Docker (mongo+api) + `npm start` |
+
+**No mezcles las URLs:** si usas `npm start`, entra en **:4200**. Si usas solo Docker, entra en **:8090**.
+
+---
+
+### Modo A — Docker completo (mas simple)
+
+**Paso 1.** Abre **Docker Desktop** y espera a que este en *Running*.
+
+**Paso 2.** Abre PowerShell o Git Bash y ve a la raiz del proyecto:
+
+```powershell
+cd C:\Users\User\Documents\GitHub\Ticket-flow
+```
+
+(Ajusta la ruta si clonaste en otro sitio.)
+
+**Paso 3.** Levanta las 3 capas (primera vez tarda varios minutos):
+
+```powershell
+docker compose up -d --build
+```
+
+**Paso 4.** Verifica que los 3 contenedores esten *Up*:
+
+```powershell
+docker compose ps
+```
+
+Debes ver: `TicketFlow-Mongo`, `TicketFlow-API`, `TicketFlow-Web`.
+
+**Paso 5.** Prueba la API en el navegador o terminal:
+
+```powershell
+curl http://127.0.0.1:3000/api/health
+```
+
+Respuesta esperada: `"status":"ok"`.
+
+**Paso 6.** Abre el navegador en:
+
+**http://127.0.0.1:8090**
+
+**Paso 7.** Inicia sesion con una cuenta demo o **crea la tuya** en `/registro`.
+
+| Usuario | Contrasena |
+|---------|------------|
+| `rai_manrique` | `TicketFlow2026` |
+
+Cuenta nueva: http://127.0.0.1:8090/registro (solo fans; rol `usuario`).
+
+---
+
+### Modo B — Desarrollo Angular (`ng serve`)
+
+Usa este modo si vas a **editar el frontend** en `frontend-angular/`.
+
+**Paso 1.** Abre **Docker Desktop** (*Running*).
+
+**Paso 2.** Terminal 1 — raiz del proyecto, solo datos + API:
+
+```powershell
+cd C:\Users\User\Documents\GitHub\Ticket-flow
+docker compose up -d mongo api
+```
+
+**Paso 3.** Comprueba la API (obligatorio antes de abrir Angular):
+
+```powershell
+curl http://127.0.0.1:3000/api/health
+```
+
+Si falla, **no sigas**: revisa la seccion [Problemas frecuentes](#problemas-frecuentes).
+
+**Paso 4.** Terminal 2 — frontend Angular:
+
+```powershell
+cd C:\Users\User\Documents\GitHub\Ticket-flow\frontend-angular
+npm install
+npm start
+```
+
+Espera el mensaje: `Local: http://localhost:4200/`
+
+**Paso 5.** Abre el navegador en:
+
+**http://localhost:4200**
+
+(No uses :8090 en este modo.)
+
+**Paso 6.** Login con `rai_manrique` / `TicketFlow2026`.
+
+> **Importante:** usa `npm start` (incluye proxy a la API). Si corres solo `ng serve` sin proxy, el login puede fallar. El proxy ya esta en `angular.json`, pero `npm start` es lo mas seguro.
+
+**Paso 7.** Si cambias codigo del frontend, la pagina se recarga sola. Si cambias el **backend**, reconstruye la API:
+
+```powershell
+cd C:\Users\User\Documents\GitHub\Ticket-flow
+docker compose up -d --build api
+```
+
+---
+
+### Compilar Angular a mano (build de produccion)
+
+Solo si necesitas generar los archivos estaticos:
+
+```powershell
+cd frontend-angular
+npm install
+npm run build
+```
+
+Salida: `frontend-angular/dist/ticketflow-web/browser/`
+
+Para servirlos con nginx en Docker:
+
+```powershell
+cd ..
+docker compose up -d --build web
+```
+
+---
+
+### Problemas frecuentes
+
+| Error o sintoma | Causa habitual | Solucion |
+|-----------------|----------------|----------|
+| `API no disponible` en el login | Docker cerrado o API no levantada | Abre Docker Desktop → `docker compose up -d mongo api` → reinicia `npm start` |
+| `dockerDesktopLinuxEngine` / `cannot find the file` | Docker Desktop no esta corriendo | Abre Docker Desktop y espera *Running* |
+| `ECONNREFUSED 127.0.0.1:8090` en la terminal de `ng serve` | Proxy viejo o sin API | Usa `npm start`; el proxy apunta a la API en **:3000**. Levanta `docker compose up -d mongo api` |
+| Login no hace nada en **:4200** | Entraste sin API arriba | `curl http://127.0.0.1:3000/api/health` debe responder `ok` |
+| **Registro no guarda** / error al crear cuenta | API vieja sin `/register` | `docker compose up -d --build api` y recarga la pagina |
+| **502 Bad Gateway** en **:8090** | Contenedor web desconectado de la API | `docker compose up -d --force-recreate` |
+| `cd Ticket-flow: No such file` | Ya estas dentro del repo | Usa `cd` a la ruta real, ej. `cd Documents/GitHub/Ticket-flow` |
+| `npm run dev` en `frontend-angular` falla | Ese script no existe ahi | En frontend: `npm start`. En backend: `cd backend` → `npm run dev` |
+| Contraseña incorrecta | Typo o `.env` distinto | Default: `TicketFlow2026` para todas las cuentas demo |
+
+**Secuencia de rescate rapida** (cuando nada funciona):
+
+```powershell
+# 1. Desde la raiz del proyecto
+docker compose down
+docker compose up -d --build
+
+# 2. Espera 30 segundos y verifica
+docker compose ps
+curl http://127.0.0.1:3000/api/health
+
+# 3. Modo desarrollo: reinicia Angular
+cd frontend-angular
+npm start
+```
+
+---
+
+## Compilar y ejecutar (Docker — referencia rapida)
 
 Levanta las **3 capas** (Mongo, API y frontend Angular compilado):
 
@@ -85,44 +258,28 @@ Rutas Angular según rol:
 > Si el login falla con **502**, recrea los contenedores en la misma red:
 > `docker compose up -d --force-recreate`
 
+> Si el login falla con **502**, recrea los contenedores:
+> `docker compose up -d --force-recreate`
+
 ---
 
-## Compilar y ejecutar (desarrollo local)
+## Desarrollo local (referencia rapida)
 
-### 1. Backend + MongoDB (Docker)
+Resumen del [Modo B](#modo-b--desarrollo-angular-ng-serve) de la guia paso a paso:
 
 ```powershell
+# Terminal 1 — raiz del proyecto
 docker compose up -d mongo api
-```
+curl http://127.0.0.1:3000/api/health
 
-### 2. Frontend Angular (modo desarrollo)
-
-```powershell
+# Terminal 2
 cd frontend-angular
 npm install
 npm start
+# Abrir http://localhost:4200
 ```
 
-Abre **http://localhost:4200** — el proxy redirige `/api` al stack Docker (puerto 8090 o API directa según `proxy.conf.json`).
-
-### 3. Compilar Angular para producción (sin Docker web)
-
-```powershell
-cd frontend-angular
-npm install
-npm run build
-```
-
-Salida en: `frontend-angular/dist/ticketflow-web/browser/`
-
-Para servir ese build localmente necesitas un servidor estático con proxy a la API, o usar Docker:
-
-```powershell
-cd ..
-docker compose up -d --build web
-```
-
-### 4. Backend sin Docker (opcional)
+### Backend sin Docker (opcional avanzado)
 
 Con MongoDB ya corriendo en Docker (`127.0.0.1:27018`):
 
@@ -186,6 +343,7 @@ docker compose up -d --build
 |--------|----------|-------------|
 | GET | `/api/health` | Estado del servicio |
 | POST | `/api/auth/login` | Login (JWT) |
+| POST | `/api/auth/register` | Crear cuenta **solo rol usuario** |
 | GET | `/api/auth/me` | Usuario en sesión |
 | GET | `/api/eventos` | Listar eventos |
 | GET | `/api/eventos/:id/detalle` | Detalle + zonas/precios |

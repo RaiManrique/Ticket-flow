@@ -3,14 +3,19 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  AdminDashboardData,
   Boleto,
   CompraResult,
   CupoEvento,
   Evento,
+  EventoOrganizador,
+  EventoOrganizadorDetalle,
   PoliticasResponse,
   Publicacion,
   Reembolso,
+  ReembolsosPanelResponse,
   Venta,
+  VentasPanelResponse,
 } from '../models/ticketflow.models';
 
 @Injectable({ providedIn: 'root' })
@@ -19,7 +24,7 @@ export class EventosService {
   private readonly base = `${environment.apiUrl}/eventos`;
 
   list(): Observable<Evento[]> {
-    return this.http.get<Evento[]>(this.base);
+    return this.http.get<Evento[]>(this.base, { headers: { 'Cache-Control': 'no-store' } });
   }
 
   detalle(id: string): Observable<Evento> {
@@ -89,23 +94,39 @@ export class AdminService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/admin`;
 
-  dashboard(): Observable<Record<string, unknown>> {
-    return this.http.get<Record<string, unknown>>(`${this.base}/dashboard`);
+  dashboard(): Observable<AdminDashboardData> {
+    return this.http.get<AdminDashboardData>(`${this.base}/dashboard`);
   }
 
   usuarios(): Observable<Record<string, unknown>[]> {
     return this.http.get<Record<string, unknown>[]>(`${this.base}/usuarios`);
   }
 
-  eventos(): Observable<Evento[]> {
-    return this.http.get<Evento[]>(`${this.base}/eventos`);
+  eventos(): Observable<EventoOrganizador[]> {
+    return this.http.get<EventoOrganizador[]>(`${this.base}/eventos`);
   }
 
-  ventas(): Observable<Venta[]> {
-    return this.http.get<Venta[]>(`${this.base}/ventas`);
+  eventoDetalle(id: string): Observable<EventoOrganizadorDetalle> {
+    return this.http.get<EventoOrganizadorDetalle>(`${this.base}/eventos/${id}/detalle`);
   }
 
-  reembolsos(): Observable<Reembolso[]> {
-    return this.http.get<Reembolso[]>(`${this.base}/reembolsos`);
+  ventas(): Observable<VentasPanelResponse> {
+    return this.http.get<VentasPanelResponse>(`${this.base}/ventas`);
+  }
+
+  reembolsos(): Observable<ReembolsosPanelResponse> {
+    return this.http.get<ReembolsosPanelResponse>(`${this.base}/reembolsos`);
+  }
+
+  createEvento(payload: {
+    titulo: string;
+    descripcion?: string;
+    categoria: string;
+    ciudad: string;
+    fecha_evento: string;
+    flyer_url?: string;
+    precio_base?: number;
+  }): Observable<Evento & { mensaje?: string }> {
+    return this.http.post<Evento & { mensaje?: string }>(`${this.base}/eventos`, payload);
   }
 }

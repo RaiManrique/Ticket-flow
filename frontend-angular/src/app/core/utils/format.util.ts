@@ -40,4 +40,6 @@ export const CATEGORY_LABEL: Record<string, string> = {
   concierto: 'CONCIERTOS',
   festival: 'FESTIVALES',
   teatro: 'TEATRO',
+  deporte: 'DEPORTE',
+  otro: 'OTROS',
 };

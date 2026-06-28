@@ -29,7 +29,7 @@ export class UsuarioInicioComponent implements OnInit {
   feedError = '';
 
   ngOnInit(): void {
-    if (!this.state.all().length) this.state.load();
+    this.state.load();
     this.social.publicaciones().subscribe({
       next: (p) => (this.feed = p.slice(0, 4)),
       error: (err) => (this.feedError = err.message),

@@ -1,7 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AdminService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { formatMoney, formatDate } from '../../core/utils/format.util';
 
 @Component({
@@ -27,9 +29,11 @@ import { formatMoney, formatDate } from '../../core/utils/format.util';
     </div>
   `,
 })
-export class AdminPanelComponent implements OnInit {
+export class AdminPanelComponent implements OnInit, OnDestroy {
   private readonly admin = inject(AdminService);
+  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
+  private sessionSub?: Subscription;
 
   panel: 'usuarios' | 'eventos' | 'ventas' | 'reembolsos' = 'usuarios';
   title = '';
@@ -39,8 +43,20 @@ export class AdminPanelComponent implements OnInit {
   error = '';
 
   ngOnInit(): void {
+    this.initPanel();
+    this.sessionSub = this.auth.onSessionChange().subscribe(() => this.initPanel());
+  }
+
+  ngOnDestroy(): void {
+    this.sessionSub?.unsubscribe();
+  }
+
+  private initPanel(): void {
     const path = this.route.snapshot.routeConfig?.path || 'usuarios';
     this.panel = path as typeof this.panel;
+    this.loading = true;
+    this.error = '';
+    this.rows = [];
     const cfg: Record<string, { title: string; cols: string[]; load: () => ReturnType<AdminService['usuarios']> }> = {
       usuarios: { title: 'Usuarios', cols: ['username', 'email', 'rol', 'nombre_completo'], load: () => this.admin.usuarios() as never },
       eventos: { title: 'Eventos', cols: ['titulo', 'categoria', 'ciudad', 'estado'], load: () => this.admin.eventos() as never },

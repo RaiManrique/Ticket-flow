@@ -30,6 +30,8 @@ export class EventCardComponent {
   formatDateCard = formatDateCard;
 
   soldOut(e: Evento): boolean {
+    if (e.estado === 'agotado' || e.estado === 'cancelado') return true;
+    if (e.precio_minimo == null) return false;
     return e.boletos_disponibles === 0;
   }
 

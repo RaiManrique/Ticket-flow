@@ -3,11 +3,16 @@
   <aside class="admin-sidebar">
     <a routerLink="/admin" class="brand">
       <img src="/img/logo.png" alt="TicketFlow" width="42" height="42" style="border-radius:10px;">
-      <div><strong>TicketFlow</strong><small>Panel admin</small></div>
+      <div>
+        <strong>TicketFlow</strong>
+        <small>{{ isAdmin ? 'Panel admin' : 'Panel organizador' }}</small>
+      </div>
     </a>
     <nav class="admin-nav">
       <a class="admin-nav-btn" routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
-      <a class="admin-nav-btn" routerLink="/admin/usuarios" routerLinkActive="active">Usuarios</a>
+      @if (isAdmin) {
+        <a class="admin-nav-btn" routerLink="/admin/usuarios" routerLinkActive="active">Usuarios</a>
+      }
       <a class="admin-nav-btn" routerLink="/admin/eventos" routerLinkActive="active">Eventos</a>
       <a class="admin-nav-btn" routerLink="/admin/ventas" routerLinkActive="active">Ventas</a>
       <a class="admin-nav-btn" routerLink="/admin/reembolsos" routerLinkActive="active">Reembolsos</a>

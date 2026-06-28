@@ -2,12 +2,14 @@ const express = require("express");
 const { Evento, Boleto } = require("../models");
 const { enrichEvento } = require("../data/ticketing");
 const { requireObjectId } = require("../utils/validate");
+const { createDefaultBoletos } = require("../utils/event-boletos");
 
 const router = express.Router();
 
 router.get("/", async (_req, res) => {
   try {
-    const eventos = await Evento.find({ estado: "publicado" })
+    res.set("Cache-Control", "no-store");
+    const eventos = await Evento.find({ estado: { $in: ["publicado", "agotado"] } })
       .sort({ fecha_evento: 1 })
       .lean();
 

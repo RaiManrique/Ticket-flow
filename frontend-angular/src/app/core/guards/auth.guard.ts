@@ -11,6 +11,7 @@ export const authGuard: CanActivateFn = () => {
   const token = auth.getToken();
 
   if (user && token && auth.isJwtToken(token)) {
+    auth.syncStoredSession();
     return of(true);
   }
 
@@ -42,6 +43,7 @@ export function roleGuard(roles: UserRole[]): CanActivateFn {
     };
 
     if (auth.getUser() && auth.isJwtToken(auth.getToken())) {
+      auth.syncStoredSession();
       return of(check());
     }
 
