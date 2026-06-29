@@ -1,9 +1,11 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const { Boleto, Venta, Evento, Reembolso } = require("../models");
-const { requireAuth } = require("../middleware/auth");
+const { requireAuth, requireStaff } = require("../middleware/auth");
 const { requireObjectId } = require("../utils/validate");
 const { evaluarReembolso } = require("../data/ticketing");
+const { scopedEventIdsFilter } = require("../utils/staff");
+const { enrichVentas, ventasResumen } = require("../utils/ventas-panel");
 
 const router = express.Router();
 
@@ -124,6 +126,20 @@ router.get("/mias", requireAuth, async (req, res) => {
       .limit(30)
       .lean();
     res.json(ventas);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/panel", requireAuth, requireStaff, async (req, res) => {
+  try {
+    const ventaScope = await scopedEventIdsFilter(req.user);
+    const ventas = await Venta.find(ventaScope).sort({ fecha_venta: -1 }).limit(50).lean();
+    const [resumen, items] = await Promise.all([
+      ventasResumen(ventaScope),
+      enrichVentas(ventas),
+    ]);
+    res.json({ resumen, ventas: items });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

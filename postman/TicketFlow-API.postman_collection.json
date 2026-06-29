@@ -320,6 +320,14 @@
             },
             "url": "{{base_url}}/ventas/reembolso"
           }
+        },
+        {
+          "name": "Panel ventas (organizador/admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ventas/panel",
+            "description": "Requiere token de organizador o admin (login en 01 - Auth). No esta en /admin."
+          }
         }
       ]
     },
@@ -414,10 +422,6 @@
             },
             "url": "{{base_url}}/admin/eventos"
           }
-        },
-        {
-          "name": "Ventas (staff)",
-          "request": { "method": "GET", "url": "{{base_url}}/admin/ventas" }
         },
         {
           "name": "Reembolsos (staff)",

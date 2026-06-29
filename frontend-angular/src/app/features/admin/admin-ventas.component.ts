@@ -39,7 +39,7 @@ export class AdminVentasComponent implements OnInit, OnDestroy {
   load(): void {
     this.loading = true;
     this.error = '';
-    this.admin.ventas().subscribe({
+    this.admin.ventasPanel().subscribe({
       next: (d) => {
         this.data = d;
         this.loading = false;

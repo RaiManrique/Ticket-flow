@@ -60,7 +60,7 @@ export class AdminPanelComponent implements OnInit, OnDestroy {
     const cfg: Record<string, { title: string; cols: string[]; load: () => ReturnType<AdminService['usuarios']> }> = {
       usuarios: { title: 'Usuarios', cols: ['username', 'email', 'rol', 'nombre_completo'], load: () => this.admin.usuarios() as never },
       eventos: { title: 'Eventos', cols: ['titulo', 'categoria', 'ciudad', 'estado'], load: () => this.admin.eventos() as never },
-      ventas: { title: 'Ventas', cols: ['referencia_pago', 'estado', 'metodo_pago', 'monto_total'], load: () => this.admin.ventas() as never },
+      ventas: { title: 'Ventas', cols: ['referencia_pago', 'estado', 'metodo_pago', 'monto_total'], load: () => this.admin.ventasPanel() as never },
       reembolsos: { title: 'Reembolsos', cols: ['referencia', 'monto', 'estado', 'motivo'], load: () => this.admin.reembolsos() as never },
     };
     const c = cfg[this.panel];

@@ -110,8 +110,8 @@ export class AdminService {
     return this.http.get<EventoOrganizadorDetalle>(`${this.base}/eventos/${id}/detalle`);
   }
 
-  ventas(): Observable<VentasPanelResponse> {
-    return this.http.get<VentasPanelResponse>(`${this.base}/ventas`);
+  ventasPanel(): Observable<VentasPanelResponse> {
+    return this.http.get<VentasPanelResponse>(`${environment.apiUrl}/ventas/panel`);
   }
 
   reembolsos(): Observable<ReembolsosPanelResponse> {

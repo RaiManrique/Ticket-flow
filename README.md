@@ -14,7 +14,7 @@ Plataforma de **venta de boletos** y **red social de eventos** en el Perú. Proy
 ┌────────────────────────────▼─────────────────────────────────┐
 │  CAPA DE APLICACION                                          │
 │  TicketFlow-API (Node.js + Express) — http://127.0.0.1:3000  │
-│  REST API: auth JWT, eventos, ventas, reembolsos, social    │
+│  REST API: auth JWT, eventos, compras, reembolsos, social, admin │
 └────────────────────────────┬─────────────────────────────────┘
                              │ mongo:27017 (red interna)
 ┌────────────────────────────▼─────────────────────────────────┐
@@ -291,9 +291,9 @@ Si falta el header o el token expiro: `401` con `"Sesion invalida o expirada"`.
 
 Rutas **sin token** (publicas): `GET /api/health`, `GET /api/eventos`, `POST /api/auth/login`, `POST /api/auth/register`, `GET /api/politicas`, `GET /api/demo/login-info`.
 
-Rutas **con token usuario**: `/api/ventas/*`, `GET /api/auth/me`, `POST /api/social/publicaciones`, etc.
+Rutas **con token usuario**: `/api/ventas/mis-boletos`, `/api/ventas/mias`, `GET /api/auth/me`, `POST /api/social/publicaciones`, etc.
 
-Rutas **token organizador/admin**: `/api/admin/*` (organizador ve solo sus datos; admin ve todo).
+Rutas **token organizador/admin**: `/api/ventas/panel`, `/api/admin/*` (organizador ve solo sus datos; admin ve todo).
 
 ### Postman (API)
 
@@ -458,6 +458,18 @@ docker compose up -d --build
 
 ## API (capa de aplicación)
 
+### Rutas por módulo
+
+| Módulo | Prefijo | Responsabilidad |
+|--------|---------|-----------------|
+| Auth | `/api/auth` | Login, registro, JWT |
+| Eventos | `/api/eventos` | Catálogo público |
+| **Ventas** | `/api/ventas` | Compras, billetera, reembolsos y **panel staff** |
+| Social | `/api/social` | Publicaciones y comunidad |
+| Admin | `/api/admin` | Dashboard, eventos staff, usuarios (solo admin) |
+
+> **Ventas no van en `/api/admin`.** Toda la lógica de compras y el panel de ventas del organizador están en `/api/ventas` (colección `ventas` en MongoDB = capa de datos).
+
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
 | GET | `/api/health` | Estado del servicio |
@@ -469,6 +481,7 @@ docker compose up -d --build
 | GET | `/api/eventos/:id/boletos` | Boletos disponibles |
 | POST | `/api/ventas` | Comprar (requiere auth) |
 | GET | `/api/ventas/mis-boletos` | Billetera del usuario |
+| GET | `/api/ventas/panel` | Panel ventas (organizador/admin) |
 | POST | `/api/ventas/reembolso` | Solicitar reembolso |
 | GET | `/api/politicas` | Condiciones de compra/reembolso |
 | GET | `/api/social/publicaciones` | Feed social |
