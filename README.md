@@ -240,6 +240,61 @@ docker compose ps
 
 Mongo queda en **127.0.0.1** a propósito: la API se conecta por la red interna Docker (`mongo:27017`). Web y API escuchan en **todas las interfaces** (`0.0.0.0`) para Postman y otras PCs en la red. Variables en `.env`: `WEB_BIND_IP`, `API_BIND_IP`, `MONGO_BIND_IP`.
 
+### Como funciona el token JWT (importante)
+
+**No creas el token a mano.** La API lo genera cuando inicias sesion o te registras.
+
+| Paso | Que haces | Que devuelve la API |
+|------|-----------|---------------------|
+| 1 | `POST /api/auth/login` con usuario y contrasena | JSON con campo `"token": "eyJhbG..."` |
+| 2 | Copias ese valor (o Postman lo guarda en `{{token}}`) | — |
+| 3 | En rutas protegidas envias el header | `Authorization: Bearer eyJhbG...` |
+
+El token es una cadena larga con **3 partes separadas por puntos** (formato JWT), por ejemplo:
+
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZjBhMDAxMDAwMDAwMDAwMDAwMDA0Iiwicm9sIjoidXN1YXJpbyIsInVzZXJuYW1lIjoicmFpX21hbnJpcXVlIiwiaWF0IjoxNzM... .signature...
+```
+
+En Postman la variable `token` empieza **vacia** hasta que ejecutas **Login**. Eso es normal.
+
+#### Obtener token (Postman o curl)
+
+**Postman:** carpeta `01 - Auth` → **Login usuario (rai_manrique)** → Send.  
+El script de prueba guarda automaticamente el token en el entorno **TicketFlow Local**.
+
+**PowerShell (ver token en consola):**
+
+```powershell
+$body = '{"login":"rai_manrique","password":"TicketFlow2026"}'
+$r = Invoke-RestMethod -Uri "http://127.0.0.1:3000/api/auth/login" -Method POST -ContentType "application/json" -Body $body
+$r.token          # copia esto para Bearer
+$r.user.username  # rai_manrique
+```
+
+#### Validar que el token funciona
+
+```http
+GET http://127.0.0.1:3000/api/auth/me
+Authorization: Bearer PEGA_AQUI_EL_TOKEN_DEL_LOGIN
+```
+
+Respuesta esperada (`200`): datos del usuario (`username`, `rol`, etc.).  
+Si falta el header o el token expiro: `401` con `"Sesion invalida o expirada"`.
+
+#### Que valida la API (`requireAuth`)
+
+1. Header `Authorization: Bearer <token>` presente y formato JWT valido
+2. Firma correcta (`JWT_SECRET` en `.env` del contenedor `api`)
+3. Token no expirado (default **24 h**, variable `JWT_EXPIRES`)
+4. Usuario existe en MongoDB
+
+Rutas **sin token** (publicas): `GET /api/health`, `GET /api/eventos`, `POST /api/auth/login`, `POST /api/auth/register`, `GET /api/politicas`, `GET /api/demo/login-info`.
+
+Rutas **con token usuario**: `/api/ventas/*`, `GET /api/auth/me`, `POST /api/social/publicaciones`, etc.
+
+Rutas **token organizador/admin**: `/api/admin/*` (organizador ve solo sus datos; admin ve todo).
+
 ### Postman (API)
 
 Puedes llamar la API de dos formas:
@@ -281,22 +336,26 @@ En la carpeta `postman/` del repo:
 
 **Orden sugerido de pruebas:**
 
-1. `00 - Health` → Health check (debe responder `mongo: connected`)
-2. `01 - Auth` → Login usuario (guarda el `token` automaticamente)
-3. `02 - Eventos` → Listar y boletos (actualiza `evento_id` y `boleto_id`)
-4. `03 - Ventas` → Cupo, mis boletos, comprar (requiere token de usuario)
-5. `05 - Admin` → Login organizador/admin antes de estas rutas
-6. `07 - Via Web` → Misma API pasando por nginx en `:8090`
+1. Activa el entorno **TicketFlow Local** (esquina superior derecha en Postman).
+2. `00 - Health` → Health check (`mongo: connected`).
+3. `01 - Auth` → **Login usuario** → Send (**obligatorio antes de ventas/admin**).
+4. `01 - Auth` → **Verificar token (GET /me)** → debe dar `200`.
+5. `02 - Eventos` → Listar y boletos.
+6. `03 - Ventas` → Cupo, mis boletos (usa el token guardado).
+7. Para admin: **Login organizador** o **Login admin**, luego carpeta `05 - Admin`.
+
+Si `{{token}}` esta vacio y llamas `/ventas/mis-boletos`, recibiras **401**. Vuelve al paso 3.
 
 Variables del entorno:
 
-| Variable | Valor default |
-|----------|---------------|
-| `base_url` | `http://127.0.0.1:3000/api` |
-| `base_url_web` | `http://127.0.0.1:8090/api` |
-| `demo_password` | `TicketFlow2026` |
-| `evento_id` | Teatro demo (seed Mongo) |
-| `boleto_id` | Boleto disponible demo |
+| Variable | Valor inicial | Descripcion |
+|----------|---------------|-------------|
+| `base_url` | `http://127.0.0.1:3000/api` | URL directa API |
+| `base_url_web` | `http://127.0.0.1:8090/api` | Via nginx |
+| `demo_password` | `TicketFlow2026` | Contrasena cuentas demo |
+| `token` | *(vacio)* | Se llena sola al hacer Login |
+| `evento_id` | ID teatro demo | Se actualiza al listar eventos |
+| `boleto_id` | ID boleto demo | Se actualiza al listar boletos |
 
 ### Iniciar sesión
 

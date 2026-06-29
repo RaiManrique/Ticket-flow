@@ -2,11 +2,12 @@
   "info": {
     "_postman_id": "ticketflow-api-collection",
     "name": "TicketFlow API",
-    "description": "Coleccion para probar la API de TicketFlow.\n\n1. Importa tambien el entorno `TicketFlow-Local.postman_environment.json`.\n2. Levanta Docker: `docker compose up -d mongo api`.\n3. Ejecuta **Auth > Login usuario** (guarda el token automaticamente).\n4. Prueba el resto de carpetas.\n\nBase URL directa: {{base_url}}\nVia nginx web: {{base_url_web}}",
+    "description": "Coleccion TicketFlow API.\n\nIMPORTANTE — El token NO se escribe a mano:\n1. Importa el entorno TicketFlow-Local.postman_environment.json\n2. Activa ese entorno (arriba a la derecha)\n3. docker compose up -d mongo api\n4. Ejecuta Login usuario → el campo token se llena solo\n5. Ejecuta Verificar token (GET /me) para confirmar\n\nRutas protegidas usan: Authorization: Bearer {{token}}",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "base_url", "value": "http://127.0.0.1:3000/api" },
+    { "key": "demo_password", "value": "TicketFlow2026" },
     { "key": "token", "value": "" },
     { "key": "evento_id", "value": "64f0b0010000000000000003" },
     { "key": "boleto_id", "value": "64f0c0010000000000000005" },
@@ -61,13 +62,56 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "pm.test('Login OK', () => pm.response.to.have.status(200));",
                   "if (pm.response.code === 200) {",
                   "  const j = pm.response.json();",
+                  "  pm.test('Token JWT en respuesta', () => {",
+                  "    pm.expect(j.token).to.be.a('string').and.not.empty;",
+                  "    pm.expect(j.token.split('.').length).to.eql(3);",
+                  "  });",
                   "  pm.collectionVariables.set('token', j.token);",
                   "  pm.environment.set('token', j.token);",
                   "  console.log('Token guardado para', j.user.username);",
-                  "}",
-                  "pm.test('Login OK', () => pm.response.to.have.status(200));"
+                  "  console.log('Usa Authorization: Bearer ' + j.token.substring(0, 24) + '...');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verificar token (GET /me)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/me",
+            "description": "Ejecuta DESPUES del Login. Si {{token}} esta vacio, fallara con 401."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const t = pm.environment.get('token') || pm.collectionVariables.get('token');",
+                  "if (!t) {",
+                  "  console.warn('Sin token: ejecuta primero Login usuario');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Token valido (200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const u = pm.response.json();",
+                  "  pm.test('Usuario en sesion', () => pm.expect(u.username).to.be.a('string'));",
+                  "  console.log('Sesion OK:', u.username, '| rol:', u.rol);",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -224,6 +268,18 @@
     {
       "name": "03 - Ventas (usuario auth)",
       "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const t = pm.environment.get('token') || pm.collectionVariables.get('token');",
+              "if (!t) console.warn('Ejecuta Login en 01 - Auth antes de probar ventas');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "item": [
         {
           "name": "Cupo por evento",
