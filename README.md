@@ -232,11 +232,71 @@ notepad .env
 docker compose ps
 ```
 
-| Servicio | URL / Puerto | Contenedor |
-|----------|--------------|------------|
-| **Web** (Angular) | http://127.0.0.1:8090 | TicketFlow-Web |
-| **API** | http://127.0.0.1:3000/api/health | TicketFlow-API |
-| **MongoDB** | 127.0.0.1:27018 | TicketFlow-Mongo |
+| Servicio | URL / Puerto | Contenedor | Bind (Docker) |
+|----------|--------------|------------|---------------|
+| **Web** (Angular + proxy `/api`) | http://127.0.0.1:8090 | TicketFlow-Web | `0.0.0.0:8090` (accesible en LAN) |
+| **API** (directa, Postman) | http://127.0.0.1:3000/api/health | TicketFlow-API | `0.0.0.0:3000` |
+| **MongoDB** | 127.0.0.1:27018 | TicketFlow-Mongo | `127.0.0.1:27018` (solo local) |
+
+Mongo queda en **127.0.0.1** a propósito: la API se conecta por la red interna Docker (`mongo:27017`). Web y API escuchan en **todas las interfaces** (`0.0.0.0`) para Postman y otras PCs en la red. Variables en `.env`: `WEB_BIND_IP`, `API_BIND_IP`, `MONGO_BIND_IP`.
+
+### Postman (API)
+
+Puedes llamar la API de dos formas:
+
+| Modo | Base URL | Ejemplo |
+|------|----------|---------|
+| **Directo** (recomendado) | `http://127.0.0.1:3000/api` | `GET /health` → `http://127.0.0.1:3000/api/health` |
+| **Via web** (nginx proxy) | `http://127.0.0.1:8090/api` | `POST /auth/login` → `http://127.0.0.1:8090/api/auth/login` |
+
+Login de prueba:
+
+```http
+POST http://127.0.0.1:3000/api/auth/login
+Content-Type: application/json
+
+{"login": "rai_manrique", "password": "TicketFlow2026"}
+```
+
+Rutas protegidas: header `Authorization: Bearer <token>`.
+
+Desde otra PC en la misma red, cambia `127.0.0.1` por la IP de tu equipo (ej. `http://192.168.1.50:3000/api/health`).
+
+Tras cambiar puertos o bind en `.env`:
+
+```powershell
+docker compose up -d --force-recreate web api
+```
+
+### Coleccion Postman (pruebas completas)
+
+En la carpeta `postman/` del repo:
+
+| Archivo | Uso |
+|---------|-----|
+| `TicketFlow-API.postman_collection.json` | Todas las rutas (auth, eventos, ventas, admin, social) |
+| `TicketFlow-Local.postman_environment.json` | Variables: `base_url`, `token`, IDs demo |
+
+**Importar en Postman:** File → Import → selecciona ambos JSON. Activa el entorno **TicketFlow Local**.
+
+**Orden sugerido de pruebas:**
+
+1. `00 - Health` → Health check (debe responder `mongo: connected`)
+2. `01 - Auth` → Login usuario (guarda el `token` automaticamente)
+3. `02 - Eventos` → Listar y boletos (actualiza `evento_id` y `boleto_id`)
+4. `03 - Ventas` → Cupo, mis boletos, comprar (requiere token de usuario)
+5. `05 - Admin` → Login organizador/admin antes de estas rutas
+6. `07 - Via Web` → Misma API pasando por nginx en `:8090`
+
+Variables del entorno:
+
+| Variable | Valor default |
+|----------|---------------|
+| `base_url` | `http://127.0.0.1:3000/api` |
+| `base_url_web` | `http://127.0.0.1:8090/api` |
+| `demo_password` | `TicketFlow2026` |
+| `evento_id` | Teatro demo (seed Mongo) |
+| `boleto_id` | Boleto disponible demo |
 
 ### Iniciar sesión
 
@@ -396,6 +456,9 @@ Variables principales en `.env`:
 | `JWT_SECRET` | Firma de tokens |
 | `WEB_PORT` | Puerto web (default `8090`) |
 | `API_PORT` | Puerto API (default `3000`) |
+| `WEB_BIND_IP` | Interfaz del puerto web (default `0.0.0.0`; Postman/LAN) |
+| `API_BIND_IP` | Interfaz del puerto API (default `0.0.0.0`) |
+| `MONGO_BIND_IP` | Interfaz Mongo (default `127.0.0.1`, solo local) |
 | `CORS_ORIGINS` | Origenes permitidos (incluye `:4200` para ng serve) |
 
 ---

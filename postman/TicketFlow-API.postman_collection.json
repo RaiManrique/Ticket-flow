@@ -1,0 +1,415 @@
+{
+  "info": {
+    "_postman_id": "ticketflow-api-collection",
+    "name": "TicketFlow API",
+    "description": "Coleccion para probar la API de TicketFlow.\n\n1. Importa tambien el entorno `TicketFlow-Local.postman_environment.json`.\n2. Levanta Docker: `docker compose up -d mongo api`.\n3. Ejecuta **Auth > Login usuario** (guarda el token automaticamente).\n4. Prueba el resto de carpetas.\n\nBase URL directa: {{base_url}}\nVia nginx web: {{base_url_web}}",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:3000/api" },
+    { "key": "token", "value": "" },
+    { "key": "evento_id", "value": "64f0b0010000000000000003" },
+    { "key": "boleto_id", "value": "64f0c0010000000000000005" },
+    { "key": "publicacion_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "00 - Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Mongo conectado', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.status).to.eql('ok');",
+                  "  pm.expect(j.mongo).to.eql('connected');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 - Auth",
+      "item": [
+        {
+          "name": "Login usuario (rai_manrique)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"rai_manrique\",\n  \"password\": \"{{demo_password}}\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  pm.collectionVariables.set('token', j.token);",
+                  "  pm.environment.set('token', j.token);",
+                  "  console.log('Token guardado para', j.user.username);",
+                  "}",
+                  "pm.test('Login OK', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login organizador (victor_arapa)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"victor_arapa\",\n  \"password\": \"{{demo_password}}\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  pm.collectionVariables.set('token', j.token);",
+                  "  pm.environment.set('token', j.token);",
+                  "}",
+                  "pm.test('Login OK', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login admin (admin_ticketflow)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"admin_ticketflow\",\n  \"password\": \"{{demo_password}}\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  pm.collectionVariables.set('token', j.token);",
+                  "  pm.environment.set('token', j.token);",
+                  "}",
+                  "pm.test('Login OK', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me (sesion actual)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/me"
+          }
+        },
+        {
+          "name": "Register usuario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test_fan_{{$timestamp}}@example.com\",\n  \"username\": \"test_fan_{{$timestamp}}\",\n  \"nombre_completo\": \"Fan de Prueba\",\n  \"password\": \"MiClave12345\"\n}"
+            },
+            "url": "{{base_url}}/auth/register"
+          }
+        },
+        {
+          "name": "Register organizador",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"org_{{$timestamp}}@example.com\",\n  \"username\": \"org_{{$timestamp}}\",\n  \"nombre_completo\": \"Productora Demo\",\n  \"password\": \"MiClave12345\"\n}"
+            },
+            "url": "{{base_url}}/auth/register-organizer"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Eventos (publico)",
+      "item": [
+        {
+          "name": "Listar eventos publicados",
+          "request": { "method": "GET", "url": "{{base_url}}/eventos" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const list = pm.response.json();",
+                  "  if (list.length) {",
+                  "    pm.collectionVariables.set('evento_id', list[0]._id);",
+                  "    pm.environment.set('evento_id', list[0]._id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle evento",
+          "request": { "method": "GET", "url": "{{base_url}}/eventos/{{evento_id}}/detalle" }
+        },
+        {
+          "name": "Evento por ID",
+          "request": { "method": "GET", "url": "{{base_url}}/eventos/{{evento_id}}" }
+        },
+        {
+          "name": "Boletos del evento",
+          "request": { "method": "GET", "url": "{{base_url}}/eventos/{{evento_id}}/boletos" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const boletos = pm.response.json();",
+                  "  const libre = boletos.find(b => b.estado === 'disponible');",
+                  "  if (libre) {",
+                  "    pm.collectionVariables.set('boleto_id', libre._id);",
+                  "    pm.environment.set('boleto_id', libre._id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Ventas (usuario auth)",
+      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+      "item": [
+        {
+          "name": "Cupo por evento",
+          "request": { "method": "GET", "url": "{{base_url}}/ventas/cupo/{{evento_id}}" }
+        },
+        {
+          "name": "Mis boletos (billetera)",
+          "request": { "method": "GET", "url": "{{base_url}}/ventas/mis-boletos" }
+        },
+        {
+          "name": "Mis reembolsos",
+          "request": { "method": "GET", "url": "{{base_url}}/ventas/mis-reembolsos" }
+        },
+        {
+          "name": "Mis ventas",
+          "request": { "method": "GET", "url": "{{base_url}}/ventas/mias" }
+        },
+        {
+          "name": "Comprar boletos",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evento_id\": \"{{evento_id}}\",\n  \"boletos_ids\": [\"{{boleto_id}}\"],\n  \"metodo_pago\": \"tarjeta\"\n}"
+            },
+            "url": "{{base_url}}/ventas"
+          }
+        },
+        {
+          "name": "Solicitar reembolso",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"boleto_id\": \"{{boleto_id}}\",\n  \"motivo\": \"No podre asistir al evento por motivos personales urgentes.\"\n}"
+            },
+            "url": "{{base_url}}/ventas/reembolso"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Social",
+      "item": [
+        {
+          "name": "Listar publicaciones",
+          "request": { "method": "GET", "url": "{{base_url}}/social/publicaciones" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const list = pm.response.json();",
+                  "  if (list.length) {",
+                  "    pm.collectionVariables.set('publicacion_id', list[0]._id);",
+                  "    pm.environment.set('publicacion_id', list[0]._id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear publicacion",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Probando feed desde Postman\",\n  \"evento_id\": \"{{evento_id}}\"\n}"
+            },
+            "url": "{{base_url}}/social/publicaciones"
+          }
+        },
+        {
+          "name": "Like publicacion",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "url": "{{base_url}}/social/publicaciones/{{publicacion_id}}/like"
+          }
+        },
+        {
+          "name": "Comentarios de publicacion",
+          "request": { "method": "GET", "url": "{{base_url}}/social/publicaciones/{{publicacion_id}}/comentarios" }
+        },
+        {
+          "name": "Agregar comentario",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Comentario de prueba desde Postman\"\n}"
+            },
+            "url": "{{base_url}}/social/publicaciones/{{publicacion_id}}/comentarios"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Admin / Organizador",
+      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": { "method": "GET", "url": "{{base_url}}/admin/dashboard" }
+        },
+        {
+          "name": "Eventos (staff)",
+          "request": { "method": "GET", "url": "{{base_url}}/admin/eventos" }
+        },
+        {
+          "name": "Detalle evento (staff)",
+          "request": { "method": "GET", "url": "{{base_url}}/admin/eventos/{{evento_id}}/detalle" }
+        },
+        {
+          "name": "Crear evento",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Evento Postman Demo\",\n  \"descripcion\": \"Creado desde la coleccion de pruebas\",\n  \"categoria\": \"concierto\",\n  \"ciudad\": \"Lima\",\n  \"fecha_evento\": \"2026-12-01T20:00:00.000Z\",\n  \"precio_base\": 90\n}"
+            },
+            "url": "{{base_url}}/admin/eventos"
+          }
+        },
+        {
+          "name": "Ventas (staff)",
+          "request": { "method": "GET", "url": "{{base_url}}/admin/ventas" }
+        },
+        {
+          "name": "Reembolsos (staff)",
+          "request": { "method": "GET", "url": "{{base_url}}/admin/reembolsos" }
+        },
+        {
+          "name": "Usuarios (solo admin)",
+          "request": { "method": "GET", "url": "{{base_url}}/admin/usuarios" }
+        }
+      ]
+    },
+    {
+      "name": "06 - Politicas y Demo",
+      "item": [
+        {
+          "name": "Politicas",
+          "request": { "method": "GET", "url": "{{base_url}}/politicas" }
+        },
+        {
+          "name": "Demo login info",
+          "request": { "method": "GET", "url": "{{base_url}}/demo/login-info" }
+        },
+        {
+          "name": "Demo compradores",
+          "request": { "method": "GET", "url": "{{base_url}}/demo/compradores" }
+        }
+      ]
+    },
+    {
+      "name": "07 - Via Web (nginx :8090)",
+      "item": [
+        {
+          "name": "Health via web",
+          "request": { "method": "GET", "url": "{{base_url_web}}/health" }
+        },
+        {
+          "name": "Login via web",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"rai_manrique\",\n  \"password\": \"{{demo_password}}\"\n}"
+            },
+            "url": "{{base_url_web}}/auth/login"
+          }
+        }
+      ]
+    }
+  ]
+}

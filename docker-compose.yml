@@ -66,7 +66,7 @@ services:
       REFUND_MAX_DAYS: ${REFUND_MAX_DAYS:-30}
       REFUND_MIN_HOURS_BEFORE_EVENT: ${REFUND_MIN_HOURS_BEFORE_EVENT:-48}
     ports:
-      - "127.0.0.1:${API_PORT:-3000}:3000"
+      - "${API_BIND_IP:-0.0.0.0}:${API_PORT:-3000}:3000"
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 15s
@@ -88,7 +88,7 @@ services:
       com.ticketflow.layer: presentacion
       com.ticketflow.service: frontend
     ports:
-      - "127.0.0.1:${WEB_PORT:-8090}:80"
+      - "${WEB_BIND_IP:-0.0.0.0}:${WEB_PORT:-8090}:80"
     depends_on:
       api:
         condition: service_healthy
