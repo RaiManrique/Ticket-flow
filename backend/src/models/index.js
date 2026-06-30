@@ -29,37 +29,6 @@ const eventoSchema = new mongoose.Schema(
   { collection: "eventos" }
 );
 
-const boletoSchema = new mongoose.Schema(
-  {
-    evento_id: mongoose.Schema.Types.ObjectId,
-    zona: String,
-    fila: String,
-    asiento: String,
-    codigo_entrada: String,
-    precio: Number,
-    estado: String,
-    reservado_por: mongoose.Schema.Types.ObjectId,
-    reservado_hasta: Date,
-    vendido_a: mongoose.Schema.Types.ObjectId,
-    fecha_venta: Date,
-  },
-  { collection: "boletos" }
-);
-
-const ventaSchema = new mongoose.Schema(
-  {
-    usuario_id: mongoose.Schema.Types.ObjectId,
-    evento_id: mongoose.Schema.Types.ObjectId,
-    boletos_ids: [mongoose.Schema.Types.ObjectId],
-    monto_total: Number,
-    metodo_pago: String,
-    estado: String,
-    referencia_pago: String,
-    fecha_venta: Date,
-  },
-  { collection: "ventas" }
-);
-
 const publicacionSchema = new mongoose.Schema(
   {
     usuario_id: mongoose.Schema.Types.ObjectId,
@@ -82,28 +51,9 @@ const comentarioSchema = new mongoose.Schema(
   { collection: "comentarios" }
 );
 
-const reembolsoSchema = new mongoose.Schema(
-  {
-    usuario_id: mongoose.Schema.Types.ObjectId,
-    venta_id: mongoose.Schema.Types.ObjectId,
-    boleto_id: mongoose.Schema.Types.ObjectId,
-    evento_id: mongoose.Schema.Types.ObjectId,
-    motivo: String,
-    monto: Number,
-    estado: String,
-    referencia: String,
-    fecha_solicitud: Date,
-    fecha_procesado: Date,
-  },
-  { collection: "reembolsos" }
-);
-
 module.exports = {
   Usuario: mongoose.model("Usuario", usuarioSchema),
   Evento: mongoose.model("Evento", eventoSchema),
-  Boleto: mongoose.model("Boleto", boletoSchema),
-  Venta: mongoose.model("Venta", ventaSchema),
   Publicacion: mongoose.model("Publicacion", publicacionSchema),
   Comentario: mongoose.model("Comentario", comentarioSchema),
-  Reembolso: mongoose.model("Reembolso", reembolsoSchema),
 };

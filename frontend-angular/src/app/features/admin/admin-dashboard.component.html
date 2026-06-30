@@ -1,7 +1,7 @@
 <header class="admin-topbar">
   <div>
     <h1>Dashboard</h1>
-    <p>{{ isOrganizerView() ? 'Panorama de tus eventos, ventas e ingresos' : 'Panorama general de TicketFlow' }}</p>
+    <p>{{ isOrganizerView() ? 'Panorama de tus eventos y comunidad' : 'Panorama general de TicketFlow' }}</p>
   </div>
   <span class="status-pill ok">{{ isOrganizerView() ? 'Vista organizador' : 'Vista administrador' }}</span>
 </header>
@@ -23,43 +23,27 @@
       <small class="metric-hint">{{ isOrganizerView() ? 'Publicados por ti' : 'En catalogo' }}</small>
     </div>
     <div class="metric-card accent">
-      <span class="metric-label">Ingresos netos</span>
-      <strong class="metric-value">{{ formatMoney(resumen()!.ingresos_netos) }}</strong>
-      <small class="metric-hint">Tras {{ formatMoney(resumen()!.monto_reembolsado) }} en reembolsos</small>
-    </div>
-    <div class="metric-card">
-      <span class="metric-label">Ventas</span>
-      <strong class="metric-value">{{ resumen()!.ventas }}</strong>
-      <small class="metric-hint">Transacciones confirmadas</small>
-    </div>
-    <div class="metric-card">
-      <span class="metric-label">Ocupacion</span>
-      <strong class="metric-value">{{ resumen()!.ocupacion }}%</strong>
-      <small class="metric-hint">{{ resumen()!.boletos_vendidos }} vendidos / {{ resumen()!.boletos }} total</small>
-    </div>
-    <div class="metric-card">
-      <span class="metric-label">Reembolsos</span>
-      <strong class="metric-value">{{ resumen()!.reembolsos }}</strong>
-      <small class="metric-hint">Procesados</small>
+      <span class="metric-label">Publicaciones</span>
+      <strong class="metric-value">{{ resumen()!.publicaciones }}</strong>
+      <small class="metric-hint">Actividad en la comunidad</small>
     </div>
   </div>
 
   <div class="admin-grid-2">
     <div class="admin-card">
       <div class="admin-card-head">
-        <h3>Top eventos por ingresos</h3>
+        <h3>Top eventos por actividad</h3>
         <a routerLink="/admin/eventos" class="link-btn">Ver eventos</a>
       </div>
       @for (t of data.top_eventos; track t.evento_id) {
         <div class="org-rank-row">
           <div>
             <strong>{{ t.evento?.titulo || 'Evento' }}</strong>
-            <small>{{ t.ventas }} ventas · {{ t.entradas }} entradas</small>
+            <small>{{ t.publicaciones }} publicaciones · {{ t.likes }} likes</small>
           </div>
-          <strong>{{ formatMoney(t.ingresos) }}</strong>
         </div>
       } @empty {
-        <p class="org-muted">Aun no hay ventas registradas.</p>
+        <p class="org-muted">Aun no hay actividad registrada.</p>
       }
     </div>
 
@@ -81,61 +65,24 @@
     </div>
   </div>
 
-  <div class="admin-grid-2">
-    <div class="admin-card">
-      <h3>Inventario de boletos</h3>
-      @for (row of boletosPorEstado(); track row[0]) {
-        <div class="bar-row chart-bars">
-          <span class="bar-label">{{ row[0] }}</span>
-          <div class="bar-track"><div class="bar-fill" [style.width.%]="(row[1] / boletosMax()) * 100"></div></div>
-          <span class="bar-value">{{ row[1] }}</span>
-        </div>
-      } @empty {
-        <p class="org-muted">Sin boletos registrados.</p>
-      }
-    </div>
-
-    <div class="admin-card">
-      <div class="admin-card-head">
-        <h3>Ventas por metodo de pago</h3>
-        <a routerLink="/admin/ventas" class="link-btn">Ver todas</a>
-      </div>
-      @for (m of data.ventas_por_metodo; track m.metodo) {
-        <div class="org-rank-row">
-          <div>
-            <strong>{{ metodoLabel(m.metodo) }}</strong>
-            <small>{{ m.ventas }} transacciones</small>
-          </div>
-          <strong>{{ formatMoney(m.ingresos) }}</strong>
-        </div>
-      } @empty {
-        <p class="org-muted">Sin ventas por metodo aun.</p>
-      }
-    </div>
-  </div>
-
   <div class="admin-card">
     <div class="admin-card-head">
-      <h3>Actividad reciente</h3>
-      <a routerLink="/admin/ventas" class="link-btn">Historial completo</a>
+      <h3>Publicaciones recientes</h3>
+      <a routerLink="/usuario/comunidad" class="link-btn">Ver comunidad</a>
     </div>
-    @for (v of data.ventasRecientes; track v.referencia_pago) {
+    @for (p of data.publicaciones_recientes; track p._id) {
       <div class="org-sale-row">
         <div>
-          <code>{{ v.referencia_pago }}</code>
+          <strong>{{ p.autor?.nombre_completo || p.autor?.username || 'Usuario' }}</strong>
           <small>
-            {{ v.evento?.titulo || 'Evento' }} ·
-            {{ v.usuario?.nombre_completo || v.usuario?.username || 'Comprador' }} ·
-            {{ v.entradas || 0 }} entrada(s)
+            {{ p.evento?.titulo || 'Sin evento' }} ·
+            {{ p.texto }}
           </small>
         </div>
-        <div class="org-sale-side">
-          <strong>{{ formatMoney(v.monto_total) }}</strong>
-          <small>{{ v.fecha_venta ? formatDate(v.fecha_venta) : '' }}</small>
-        </div>
+        <small>{{ p.fecha_publicacion ? formatDate(p.fecha_publicacion) : '' }}</small>
       </div>
     } @empty {
-      <p class="org-muted">Sin ventas recientes.</p>
+      <p class="org-muted">Sin publicaciones recientes.</p>
     }
   </div>
 } @else {

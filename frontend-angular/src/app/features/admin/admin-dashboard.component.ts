@@ -5,7 +5,7 @@ import { Subscription } from 'rxjs';
 import { AdminService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminDashboardData } from '../../core/models/ticketflow.models';
-import { CATEGORY_LABEL, formatDate, formatMoney } from '../../core/utils/format.util';
+import { CATEGORY_LABEL, formatDate } from '../../core/utils/format.util';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -21,7 +21,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   data: AdminDashboardData | null = null;
   error = '';
   readonly isAdmin = this.auth.getUser()?.rol === 'admin';
-  formatMoney = formatMoney;
   formatDate = formatDate;
   categoryLabel = CATEGORY_LABEL;
 
@@ -49,17 +48,5 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   resumen() {
     return this.data?.resumen;
-  }
-
-  boletosPorEstado(): [string, number][] {
-    return Object.entries(this.data?.boletosPorEstado || {});
-  }
-
-  boletosMax(): number {
-    return Math.max(...Object.values(this.data?.boletosPorEstado || { _: 1 }), 1);
-  }
-
-  metodoLabel(metodo: string): string {
-    return ({ tarjeta: 'Tarjeta', yape: 'Yape', plin: 'Plin', transferencia: 'Transferencia' } as Record<string, string>)[metodo] || metodo;
   }
 }

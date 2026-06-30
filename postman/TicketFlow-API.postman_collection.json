@@ -266,73 +266,7 @@
       ]
     },
     {
-      "name": "03 - Ventas (usuario auth)",
-      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
-      "event": [
-        {
-          "listen": "prerequest",
-          "script": {
-            "exec": [
-              "const t = pm.environment.get('token') || pm.collectionVariables.get('token');",
-              "if (!t) console.warn('Ejecuta Login en 01 - Auth antes de probar ventas');"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "item": [
-        {
-          "name": "Cupo por evento",
-          "request": { "method": "GET", "url": "{{base_url}}/ventas/cupo/{{evento_id}}" }
-        },
-        {
-          "name": "Mis boletos (billetera)",
-          "request": { "method": "GET", "url": "{{base_url}}/ventas/mis-boletos" }
-        },
-        {
-          "name": "Mis reembolsos",
-          "request": { "method": "GET", "url": "{{base_url}}/ventas/mis-reembolsos" }
-        },
-        {
-          "name": "Mis ventas",
-          "request": { "method": "GET", "url": "{{base_url}}/ventas/mias" }
-        },
-        {
-          "name": "Comprar boletos",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"evento_id\": \"{{evento_id}}\",\n  \"boletos_ids\": [\"{{boleto_id}}\"],\n  \"metodo_pago\": \"tarjeta\"\n}"
-            },
-            "url": "{{base_url}}/ventas"
-          }
-        },
-        {
-          "name": "Solicitar reembolso",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"boleto_id\": \"{{boleto_id}}\",\n  \"motivo\": \"No podre asistir al evento por motivos personales urgentes.\"\n}"
-            },
-            "url": "{{base_url}}/ventas/reembolso"
-          }
-        },
-        {
-          "name": "Panel ventas (organizador/admin)",
-          "request": {
-            "method": "GET",
-            "url": "{{base_url}}/ventas/panel",
-            "description": "Requiere token de organizador o admin (login en 01 - Auth). No esta en /admin."
-          }
-        }
-      ]
-    },
-    {
-      "name": "04 - Social",
+      "name": "03 - Social",
       "item": [
         {
           "name": "Listar publicaciones",
@@ -418,14 +352,10 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"titulo\": \"Evento Postman Demo\",\n  \"descripcion\": \"Creado desde la coleccion de pruebas\",\n  \"categoria\": \"concierto\",\n  \"ciudad\": \"Lima\",\n  \"fecha_evento\": \"2026-12-01T20:00:00.000Z\",\n  \"precio_base\": 90\n}"
+              "raw": "{\n  \"titulo\": \"Evento Postman Demo\",\n  \"descripcion\": \"Creado desde la coleccion de pruebas\",\n  \"categoria\": \"concierto\",\n  \"ciudad\": \"Lima\",\n  \"fecha_evento\": \"2026-12-01T20:00:00.000Z\"\n}"
             },
             "url": "{{base_url}}/admin/eventos"
           }
-        },
-        {
-          "name": "Reembolsos (staff)",
-          "request": { "method": "GET", "url": "{{base_url}}/admin/reembolsos" }
         },
         {
           "name": "Usuarios (solo admin)",
@@ -434,19 +364,11 @@
       ]
     },
     {
-      "name": "06 - Politicas y Demo",
+      "name": "06 - Demo",
       "item": [
-        {
-          "name": "Politicas",
-          "request": { "method": "GET", "url": "{{base_url}}/politicas" }
-        },
         {
           "name": "Demo login info",
           "request": { "method": "GET", "url": "{{base_url}}/demo/login-info" }
-        },
-        {
-          "name": "Demo compradores",
-          "request": { "method": "GET", "url": "{{base_url}}/demo/compradores" }
         }
       ]
     },

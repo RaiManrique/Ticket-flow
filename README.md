@@ -8,13 +8,13 @@ Plataforma de **venta de boletos** y **red social de eventos** en el Perú. Proy
 ┌──────────────────────────────────────────────────────────────┐
 │  CAPA DE PRESENTACION                                        │
 │  TicketFlow-Web (Angular 19 + Nginx) — http://127.0.0.1:8090 │
-│  Login, eventos, checkout, billetera, comunidad, panel admin │
+│  Login, eventos, comunidad, panel admin │
 └────────────────────────────┬─────────────────────────────────┘
                              │ /api/*
 ┌────────────────────────────▼─────────────────────────────────┐
 │  CAPA DE APLICACION                                          │
 │  TicketFlow-API (Node.js + Express) — http://127.0.0.1:3000  │
-│  REST API: auth JWT, eventos, compras, reembolsos, social, admin │
+│  REST API: auth JWT, eventos, social, admin │
 └────────────────────────────┬─────────────────────────────────┘
                              │ mongo:27017 (red interna)
 ┌────────────────────────────▼─────────────────────────────────┐
@@ -289,11 +289,11 @@ Si falta el header o el token expiro: `401` con `"Sesion invalida o expirada"`.
 3. Token no expirado (default **24 h**, variable `JWT_EXPIRES`)
 4. Usuario existe en MongoDB
 
-Rutas **sin token** (publicas): `GET /api/health`, `GET /api/eventos`, `POST /api/auth/login`, `POST /api/auth/register`, `GET /api/politicas`, `GET /api/demo/login-info`.
+Rutas **sin token** (publicas): `GET /api/health`, `GET /api/eventos`, `POST /api/auth/login`, `POST /api/auth/register`, `GET /api/demo/login-info`.
 
-Rutas **con token usuario**: `/api/ventas/mis-boletos`, `/api/ventas/mias`, `GET /api/auth/me`, `POST /api/social/publicaciones`, etc.
+Rutas **con token usuario**: `GET /api/auth/me`, `POST /api/social/publicaciones`, etc.
 
-Rutas **token organizador/admin**: `/api/ventas/panel`, `/api/admin/*` (organizador ve solo sus datos; admin ve todo).
+Rutas **token organizador/admin**: `/api/admin/*` (organizador ve solo sus datos; admin ve todo).
 
 ### Postman (API)
 
@@ -464,11 +464,8 @@ docker compose up -d --build
 |--------|---------|-----------------|
 | Auth | `/api/auth` | Login, registro, JWT |
 | Eventos | `/api/eventos` | Catálogo público |
-| **Ventas** | `/api/ventas` | Compras, billetera, reembolsos y **panel staff** |
 | Social | `/api/social` | Publicaciones y comunidad |
 | Admin | `/api/admin` | Dashboard, eventos staff, usuarios (solo admin) |
-
-> **Ventas no van en `/api/admin`.** Toda la lógica de compras y el panel de ventas del organizador están en `/api/ventas` (colección `ventas` en MongoDB = capa de datos).
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
@@ -477,14 +474,9 @@ docker compose up -d --build
 | POST | `/api/auth/register` | Crear cuenta **solo rol usuario** |
 | GET | `/api/auth/me` | Usuario en sesión |
 | GET | `/api/eventos` | Listar eventos |
-| GET | `/api/eventos/:id/detalle` | Detalle + zonas/precios |
-| GET | `/api/eventos/:id/boletos` | Boletos disponibles |
-| POST | `/api/ventas` | Comprar (requiere auth) |
-| GET | `/api/ventas/mis-boletos` | Billetera del usuario |
-| GET | `/api/ventas/panel` | Panel ventas (organizador/admin) |
-| POST | `/api/ventas/reembolso` | Solicitar reembolso |
-| GET | `/api/politicas` | Condiciones de compra/reembolso |
+| GET | `/api/eventos/:id/detalle` | Detalle del evento |
 | GET | `/api/social/publicaciones` | Feed social |
+| POST | `/api/social/publicaciones` | Crear publicación (auth) |
 | GET | `/api/admin/dashboard` | Métricas (staff) |
 
 ---

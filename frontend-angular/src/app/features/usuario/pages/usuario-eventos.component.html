@@ -19,8 +19,6 @@
     <div class="events-toolbar-actions">
       <select class="toolbar-select" [ngModel]="state.sort()" (ngModelChange)="state.sort.set($event)">
         <option value="fecha-asc">Mas cercanos</option>
-        <option value="precio-asc">Menor precio</option>
-        <option value="precio-desc">Mayor precio</option>
         <option value="popularidad">Mas populares</option>
       </select>
       <button class="btn btn-ghost btn-sm" [class.active]="state.favoritesOnly()" type="button" (click)="toggleFavFilter()">Favoritos</button>
@@ -36,7 +34,7 @@
     } @else {
       @for (e of list(); track e._id) {
         <app-event-card [evento]="e" [favorite]="isFav(e)"
-          (buy)="buy($event)" (detail)="openDetail($event._id)" (share)="share($event)" (toggleFavorite)="toggleFav($event)" />
+          (detail)="openDetail($event._id)" (share)="share($event)" (toggleFavorite)="toggleFav($event)" />
       }
     }
   </div>
@@ -60,36 +58,16 @@
           </div>
         </div>
         <p class="event-detail-desc">{{ detailEvento.descripcion }}</p>
-        @if (detailEvento.estadisticas?.zonas?.length) {
-          <table class="event-detail-table">
-            <thead><tr><th>Zona</th><th>Precio</th><th>Disponibles</th></tr></thead>
-            <tbody>
-              @for (z of detailEvento.estadisticas!.zonas!; track z.zona) {
-                <tr>
-                  <td>{{ z.zona }}</td>
-                  <td>{{ formatMoney(z.precio_min) }}</td>
-                  <td>{{ z.disponibles }} / {{ z.total }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+        @if (detailEvento.info_comercial) {
+          <div class="event-detail-venue">
+            <strong>{{ detailEvento.info_comercial['recinto'] }}</strong>
+            <p>{{ detailEvento.info_comercial['direccion'] }}</p>
+          </div>
         }
         <div class="event-detail-actions">
-          <button class="btn btn-glow" type="button" (click)="buy(detailEvento); closeDetail()">Comprar entradas</button>
-          <button class="link-btn" type="button" (click)="openPolicies('reembolso')">Politicas</button>
+          <button class="btn btn-glow" type="button" routerLink="/usuario/comunidad">Ir a comunidad</button>
         </div>
       }
-    </div>
-  </div>
-}
-
-@if (showPolicies) {
-  <div class="ticket-modal">
-    <div class="ticket-modal-backdrop" (click)="showPolicies = false"></div>
-    <div class="ticket-modal-card policies-card">
-      <button type="button" class="ticket-modal-close" (click)="showPolicies = false">&times;</button>
-      <h3>Politicas TicketFlow</h3>
-      <div class="policies-content" [innerHTML]="policiesHtml"></div>
     </div>
   </div>
 }

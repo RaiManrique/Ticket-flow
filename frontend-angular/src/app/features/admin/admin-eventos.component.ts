@@ -9,7 +9,7 @@ import {
   EventoOrganizadorDetalle,
   EventoResumenOrganizador,
 } from '../../core/models/ticketflow.models';
-import { CATEGORY_LABEL, formatDate, formatMoney } from '../../core/utils/format.util';
+import { CATEGORY_LABEL, formatDate } from '../../core/utils/format.util';
 import { eventFlyer } from '../../core/utils/images.util';
 
 @Component({
@@ -40,13 +40,11 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
   categoria = 'concierto';
   ciudad = 'Lima';
   fecha_evento = '';
-  precio_base = 80;
 
   readonly categorias = ['concierto', 'festival', 'teatro', 'deporte', 'otro'];
   readonly isAdmin = this.auth.getUser()?.rol === 'admin';
   readonly categoryLabel = CATEGORY_LABEL;
   formatDate = formatDate;
-  formatMoney = formatMoney;
   eventFlyer = eventFlyer;
 
   ngOnInit(): void {
@@ -78,23 +76,7 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
   }
 
   resumen(e: EventoOrganizador): EventoResumenOrganizador {
-    return (
-      e.resumen || {
-        total_boletos: 0,
-        disponibles: 0,
-        vendidos: 0,
-        reservados: 0,
-        precio_minimo: null,
-        precio_maximo: null,
-        ventas: 0,
-        ingresos: 0,
-        entradas_vendidas: 0,
-        publicaciones: 0,
-        reembolsos: 0,
-        monto_reembolsado: 0,
-        ocupacion: 0,
-      }
-    );
+    return e.resumen || { publicaciones: 0, likes: 0 };
   }
 
   estadoLabel(estado?: string): string {
@@ -161,7 +143,6 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
         categoria: this.categoria,
         ciudad: this.ciudad.trim(),
         fecha_evento: new Date(this.fecha_evento).toISOString(),
-        precio_base: Number(this.precio_base) || 80,
       })
       .subscribe({
         next: (res) => {
@@ -180,9 +161,5 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
           this.saving = false;
         },
       });
-  }
-
-  estadosDetalle(): [string, number][] {
-    return Object.entries(this.detail?.boletos_por_estado || {});
   }
 }

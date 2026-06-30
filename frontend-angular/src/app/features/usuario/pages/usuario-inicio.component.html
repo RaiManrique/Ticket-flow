@@ -18,7 +18,7 @@
         </select>
         <input type="date" [(ngModel)]="fecha" class="chip-date">
       </div>
-      <button class="btn btn-search" type="button" (click)="search()">BUSCAR TICKET</button>
+      <button class="btn btn-search" type="button" (click)="search()">BUSCAR EVENTOS</button>
     </div>
   </section>
 
@@ -35,7 +35,7 @@
           } @else {
             @for (e of trending(); track e._id; let i = $index) {
               <app-event-card [evento]="e" [featured]="i === 0" [favorite]="isFav(e)"
-                (buy)="buy($event)" (detail)="detail($event)" (share)="share($event)" (toggleFavorite)="toggleFav($event)" />
+                (detail)="detail($event)" (share)="share($event)" (toggleFavorite)="toggleFav($event)" />
             }
           }
         </div>

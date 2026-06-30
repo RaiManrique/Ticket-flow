@@ -7,14 +7,10 @@ import { UsuarioLayoutComponent } from './features/usuario/usuario-layout.compon
 import { UsuarioInicioComponent } from './features/usuario/pages/usuario-inicio.component';
 import { UsuarioEventosComponent } from './features/usuario/pages/usuario-eventos.component';
 import { UsuarioComunidadComponent } from './features/usuario/pages/usuario-comunidad.component';
-import { UsuarioBilleteraComponent } from './features/usuario/pages/usuario-billetera.component';
-import { UsuarioCheckoutComponent } from './features/usuario/pages/usuario-checkout.component';
 import { AdminLayoutComponent } from './features/admin/admin-layout.component';
 import { AdminDashboardComponent } from './features/admin/admin-dashboard.component';
 import { AdminPanelComponent } from './features/admin/admin-panel.component';
 import { AdminEventosComponent } from './features/admin/admin-eventos.component';
-import { AdminVentasComponent } from './features/admin/admin-ventas.component';
-import { AdminReembolsosComponent } from './features/admin/admin-reembolsos.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -30,8 +26,6 @@ export const routes: Routes = [
       { path: 'inicio', component: UsuarioInicioComponent },
       { path: 'eventos', component: UsuarioEventosComponent },
       { path: 'comunidad', component: UsuarioComunidadComponent },
-      { path: 'billetera', component: UsuarioBilleteraComponent },
-      { path: 'checkout/:id', component: UsuarioCheckoutComponent },
     ],
   },
   {
@@ -42,8 +36,6 @@ export const routes: Routes = [
       { path: '', component: AdminDashboardComponent },
       { path: 'usuarios', component: AdminPanelComponent, data: { panel: 'usuarios' } },
       { path: 'eventos', component: AdminEventosComponent },
-      { path: 'ventas', component: AdminVentasComponent },
-      { path: 'reembolsos', component: AdminReembolsosComponent },
     ],
   },
   { path: '**', redirectTo: 'login' },

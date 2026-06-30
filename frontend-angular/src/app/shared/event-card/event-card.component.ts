@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Evento } from '../../core/models/ticketflow.models';
-import { CATEGORY_LABEL, formatDateCard, formatMoney } from '../../core/utils/format.util';
+import { CATEGORY_LABEL, formatDateCard } from '../../core/utils/format.util';
 import { eventFlyer } from '../../core/utils/images.util';
 
 @Component({
@@ -15,7 +15,6 @@ export class EventCardComponent {
   @Input() featured = false;
   @Input() favorite = false;
 
-  @Output() buy = new EventEmitter<Evento>();
   @Output() detail = new EventEmitter<Evento>();
   @Output() share = new EventEmitter<Evento>();
   @Output() toggleFavorite = new EventEmitter<Evento>();
@@ -26,14 +25,7 @@ export class EventCardComponent {
     return eventFlyer(e);
   }
 
-  formatMoney = formatMoney;
   formatDateCard = formatDateCard;
-
-  soldOut(e: Evento): boolean {
-    if (e.estado === 'agotado' || e.estado === 'cancelado') return true;
-    if (e.precio_minimo == null) return false;
-    return e.boletos_disponibles === 0;
-  }
 
   fansLabel(count: number): string {
     if (count >= 1000) return `${Math.floor(count / 1000)}K+ fans`;

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "health": "node scripts/health-check.js"
+    "health": "node scripts/health-check.js",
+    "validate:api": "node scripts/validate-api.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
