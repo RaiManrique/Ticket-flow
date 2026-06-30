@@ -162,4 +162,29 @@ router.get("/me", requireAuth, (req, res) => {
   res.json(req.user);
 });
 
+router.put("/me", requireAuth, async (req, res) => {
+  try {
+    const { nombre_completo, foto_perfil_url } = req.body;
+    const user = await Usuario.findById(req.user._id);
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+
+    if (nombre_completo) user.nombre_completo = String(nombre_completo).trim();
+    if (foto_perfil_url) user.foto_perfil_url = String(foto_perfil_url).trim();
+
+    await user.save();
+    res.json(publicUser(user.toObject()));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete("/me", requireAuth, async (req, res) => {
+  try {
+    await Usuario.findByIdAndDelete(req.user._id);
+    res.json({ mensaje: "Usuario eliminado correctamente" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
