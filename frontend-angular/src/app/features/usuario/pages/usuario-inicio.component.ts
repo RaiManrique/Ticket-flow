@@ -49,10 +49,6 @@ export class UsuarioInicioComponent implements OnInit {
     this.router.navigate(['/usuario/eventos']);
   }
 
-  buy(e: Evento): void {
-    this.router.navigate(['/usuario/checkout', e._id]);
-  }
-
   detail(e: Evento): void {
     this.router.navigate(['/usuario/eventos'], { queryParams: { detalle: e._id } });
   }

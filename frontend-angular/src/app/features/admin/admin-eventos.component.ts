@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { AdminService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Evento } from '../../core/models/ticketflow.models';
+import { Evento, User } from '../../core/models/ticketflow.models';
 import { CATEGORY_LABEL, formatDate } from '../../core/utils/format.util';
 import { eventFlyer } from '../../core/utils/images.util';
 
@@ -27,7 +27,7 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
   showCreateForm = false;
 
   selectedId: string | null = null;
-  detail: { evento: Evento; asistentes: Record<string, unknown>[] } | null = null;
+  detail: { evento: Evento; asistentes: User[] } | null = null;
   detailLoading = false;
   detailError = '';
 

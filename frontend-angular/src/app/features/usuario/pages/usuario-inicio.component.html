@@ -1,13 +1,13 @@
 <div id="view-inicio" class="app-view active">
   <section class="app-hero">
     <div class="hero-text">
-      <p class="hero-kicker">TicketFlow Peru</p>
+      <p class="hero-kicker">TicketFlow Perú</p>
       <h1>VIVE LA EMOCION</h1>
-      <p class="hero-sub">Encuentra tu proximo latido</p>
+      <p class="hero-sub">Encuentra tu próximo latido</p>
     </div>
     <div class="search-panel">
       <div class="search-input-wrap">
-        <input type="search" [(ngModel)]="query" placeholder="¿A quien quieres ver?">
+        <input type="search" [(ngModel)]="query" placeholder="¿A quién quieres ver?">
       </div>
       <div class="search-filters">
         <select [(ngModel)]="ciudad" class="chip-select">
@@ -18,7 +18,7 @@
         </select>
         <input type="date" [(ngModel)]="fecha" class="chip-date">
       </div>
-      <button class="btn btn-search" type="button" (click)="search()">BUSCAR TICKET</button>
+      <button class="btn btn-search" type="button" (click)="search()">BUSCAR</button>
     </div>
   </section>
 
@@ -35,7 +35,7 @@
           } @else {
             @for (e of trending(); track e._id; let i = $index) {
               <app-event-card [evento]="e" [featured]="i === 0" [favorite]="isFav(e)"
-                (buy)="buy($event)" (detail)="detail($event)" (share)="share($event)" (toggleFavorite)="toggleFav($event)" />
+                (detail)="detail($event)" (share)="share($event)" (toggleFavorite)="toggleFav($event)" />
             }
           }
         </div>

@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AdminService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { formatMoney, formatDate } from '../../core/utils/format.util';
+import { formatDate } from '../../core/utils/format.util';
 
 @Component({
   selector: 'app-admin-panel',
@@ -35,7 +35,7 @@ export class AdminPanelComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private sessionSub?: Subscription;
 
-  panel: 'usuarios' | 'eventos' | 'ventas' | 'reembolsos' = 'usuarios';
+  panel: 'usuarios' | 'eventos' = 'usuarios';
   title = '';
   columns: string[] = [];
   rows: Record<string, unknown>[] = [];
@@ -60,8 +60,6 @@ export class AdminPanelComponent implements OnInit, OnDestroy {
     const cfg: Record<string, { title: string; cols: string[]; load: () => ReturnType<AdminService['usuarios']> }> = {
       usuarios: { title: 'Usuarios', cols: ['username', 'email', 'rol', 'nombre_completo'], load: () => this.admin.usuarios() as never },
       eventos: { title: 'Eventos', cols: ['titulo', 'categoria', 'ciudad', 'estado'], load: () => this.admin.eventos() as never },
-      ventas: { title: 'Ventas', cols: ['referencia_pago', 'estado', 'metodo_pago', 'monto_total'], load: () => this.admin.ventasPanel() as never },
-      reembolsos: { title: 'Reembolsos', cols: ['referencia', 'monto', 'estado', 'motivo'], load: () => this.admin.reembolsos() as never },
     };
     const c = cfg[this.panel];
     this.title = c.title;
@@ -80,7 +78,6 @@ export class AdminPanelComponent implements OnInit, OnDestroy {
 
   cell(row: Record<string, unknown>, col: string): string {
     const v = row[col];
-    if (col === 'monto_total' || col === 'monto') return formatMoney(Number(v));
     if (col === 'fecha_solicitud' || col === 'fecha_venta') return formatDate(String(v));
     return String(v ?? '—');
   }

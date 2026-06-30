@@ -6,6 +6,7 @@ import {
   AdminDashboardData,
   Evento,
   Publicacion,
+  User,
 } from '../models/ticketflow.models';
 
 @Injectable({ providedIn: 'root' })
@@ -57,8 +58,8 @@ export class AdminService {
     return this.http.get<Evento[]>(`${this.base}/eventos`);
   }
 
-  eventoDetalle(id: string): Observable<{ evento: Evento; asistentes: Record<string, unknown>[] }> {
-    return this.http.get<{ evento: Evento; asistentes: Record<string, unknown>[] }>(`${this.base}/eventos/${id}/detalle`);
+  eventoDetalle(id: string): Observable<{ evento: Evento; asistentes: User[] }> {
+    return this.http.get<{ evento: Evento; asistentes: User[] }>(`${this.base}/eventos/${id}/detalle`);
   }
 
   createEvento(payload: {
