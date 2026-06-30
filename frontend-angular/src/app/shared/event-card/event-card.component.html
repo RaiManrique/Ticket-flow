@@ -8,9 +8,6 @@
     <button class="event-fav-btn" [class.active]="favorite" type="button" (click)="toggleFavorite.emit(evento)" aria-label="Favorito">
       {{ favorite ? '★' : '☆' }}
     </button>
-    @if (soldOut(evento)) {
-      <div class="sold-out-stamp">SOLD OUT</div>
-    }
   </div>
   <div class="trend-body">
     <h3>{{ evento.titulo }}</h3>
@@ -22,15 +19,10 @@
     </div>
     <div class="trend-footer">
       <div class="trend-price">
-        <strong>{{ evento.precio_minimo != null ? formatMoney(evento.precio_minimo) : 'Consultar' }}</strong>
-        <small>PRECIO BASE</small>
+        <strong>{{ evento.asistentes?.length || 0 }}</strong>
+        <small>ASISTENTES</small>
       </div>
-      @if (soldOut(evento)) {
-        <span class="status-live ended">Finalizado</span>
-      } @else {
-        <span class="status-live">• VENTA GENERAL</span>
-        <button class="btn btn-buy" type="button" (click)="buy.emit(evento)">COMPRAR</button>
-      }
+      <button class="btn btn-buy" type="button" (click)="detail.emit(evento)">VER MÁS</button>
     </div>
   </div>
 </article>

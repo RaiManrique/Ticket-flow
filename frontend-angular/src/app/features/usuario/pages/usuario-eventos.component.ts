@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventCardComponent } from '../../../shared/event-card/event-card.component';
 import { EventosStateService } from '../../../core/services/eventos-state.service';
-import { EventosService, PoliticasService } from '../../../core/services/api.service';
+import { EventosService } from '../../../core/services/api.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { FavoritesService } from '../../../core/services/favorites.service';
 import { Evento } from '../../../core/models/ticketflow.models';
-import { CATEGORY_LABEL, formatDate, formatMoney } from '../../../core/utils/format.util';
+import { CATEGORY_LABEL, formatDate } from '../../../core/utils/format.util';
 import { eventFlyer } from '../../../core/utils/images.util';
 
 @Component({
@@ -20,16 +21,13 @@ export class UsuarioEventosComponent implements OnInit {
   readonly state = inject(EventosStateService);
   private readonly favs = inject(FavoritesService);
   private readonly eventosApi = inject(EventosService);
-  private readonly politicas = inject(PoliticasService);
+  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   detailEvento: Evento | null = null;
   detailLoading = false;
   detailError = '';
-  showPolicies = false;
-  policiesHtml = '';
-  policyHighlight = '';
 
   ngOnInit(): void {
     this.state.load();
@@ -61,10 +59,6 @@ export class UsuarioEventosComponent implements OnInit {
     this.state.favoritesOnly.update((v) => !v);
   }
 
-  buy(e: Evento): void {
-    this.router.navigate(['/usuario/checkout', e._id]);
-  }
-
   openDetail(id: string): void {
     this.detailLoading = true;
     this.detailError = '';
@@ -85,20 +79,6 @@ export class UsuarioEventosComponent implements OnInit {
     this.router.navigate([], { queryParams: {} });
   }
 
-  openPolicies(key = ''): void {
-    this.policyHighlight = key;
-    this.politicas.get().subscribe((data) => {
-      const keys = ['compra', 'reembolso', 'acceso', 'menores'];
-      this.policiesHtml = keys.map((k) => {
-        const s = data.secciones[k];
-        if (!s) return '';
-        const items = (s.items || []).map((i) => `<li>${i}</li>`).join('');
-        return `<section class="policies-section ${k === key ? 'highlight' : ''}"><h4>${s.titulo}</h4><ul>${items}</ul></section>`;
-      }).join('');
-      this.showPolicies = true;
-    });
-  }
-
   share(e: Evento): void {
     const url = `${window.location.origin}/usuario/eventos?detalle=${e._id}`;
     navigator.clipboard?.writeText(`${e.titulo}\n${url}`);
@@ -108,8 +88,25 @@ export class UsuarioEventosComponent implements OnInit {
     this.favs.toggle(e._id);
   }
 
+  isAttending(e: Evento): boolean {
+    const user = this.auth.getUser();
+    if (!user || !e.asistentes) return false;
+    return e.asistentes.map(String).includes(String(user._id));
+  }
+
+  toggleAttendance(e: Evento): void {
+    this.eventosApi.asistir(e._id).subscribe({
+      next: (res) => {
+        e.asistentes = res.asistentes;
+        if (this.detailEvento && this.detailEvento._id === e._id) {
+          this.detailEvento.asistentes = res.asistentes;
+        }
+        this.state.load();
+      }
+    });
+  }
+
   formatDate = formatDate;
-  formatMoney = formatMoney;
   eventFlyer = eventFlyer;
   categoryLabel = CATEGORY_LABEL;
 }

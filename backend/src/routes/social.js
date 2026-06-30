@@ -53,17 +53,67 @@ router.post("/publicaciones", requireAuth, async (req, res) => {
   }
 
   try {
+    const media_urls = Array.isArray(req.body.media_urls) ? req.body.media_urls : [];
     const publicacion = await Publicacion.create({
       usuario_id: req.user._id,
       evento_id: evento_id || undefined,
       texto,
-      media_urls: [],
+      media_urls,
+      fecha_commission: new Date(),
       fecha_publicacion: new Date(),
       usuarios_likes: [],
     });
 
     const feed = await enrichPublicaciones([publicacion.toObject()]);
     res.status(201).json(feed[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put("/publicaciones/:id", requireAuth, async (req, res) => {
+  try {
+    requireObjectId(req.params.id, "publicacion_id");
+    const { texto, media_urls } = req.body;
+    const pub = await Publicacion.findById(req.params.id);
+    if (!pub) return res.status(404).json({ error: "Publicacion no encontrada" });
+
+    if (pub.usuario_id.toString() !== req.user._id.toString() && req.user.rol !== "admin") {
+      return res.status(403).json({ error: "No tienes permiso para modificar esta publicacion" });
+    }
+
+    if (texto) {
+      if (texto.trim().length < 5) {
+        return res.status(400).json({ error: "La publicacion debe tener al menos 5 caracteres" });
+      }
+      pub.texto = texto.trim();
+    }
+
+    if (Array.isArray(media_urls)) {
+      pub.media_urls = media_urls;
+    }
+
+    await pub.save();
+
+    const feed = await enrichPublicaciones([pub.toObject()]);
+    res.json(feed[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete("/publicaciones/:id", requireAuth, async (req, res) => {
+  try {
+    requireObjectId(req.params.id, "publicacion_id");
+    const pub = await Publicacion.findById(req.params.id);
+    if (!pub) return res.status(404).json({ error: "Publicacion no encontrada" });
+
+    if (pub.usuario_id.toString() !== req.user._id.toString() && req.user.rol !== "admin") {
+      return res.status(403).json({ error: "No tienes permiso para eliminar esta publicacion" });
+    }
+
+    await Publicacion.findByIdAndDelete(req.params.id);
+    res.json({ mensaje: "Publicacion eliminada correctamente" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

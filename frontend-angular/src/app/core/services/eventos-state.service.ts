@@ -3,7 +3,7 @@ import { EventosService } from './api.service';
 import { Evento } from '../models/ticketflow.models';
 import { FavoritesService } from './favorites.service';
 
-export type SortOption = 'fecha-asc' | 'precio-asc' | 'precio-desc' | 'popularidad';
+export type SortOption = 'fecha-asc' | 'popularidad';
 
 @Injectable({ providedIn: 'root' })
 export class EventosStateService {
@@ -37,12 +37,9 @@ export class EventosStateService {
       return true;
     });
 
-    const price = (e: Evento) => Number(e.precio_minimo ?? Number.MAX_SAFE_INTEGER);
     const fans = (e: Evento) => e.asistentes?.length || 0;
     const sort = this.sort();
     list = [...list].sort((a, b) => {
-      if (sort === 'precio-asc') return price(a) - price(b);
-      if (sort === 'precio-desc') return price(b) - price(a);
       if (sort === 'popularidad') return fans(b) - fans(a);
       return new Date(a.fecha_evento).getTime() - new Date(b.fecha_evento).getTime();
     });

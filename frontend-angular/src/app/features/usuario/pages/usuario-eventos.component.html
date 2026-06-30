@@ -1,7 +1,7 @@
 <div id="view-eventos" class="app-view active">
   <div class="view-header">
     <h2>Todos los eventos</h2>
-    <p>Conciertos, festivales y teatro en Peru</p>
+    <p>Conciertos, festivales y teatro en Perú</p>
   </div>
 
   <div class="category-pills">
@@ -18,10 +18,8 @@
     </div>
     <div class="events-toolbar-actions">
       <select class="toolbar-select" [ngModel]="state.sort()" (ngModelChange)="state.sort.set($event)">
-        <option value="fecha-asc">Mas cercanos</option>
-        <option value="precio-asc">Menor precio</option>
-        <option value="precio-desc">Mayor precio</option>
-        <option value="popularidad">Mas populares</option>
+        <option value="fecha-asc">Más cercanos</option>
+        <option value="popularidad">Más populares</option>
       </select>
       <button class="btn btn-ghost btn-sm" [class.active]="state.favoritesOnly()" type="button" (click)="toggleFavFilter()">Favoritos</button>
       <button class="btn btn-ghost btn-sm" type="button" (click)="clearFilters()">Limpiar</button>
@@ -36,7 +34,7 @@
     } @else {
       @for (e of list(); track e._id) {
         <app-event-card [evento]="e" [favorite]="isFav(e)"
-          (buy)="buy($event)" (detail)="openDetail($event._id)" (share)="share($event)" (toggleFavorite)="toggleFav($event)" />
+          (detail)="openDetail($event._id)" (share)="share($event)" (toggleFavorite)="toggleFav($event)" />
       }
     }
   </div>
@@ -60,36 +58,26 @@
           </div>
         </div>
         <p class="event-detail-desc">{{ detailEvento.descripcion }}</p>
-        @if (detailEvento.estadisticas?.zonas?.length) {
-          <table class="event-detail-table">
-            <thead><tr><th>Zona</th><th>Precio</th><th>Disponibles</th></tr></thead>
-            <tbody>
-              @for (z of detailEvento.estadisticas!.zonas!; track z.zona) {
-                <tr>
-                  <td>{{ z.zona }}</td>
-                  <td>{{ formatMoney(z.precio_min) }}</td>
-                  <td>{{ z.disponibles }} / {{ z.total }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-        <div class="event-detail-actions">
-          <button class="btn btn-glow" type="button" (click)="buy(detailEvento); closeDetail()">Comprar entradas</button>
-          <button class="link-btn" type="button" (click)="openPolicies('reembolso')">Politicas</button>
+
+        <div class="event-social-stats" style="margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong style="font-size: 1.2rem; color: var(--color-primary, #00f2fe);">{{ detailEvento.asistentes?.length || 0 }}</strong>
+            <span style="margin-left: 5px; color: #aaa;">personas asistirán a este evento</span>
+          </div>
+          <div>
+            @if (isAttending(detailEvento)) {
+              <span class="status-live live" style="padding: 4px 8px; font-size: 0.8rem; background: rgba(0,242,254,0.15); color: #00f2fe; border-radius: 4px;">✓ Asistirás</span>
+            }
+          </div>
+        </div>
+
+        <div class="event-detail-actions" style="margin-top: 25px; display: flex; gap: 15px;">
+          <button class="btn btn-glow" type="button" (click)="toggleAttendance(detailEvento)" style="flex: 1;">
+            {{ isAttending(detailEvento) ? 'Ya no asistiré' : '¡Asistiré!' }}
+          </button>
+          <button class="btn btn-secondary" type="button" (click)="share(detailEvento)">Compartir</button>
         </div>
       }
-    </div>
-  </div>
-}
-
-@if (showPolicies) {
-  <div class="ticket-modal">
-    <div class="ticket-modal-backdrop" (click)="showPolicies = false"></div>
-    <div class="ticket-modal-card policies-card">
-      <button type="button" class="ticket-modal-close" (click)="showPolicies = false">&times;</button>
-      <h3>Politicas TicketFlow</h3>
-      <div class="policies-content" [innerHTML]="policiesHtml"></div>
     </div>
   </div>
 }

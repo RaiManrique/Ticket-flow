@@ -3,59 +3,11 @@ db = db.getSiblingDB('ticketflow_social');
 
 db.usuarios.deleteMany({});
 db.eventos.deleteMany({});
-db.boletos.deleteMany({});
-db.ventas.deleteMany({});
 db.publicaciones.deleteMany({});
 db.comentarios.deleteMany({});
 db.follows.deleteMany({});
 
-// Ajusta validadores en bases ya creadas (precio/monto aceptan enteros y decimales)
-db.runCommand({
-  collMod: "boletos",
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["evento_id", "zona", "precio", "estado"],
-      properties: {
-        _id: { bsonType: "objectId" },
-        evento_id: { bsonType: "objectId" },
-        zona: { bsonType: "string" },
-        fila: { bsonType: "string" },
-        asiento: { bsonType: "string" },
-        codigo_entrada: { bsonType: "string" },
-        precio: { bsonType: ["double", "int", "long", "decimal"], minimum: 0 },
-        estado: { enum: ["disponible", "reservado", "vendido", "bloqueado"] },
-        reservado_por: { bsonType: "objectId" },
-        reservado_hasta: { bsonType: "date" },
-        vendido_a: { bsonType: "objectId" },
-        fecha_venta: { bsonType: "date" }
-      }
-    }
-  },
-  validationLevel: "strict"
-});
 
-db.runCommand({
-  collMod: "ventas",
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["usuario_id", "evento_id", "boletos_ids", "monto_total", "estado", "fecha_venta"],
-      properties: {
-        _id: { bsonType: "objectId" },
-        usuario_id: { bsonType: "objectId" },
-        evento_id: { bsonType: "objectId" },
-        boletos_ids: { bsonType: "array", minItems: 1, items: { bsonType: "objectId" } },
-        monto_total: { bsonType: ["double", "int", "long", "decimal"], minimum: 0 },
-        metodo_pago: { enum: ["tarjeta", "yape", "plin", "transferencia"] },
-        estado: { enum: ["pendiente", "confirmada", "reembolsada", "fallida"] },
-        referencia_pago: { bsonType: "string" },
-        fecha_venta: { bsonType: "date" }
-      }
-    }
-  },
-  validationLevel: "strict"
-});
 
 var ahora = new Date();
 var hace30dias = new Date(ahora.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -92,89 +44,6 @@ db.eventos.insertMany([
   { _id: eventoCuscoId, creador_id: usuarioOrg2Id, titulo: "Vibra Fest Cusco 2026", descripcion: "Festival electronico en la ciudad imperial. Edicion agotada.", categoria: "festival", ciudad: "Cusco", fecha_evento: ISODate("2026-06-15T16:00:00Z"), flyer_url: "/img/eventos/festival-cusco.jpg", ubicacion: { type: "Point", coordinates: [-71.9675, -13.5319] }, asistentes: [usuario1Id, usuario2Id, usuario3Id, usuario4Id], estado: "publicado" }
 ]);
 
-var boletoVipVendidoId = ObjectId("64f0c0010000000000000001");
-var boletoGeneralVendidoId = ObjectId("64f0c0010000000000000002");
-var boletoGeneralReservadoId = ObjectId("64f0c0010000000000000003");
-var boletoFestivalVendidoId = ObjectId("64f0c0010000000000000004");
-
-var boletosSeed = [
-  { _id: boletoVipVendidoId, evento_id: eventoConciertoId, zona: "PLATINUM CENTRAL", fila: "PC-A", asiento: "12", codigo_entrada: "TF-BTS-PC-A12", precio: 599.0, estado: "vendido", vendido_a: usuario1Id, fecha_venta: hace7dias },
-  { _id: boletoGeneralVendidoId, evento_id: eventoConciertoId, zona: "VIP", fila: "VIP-G", asiento: "8", codigo_entrada: "TF-BTS-VIP-G08", precio: 399.0, estado: "vendido", vendido_a: usuario2Id, fecha_venta: hace7dias },
-  { _id: boletoGeneralReservadoId, evento_id: eventoConciertoId, zona: "VIP", fila: "VIP-H", asiento: "10", precio: 399.0, estado: "reservado", reservado_por: usuario3Id, reservado_hasta: en15min },
-  { _id: boletoFestivalVendidoId, evento_id: eventoFestivalId, zona: "Platea", fila: "PLT-B", asiento: "8", codigo_entrada: "TF-SELVA-PLT-B08", precio: 180.0, estado: "vendido", vendido_a: usuario4Id, fecha_venta: hace7dias }
-];
-
-var skipSeat = { "PC-A|12": 1, "VIP-G|8": 1, "VIP-H|10": 1, "PLT-B|8": 1 };
-
-function addSectorSeats(zona, prefix, rows, seatsPerRow, precio, mode) {
-  rows.forEach(function (row, ri) {
-    for (var s = 1; s <= seatsPerRow; s++) {
-      var fila = prefix + "-" + row;
-      if (skipSeat[fila + "|" + s]) continue;
-      var estado = "disponible";
-      if (mode === "soldout") estado = "vendido";
-      else if (mode === "light") {
-        if ((ri * seatsPerRow + s) % 19 === 0) estado = "vendido";
-        if (ri === 0 && s === 3) estado = "reservado";
-      } else if (mode === "half") {
-        if (s % 2 === 0) estado = "vendido";
-      }
-      var doc = { evento_id: eventoConciertoId, zona: zona, fila: fila, asiento: String(s), precio: precio, estado: estado };
-      if (estado === "reservado") doc.reservado_hasta = en15min;
-      boletosSeed.push(doc);
-    }
-  });
-}
-
-var rows12 = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
-var rows16 = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"];
-var rows10 = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
-var rows8 = ["A", "B", "C", "D", "E", "F", "G", "H"];
-
-addSectorSeats("PLATINUM CENTRAL", "PC", rows12, 26, 599.0, "light");
-addSectorSeats("PLATINUM LATERAL", "PL", rows10, 24, 479.0, "light");
-addSectorSeats("VIP", "VIP", rows16, 30, 399.0, "light");
-addSectorSeats("PREFERENCIAL", "PR", rows8, 20, 299.0, "half");
-addSectorSeats("OCCIDENTE 1", "OC1", rows10, 22, 249.0, "light");
-addSectorSeats("OCCIDENTE 2", "OC2", rows8, 20, 219.0, "light");
-addSectorSeats("ORIENTE 1", "OR1", rows10, 22, 249.0, "light");
-addSectorSeats("ORIENTE 2", "OR2", rows8, 20, 219.0, "light");
-addSectorSeats("NORTE", "NO", rows10, 24, 189.0, "half");
-["A", "B", "C"].forEach(function (fila) {
-  for (var s = 1; s <= 10; s++) {
-    var f = "PLT-" + fila;
-    if (skipSeat[f + "|" + s]) continue;
-    boletosSeed.push({
-      evento_id: eventoFestivalId, zona: "Platea", fila: f, asiento: String(s), precio: 180.0,
-      estado: (fila === "A" && s <= 4) ? "vendido" : "disponible"
-    });
-  }
-});
-for (var ga = 0; ga < 6; ga++) {
-  boletosSeed.push({ evento_id: eventoFestivalId, zona: "General", precio: 120.0, estado: ga < 2 ? "vendido" : "disponible" });
-}
-["A", "B", "C"].forEach(function (fila) {
-  for (var s = 1; s <= 8; s++) {
-    boletosSeed.push({
-      evento_id: eventoTeatroId, zona: "Platea", fila: "TE-" + fila, asiento: String(s), precio: 120.0,
-      estado: (fila === "A" && s <= 2) ? "vendido" : "disponible"
-    });
-  }
-});
-boletosSeed.push(
-  { evento_id: eventoTeatroId, zona: "Balcón", fila: "BA-C", asiento: "3", precio: 95.0, estado: "disponible" },
-  { evento_id: eventoTeatroId, zona: "Balcón", fila: "BA-C", asiento: "4", precio: 95.0, estado: "disponible" },
-  { evento_id: eventoCuscoId, zona: "General", precio: 150.0, estado: "vendido", vendido_a: usuario1Id, fecha_venta: hace7dias },
-  { evento_id: eventoCuscoId, zona: "VIP", precio: 280.0, estado: "vendido", vendido_a: usuario2Id, fecha_venta: hace7dias }
-);
-
-db.boletos.insertMany(boletosSeed);
-
-db.ventas.insertMany([
-  { _id: ObjectId("64f0d0010000000000000001"), usuario_id: usuario1Id, evento_id: eventoConciertoId, boletos_ids: [boletoVipVendidoId], monto_total: 599.0, metodo_pago: "tarjeta", estado: "confirmada", referencia_pago: "PAY-BTS-2026-0001", fecha_venta: hace7dias },
-  { _id: ObjectId("64f0d0010000000000000002"), usuario_id: usuario2Id, evento_id: eventoConciertoId, boletos_ids: [boletoGeneralVendidoId], monto_total: 399.0, metodo_pago: "yape", estado: "confirmada", referencia_pago: "PAY-BTS-2026-0002", fecha_venta: hace7dias },
-  { _id: ObjectId("64f0d0010000000000000003"), usuario_id: usuario4Id, evento_id: eventoFestivalId, boletos_ids: [boletoFestivalVendidoId], monto_total: 180.0, metodo_pago: "plin", estado: "confirmada", referencia_pago: "PAY-SELVA-2026-0001", fecha_venta: hace7dias }
-]);
 
 var publicacion1Id = ObjectId("64f0e0010000000000000001");
 var publicacion2Id = ObjectId("64f0e0010000000000000002");
@@ -204,8 +73,6 @@ db.follows.insertMany([
 print("Datos de ejemplo cargados correctamente.");
 print("  - usuarios: " + db.usuarios.countDocuments());
 print("  - eventos: " + db.eventos.countDocuments());
-print("  - boletos: " + db.boletos.countDocuments());
-print("  - ventas: " + db.ventas.countDocuments());
 print("  - publicaciones: " + db.publicaciones.countDocuments());
 print("  - comentarios: " + db.comentarios.countDocuments());
 print("  - follows: " + db.follows.countDocuments());
