@@ -7,6 +7,7 @@ export interface User {
   nombre_completo?: string;
   rol: UserRole;
   foto_perfil_url?: string;
+  foto_portada_url?: string;
 }
 
 export interface Session {

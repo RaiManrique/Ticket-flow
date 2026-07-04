@@ -1,215 +1,264 @@
-<div id="view-comunidad" class="app-view active">
-  <div class="view-header" style="margin-bottom: 2rem;">
-    <h2>Comunidad Live</h2>
-    <p>Comparte y coordina con otros asistentes</p>
-  </div>
-
-  <div class="bento-grid" style="align-items: start;">
-    <!-- Bento Composer -->
-    <div class="bento-item" style="position: sticky; top: 90px; z-index: 10;">
-      <div class="bento-header" style="margin-bottom: 1.5rem;">
-        <h3 style="font-size: 1.3rem;">Nueva Publicación</h3>
-        <p>¿Qué tienes en mente para este evento?</p>
-      </div>
-      <div class="composer-body" style="display: flex; flex-direction: column; gap: 12px;">
-        <textarea [(ngModel)]="text" rows="5" maxlength="280" placeholder="Escribe algo increíble..." style="width: 100%; border-radius: var(--radius-sm); padding: 16px; font-size: 1.1rem; background: var(--bg-elevated); border: 2px solid transparent; color: var(--text); resize: none; transition: all 0.3s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='transparent'"></textarea>
-        
-        @if (previewUrl) {
-          <div style="border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-elevated); position: relative;">
-            @if (isVideo(selectedFile?.name)) {
-              <video [src]="previewUrl" controls style="width: 100%; max-height: 200px; display: block;"></video>
-            } @else {
-              <img [src]="previewUrl" alt="Preview" style="width: 100%; max-height: 200px; object-fit: cover; display: block;">
-            }
-            <button class="btn btn-sm" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white;" (click)="previewUrl = null; selectedFile = null">X</button>
-          </div>
-        }
-
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-          <label for="media-upload" class="btn btn-ghost btn-sm" style="cursor: pointer; padding: 6px 12px; border-radius: 999px;">
-            📸 Adjuntar Media
-          </label>
-          <input id="media-upload" type="file" accept="image/*,video/*" (change)="onFileSelected($event)" style="display: none;">
-          <span style="color: var(--muted); font-size: 0.8rem;">{{ text.length }}/180</span>
-        </div>
-        <button class="btn btn-glow" style="width: 100%; margin-top: 10px; padding: 12px; font-weight: 700;" type="button" [disabled]="loading" (click)="publish()">Publicar</button>
-        @if (msg) { <div class="alert success" style="margin-top: 10px;">{{ msg }}</div> }
-      </div>
+<div class="min-h-screen bg-[#0b0b0c] text-[#e5e2e3] font-sans pt-10 pb-20">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    
+    <div class="mb-8">
+      <h2 class="text-3xl font-extrabold text-white tracking-tight">Comunidad Live</h2>
+      <p class="text-neutral-400 mt-1">Comparte y coordina con otros asistentes</p>
     </div>
 
-    <!-- Bento Feed (Span 2) -->
-    <div class="bento-span-2" style="display: flex; flex-direction: column; gap: 1.5rem;">
-      @if (error) {
-        <div class="alert error">{{ error }}</div>
-      } @else if (!posts.length) {
-        <div class="bento-item" style="text-align: center; padding: 4rem 2rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
-          <h3>Aún no hay publicaciones</h3>
-          <p style="color: var(--muted);">Sé el primero en compartir algo con la comunidad.</p>
-        </div>
-      } @else {
-        @for (p of posts; track p._id; let i = $index) {
-          <article class="bento-item" style="padding: 1.5rem;">
-            <div class="feed-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;">
-              <div class="avatar" style="width: 48px; height: 48px; font-size: 1.2rem; flex-shrink: 0;" [class.has-photo]="profilePhoto(p.autor)">
-                <img [src]="profilePhoto(p.autor)" alt="">
-                <span>{{ (p.autor?.username || 'U').slice(0, 2).toUpperCase() }}</span>
-              </div>
-              <div style="display: flex; flex-direction: column;">
-                <strong style="font-size: 1.05rem;">{{ p.autor?.nombre_completo || p.autor?.username }}</strong>
-                <span style="color: var(--muted); font-size: 0.85rem;">&#64;{{ p.autor?.username }}</span>
-              </div>
-              
-              <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
-                <span style="color: var(--muted); font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px;">{{ timeAgo(p.fecha_publicacion) }}</span>
-                @if (p.autor?._id === auth.getUser()?._id) {
-                  <button class="btn btn-ghost btn-sm" style="padding: 4px 8px; font-size: 0.8rem;" (click)="startEditPost(p)">✏️</button>
-                  <button class="btn btn-ghost btn-sm" style="padding: 4px 8px; font-size: 0.8rem; color: var(--danger);" (click)="deletePost(p._id)">🗑️</button>
+    <!-- Layout de 2 columnas -->
+    <div class="flex flex-col lg:flex-row gap-8 items-start">
+      
+      <!-- Columna Izquierda (Sidebar Composer) -->
+      <div class="w-full lg:w-[350px] shrink-0 sticky top-[90px] z-10 space-y-6">
+        
+        <div class="bg-white/[0.03] border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
+          <h3 class="text-xl font-bold text-white mb-1">Nueva Publicación</h3>
+          <p class="text-sm text-neutral-400 mb-6">¿Qué tienes en mente para este evento?</p>
+          
+          <div class="flex flex-col gap-4">
+            <textarea [(ngModel)]="text" rows="4" maxlength="280" placeholder="Escribe algo increíble..." class="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white placeholder-neutral-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition resize-none"></textarea>
+            
+            @if (previewUrl) {
+              <div class="relative rounded-xl overflow-hidden bg-black/50 border border-white/10">
+                @if (isVideo(selectedFile?.name)) {
+                  <video [src]="previewUrl" controls class="w-full max-h-[200px] object-cover"></video>
+                } @else {
+                  <img [src]="previewUrl" alt="Preview" class="w-full max-h-[200px] object-cover">
                 }
+                <button (click)="previewUrl = null; selectedFile = null" class="absolute top-2 right-2 bg-black/60 hover:bg-black/90 text-white w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
               </div>
+            }
+
+            <div class="flex items-center justify-between mt-2">
+              <label for="media-upload" class="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-purple-400 font-semibold rounded-full cursor-pointer transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                Media
+              </label>
+              <input id="media-upload" type="file" accept="image/*,video/*" (change)="onFileSelected($event)" class="hidden">
+              <span class="text-xs font-bold text-neutral-500">{{ text.length }}/280</span>
             </div>
             
+            <button (click)="publish()" [disabled]="loading" class="w-full mt-2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.3)] transition disabled:opacity-50">
+              {{ loading ? 'Publicando...' : 'Publicar' }}
+            </button>
+            
+            @if (msg) { <div class="mt-2 text-sm text-emerald-400 text-center bg-emerald-500/10 p-2 rounded-lg">{{ msg }}</div> }
+            @if (error) { <div class="mt-2 text-sm text-red-400 text-center bg-red-500/10 p-2 rounded-lg">{{ error }}</div> }
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Columna Derecha (Feed de Posts) -->
+      <div class="flex-1 flex flex-col gap-6">
+        
+        @if (!posts.length && !error) {
+          <div class="bg-white/[0.02] border border-white/5 border-dashed rounded-3xl p-12 text-center flex flex-col items-center">
+            <span class="text-6xl mb-4 opacity-50">📭</span>
+            <h3 class="text-xl font-bold text-white mb-2">Aún no hay publicaciones</h3>
+            <p class="text-neutral-400">Sé el primero en compartir algo con la comunidad.</p>
+          </div>
+        }
+        
+        @for (p of posts; track p._id; let i = $index) {
+          <article class="bg-white/[0.03] border border-white/10 rounded-3xl p-6 backdrop-blur-md hover:border-white/20 transition">
+            
+            <!-- Header Post -->
+            <div class="flex items-start gap-4 mb-4">
+              <div class="w-12 h-12 rounded-full overflow-hidden bg-purple-900 border-2 border-[#0b0b0c] flex-shrink-0 flex items-center justify-center font-bold text-lg">
+                @if (profilePhoto(p.autor)) {
+                  <img [src]="profilePhoto(p.autor)" alt="Avatar" class="w-full h-full object-cover">
+                } @else {
+                  {{ (p.autor?.username || 'U').slice(0, 2).toUpperCase() }}
+                }
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <strong class="text-white font-bold">{{ p.autor?.nombre_completo || p.autor?.username }}</strong>
+                  <span class="text-neutral-500 text-sm">&#64;{{ p.autor?.username }}</span>
+                  <span class="text-neutral-600 text-sm mx-1">•</span>
+                  <span class="text-neutral-500 text-sm hover:underline">{{ timeAgo(p.fecha_publicacion) }}</span>
+                </div>
+              </div>
+              
+              <!-- Post Actions -->
+              @if (p.autor?._id === auth.getUser()?._id) {
+                <div class="flex items-center gap-2">
+                  <button (click)="startEditPost(p)" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                  </button>
+                  <button (click)="deletePost(p._id)" class="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Editor de Post -->
             @if (editingPostId === p._id) {
-              <!-- Edit Post Composer -->
-              <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: var(--radius-sm); border: 1px solid var(--accent); margin-bottom: 1.2rem;">
-                <textarea [(ngModel)]="editPostDraftText" rows="4" style="width: 100%; border-radius: 8px; padding: 12px; background: var(--bg-elevated); border: 1px solid transparent; color: var(--text); resize: none; margin-bottom: 12px; font-size: 1.05rem;"></textarea>
+              <div class="mb-4 bg-black/30 border border-purple-500/50 rounded-2xl p-4">
+                <textarea [(ngModel)]="editPostDraftText" rows="3" class="w-full bg-transparent border-none text-white focus:outline-none focus:ring-0 resize-none text-lg"></textarea>
                 
                 @if (editPostDraftPreview) {
-                  <div style="margin-bottom: 12px; border-radius: 8px; overflow: hidden; max-height: 200px; background: var(--bg-elevated); position: relative; display: inline-block;">
+                  <div class="relative mt-3 rounded-xl overflow-hidden bg-black/50 inline-block max-h-[300px]">
                     @if (isVideo(editPostDraftFile ? editPostDraftFile.name : editPostDraftPreview)) {
-                      <video [src]="editPostDraftPreview" controls style="max-height: 200px; display: block;"></video>
+                      <video [src]="editPostDraftPreview" controls class="max-h-[300px]"></video>
                     } @else {
-                      <img [src]="editPostDraftPreview" alt="Preview" style="max-height: 200px; display: block;">
+                      <img [src]="editPostDraftPreview" alt="Preview" class="max-h-[300px]">
                     }
-                    <button class="btn btn-sm" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 8px;" (click)="editPostDraftPreview = null; editPostDraftFile = null">X</button>
+                    <button (click)="editPostDraftPreview = null; editPostDraftFile = null" class="absolute top-2 right-2 bg-black/60 hover:bg-black/90 text-white w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                   </div>
                 }
 
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <div>
-                    <label [for]="'edit-post-media-' + p._id" class="btn btn-ghost btn-sm" style="cursor: pointer; padding: 6px 12px; border-radius: 999px;">📸 Adjuntar Media</label>
-                    <input [id]="'edit-post-media-' + p._id" type="file" accept="image/*,video/*" (change)="onEditPostFileSelected($event)" style="display: none;">
-                  </div>
-                  <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-ghost btn-sm" style="border-radius: 999px; padding: 6px 16px;" (click)="cancelEditPost()">Cancelar</button>
-                    <button class="btn btn-glow btn-sm" style="border-radius: 999px; padding: 6px 16px;" (click)="saveEditPost(p._id)" [disabled]="editPostLoading">
-                      {{ editPostLoading ? 'Guardando...' : 'Guardar' }}
-                    </button>
+                <div class="flex items-center justify-between mt-4">
+                  <label [for]="'edit-media-' + p._id" class="text-sm font-semibold text-purple-400 hover:text-purple-300 cursor-pointer flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    Cambiar Media
+                  </label>
+                  <input [id]="'edit-media-' + p._id" type="file" accept="image/*,video/*" (change)="onEditPostFileSelected($event)" class="hidden">
+                  
+                  <div class="flex gap-2">
+                    <button (click)="cancelEditPost()" class="px-4 py-2 rounded-full text-sm font-bold text-neutral-300 hover:bg-white/5 transition">Cancelar</button>
+                    <button (click)="saveEditPost(p._id)" [disabled]="editPostLoading" class="px-4 py-2 rounded-full text-sm font-bold bg-purple-600 hover:bg-purple-500 text-white transition disabled:opacity-50">Guardar</button>
                   </div>
                 </div>
               </div>
             } @else {
-              <p style="font-size: 1.05rem; line-height: 1.6; margin-bottom: 1.2rem; color: var(--text);">{{ p.texto }}</p>
+              <!-- Contenido de Post -->
+              <p class="text-[1.05rem] leading-relaxed text-[#e5e2e3] mb-4 whitespace-pre-wrap">{{ p.texto }}</p>
               
               @if (p.media_urls?.length) {
-                <div style="margin-bottom: 1.2rem; border-radius: var(--radius); overflow: hidden; background: var(--bg-elevated); display: flex; justify-content: center; border: 1px solid var(--border);">
+                <div class="mb-4 rounded-2xl overflow-hidden border border-white/10 bg-black flex justify-center max-h-[500px]">
                   @if (isVideo(p.media_urls![0])) {
-                    <video controls style="max-width: 100%; max-height: 500px; display: block;" [src]="p.media_urls![0]"></video>
+                    <video controls [src]="p.media_urls![0]" class="max-w-full max-h-[500px]"></video>
                   } @else {
-                    <img style="max-width: 100%; max-height: 500px; object-fit: contain; display: block;" [src]="postMedia(p.media_urls![0], i)" alt="">
+                    <img [src]="postMedia(p.media_urls![0], i)" alt="Media" class="max-w-full max-h-[500px] object-contain">
                   }
                 </div>
               }
             }
-            
-            <div style="display: flex; gap: 15px; padding-top: 1rem; border-top: 1px solid var(--border);">
-              <button class="btn btn-ghost" style="border: none; padding: 6px 12px; border-radius: 999px;">
-                ❤️ {{ p.usuarios_likes?.length || 0 }} Me gusta
+
+            <!-- Botones de interaccion -->
+            <div class="flex gap-4 pt-4 border-t border-white/5">
+              <button class="flex items-center gap-2 text-neutral-400 hover:text-pink-400 transition font-medium text-sm group">
+                <div class="w-8 h-8 rounded-full group-hover:bg-pink-500/10 flex items-center justify-center transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                </div>
+                {{ p.usuarios_likes?.length || 0 }}
               </button>
-              <button class="btn btn-ghost" style="border: none; padding: 6px 12px; border-radius: 999px;" (click)="toggleComments(p._id)">
-                💬 {{ showComments[p._id] ? 'Ocultar' : 'Comentar' }}
+              <button (click)="toggleComments(p._id)" class="flex items-center gap-2 text-neutral-400 hover:text-cyan-400 transition font-medium text-sm group">
+                <div class="w-8 h-8 rounded-full group-hover:bg-cyan-500/10 flex items-center justify-center transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                </div>
+                {{ showComments[p._id] ? 'Ocultar' : 'Comentar' }}
               </button>
             </div>
 
-            <!-- Comments Section -->
+            <!-- Comentarios -->
             @if (showComments[p._id]) {
-              <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed rgba(255,255,255,0.1);">
-                <!-- Comment Composer -->
-                <div style="display: flex; gap: 12px; margin-bottom: 1.5rem; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
-                  <div class="avatar" style="width: 36px; height: 36px; font-size: 0.9rem; flex-shrink: 0;">
+              <div class="mt-4 pt-4 border-t border-dashed border-white/10">
+                
+                <!-- Caja de Comentario -->
+                <div class="flex gap-3 mb-6">
+                  <div class="w-10 h-10 rounded-full bg-purple-900 border border-[#0b0b0c] flex-shrink-0 flex items-center justify-center font-bold text-sm">
                     {{ (auth.getUser()?.username || 'U').slice(0, 2).toUpperCase() }}
                   </div>
-                  <div style="flex: 1;">
-                    <textarea [(ngModel)]="commentDrafts[p._id].text" rows="2" style="width: 100%; border-radius: 8px; padding: 10px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); resize: none;" placeholder="Escribe una respuesta..."></textarea>
+                  <div class="flex-1">
+                    <textarea [(ngModel)]="commentDrafts[p._id].text" rows="2" placeholder="Responde a este momento..." class="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-500 transition resize-none text-sm"></textarea>
                     
                     @if (commentDrafts[p._id].previewUrl) {
-                      <div style="margin-top: 10px; border-radius: 8px; overflow: hidden; max-height: 150px; position: relative;">
+                      <div class="relative mt-2 rounded-xl overflow-hidden bg-black/50 inline-block max-h-[150px]">
                         @if (isVideo(commentDrafts[p._id].file?.name)) {
-                          <video [src]="commentDrafts[p._id].previewUrl" controls style="max-height: 150px; display: block;"></video>
+                          <video [src]="commentDrafts[p._id].previewUrl" controls class="max-h-[150px]"></video>
                         } @else {
-                          <img [src]="commentDrafts[p._id].previewUrl" alt="Preview" style="max-height: 150px; display: block;">
+                          <img [src]="commentDrafts[p._id].previewUrl" alt="Preview" class="max-h-[150px]">
                         }
-                        <button class="btn btn-sm" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white;" (click)="commentDrafts[p._id].previewUrl = null; commentDrafts[p._id].file = null">X</button>
+                        <button (click)="commentDrafts[p._id].previewUrl = null; commentDrafts[p._id].file = null" class="absolute top-1 right-1 bg-black/60 hover:bg-black/90 text-white w-6 h-6 rounded-full flex items-center justify-center backdrop-blur-md transition">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
                       </div>
                     }
 
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                      <label [for]="'comment-media-' + p._id" class="btn btn-ghost btn-sm" style="cursor: pointer; padding: 4px 10px; border-radius: 999px;">
-                        📸 Adjuntar
+                    <div class="flex items-center justify-between mt-2">
+                      <label [for]="'comment-media-' + p._id" class="text-xs font-semibold text-cyan-400 hover:text-cyan-300 cursor-pointer flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        Adjuntar
                       </label>
-                      <input [id]="'comment-media-' + p._id" type="file" accept="image/*,video/*" (change)="onCommentFileSelected(p._id, $event)" style="display: none;">
+                      <input [id]="'comment-media-' + p._id" type="file" accept="image/*,video/*" (change)="onCommentFileSelected(p._id, $event)" class="hidden">
                       
-                      <button class="btn btn-glow btn-sm" style="padding: 6px 16px; border-radius: 999px;" [disabled]="commentDrafts[p._id].loading" (click)="publishComment(p._id)">Responder</button>
+                      <button (click)="publishComment(p._id)" [disabled]="commentDrafts[p._id].loading" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold py-1.5 px-4 rounded-full transition disabled:opacity-50 shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+                        Responder
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                <!-- Comments List -->
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Lista de Comentarios -->
+                <div class="space-y-4">
                   @for (c of comments[p._id]; track c._id) {
-                    <div style="display: flex; gap: 12px;">
-                      <div class="avatar" style="width: 36px; height: 36px; font-size: 0.9rem; flex-shrink: 0;" [class.has-photo]="profilePhoto(c.autor)">
-                        <img [src]="profilePhoto(c.autor)" alt="">
-                        <span>{{ (c.autor?.username || 'U').slice(0, 2).toUpperCase() }}</span>
+                    <div class="flex gap-3">
+                      <div class="w-10 h-10 rounded-full overflow-hidden bg-purple-900 border border-[#0b0b0c] flex-shrink-0 flex items-center justify-center font-bold text-sm">
+                        @if (profilePhoto(c.autor)) {
+                          <img [src]="profilePhoto(c.autor)" class="w-full h-full object-cover">
+                        } @else {
+                          {{ (c.autor?.username || 'U').slice(0, 2).toUpperCase() }}
+                        }
                       </div>
-                      <div style="flex: 1; background: rgba(255,255,255,0.03); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                          <strong style="font-size: 0.95rem;">{{ c.autor?.nombre_completo || c.autor?.username }}</strong>
-                          <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 0.75rem; color: var(--muted);">{{ timeAgo(c.fecha_comentario) }}</span>
+                      
+                      <div class="flex-1 bg-black/20 rounded-2xl rounded-tl-none p-4 border border-white/5">
+                        <div class="flex items-center justify-between mb-1">
+                          <strong class="text-white text-sm">{{ c.autor?.nombre_completo || c.autor?.username }}</strong>
+                          <div class="flex items-center gap-2">
+                            <span class="text-neutral-500 text-xs">{{ timeAgo(c.fecha_comentario) }}</span>
                             @if (c.autor?._id === auth.getUser()?._id) {
-                              <button class="btn btn-ghost btn-sm" style="padding: 2px 6px; font-size: 0.75rem;" (click)="startEditComment(c)">✏️</button>
-                              <button class="btn btn-ghost btn-sm" style="padding: 2px 6px; font-size: 0.75rem; color: var(--danger);" (click)="deleteComment(p._id, c._id)">🗑️</button>
+                              <button (click)="startEditComment(c)" class="text-neutral-400 hover:text-white transition"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                              <button (click)="deleteComment(p._id, c._id)" class="text-red-400/70 hover:text-red-400 transition"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                             }
                           </div>
                         </div>
                         
                         @if (editingCommentId === c._id) {
-                          <textarea [(ngModel)]="editDraftText" rows="2" style="width: 100%; border-radius: 8px; padding: 10px; background: var(--bg-elevated); border: 1px solid var(--accent); color: var(--text); resize: none; margin-bottom: 10px;"></textarea>
+                          <textarea [(ngModel)]="editDraftText" rows="2" class="w-full bg-black/40 border border-cyan-500/50 rounded-xl p-2 text-white text-sm focus:outline-none mb-2"></textarea>
                           
                           @if (editDraftPreview) {
-                            <div style="margin-bottom: 10px; border-radius: 8px; overflow: hidden; max-height: 150px; background: var(--bg-elevated); position: relative; display: inline-block;">
+                            <div class="relative mb-2 rounded-lg overflow-hidden bg-black/50 inline-block max-h-[150px]">
                               @if (isVideo(editDraftFile ? editDraftFile.name : editDraftPreview)) {
-                                <video [src]="editDraftPreview" controls style="max-height: 150px; display: block;"></video>
+                                <video [src]="editDraftPreview" controls class="max-h-[150px]"></video>
                               } @else {
-                                <img [src]="editDraftPreview" alt="Preview" style="max-height: 150px; display: block;">
+                                <img [src]="editDraftPreview" alt="Preview" class="max-h-[150px]">
                               }
-                              <button class="btn btn-sm" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 6px;" (click)="editDraftPreview = null; editDraftFile = null">X</button>
+                              <button (click)="editDraftPreview = null; editDraftFile = null" class="absolute top-1 right-1 bg-black/60 hover:bg-black/90 text-white w-6 h-6 rounded-full flex items-center justify-center transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                              </button>
                             </div>
                           }
 
-                          <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                              <label [for]="'edit-comment-media-' + c._id" class="btn btn-ghost btn-sm" style="cursor: pointer; padding: 4px 10px; border-radius: 999px;">📸 Adjuntar</label>
-                              <input [id]="'edit-comment-media-' + c._id" type="file" accept="image/*,video/*" (change)="onEditFileSelected($event)" style="display: none;">
-                            </div>
-                            <div style="display: flex; gap: 8px;">
-                              <button class="btn btn-ghost btn-sm" style="border-radius: 999px;" (click)="cancelEditComment()">Cancelar</button>
-                              <button class="btn btn-glow btn-sm" style="border-radius: 999px;" (click)="saveEditComment(p._id, c._id)" [disabled]="editLoading">
-                                {{ editLoading ? 'Guardando...' : 'Guardar' }}
-                              </button>
+                          <div class="flex items-center justify-between">
+                            <label [for]="'edit-comment-media-' + c._id" class="text-xs font-semibold text-cyan-400 hover:text-cyan-300 cursor-pointer">
+                              Adjuntar Media
+                            </label>
+                            <input [id]="'edit-comment-media-' + c._id" type="file" accept="image/*,video/*" (change)="onEditFileSelected($event)" class="hidden">
+                            
+                            <div class="flex gap-2">
+                              <button (click)="cancelEditComment()" class="text-xs text-neutral-400 hover:text-white transition">Cancelar</button>
+                              <button (click)="saveEditComment(p._id, c._id)" [disabled]="editLoading" class="text-xs font-bold text-cyan-400 hover:text-cyan-300 transition">Guardar</button>
                             </div>
                           </div>
                         } @else {
-                          <p style="margin: 0; font-size: 0.95rem; line-height: 1.5; color: var(--text);">{{ c.texto }}</p>
+                          <p class="text-sm text-neutral-200">{{ c.texto }}</p>
                         }
-                        
+
                         @if (c.media_urls?.length && editingCommentId !== c._id) {
-                          <div style="margin-top: 12px; border-radius: 8px; overflow: hidden; display: flex; justify-content: flex-start;">
+                          <div class="mt-3 rounded-xl overflow-hidden border border-white/5 bg-black inline-block">
                             @if (isVideo(c.media_urls![0])) {
-                              <video controls style="max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid var(--border);" [src]="c.media_urls![0]"></video>
+                              <video controls [src]="c.media_urls![0]" class="max-w-[250px] max-h-[250px]"></video>
                             } @else {
-                              <img style="max-width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px; border: 1px solid var(--border);" [src]="postMedia(c.media_urls![0], 0)" alt="">
+                              <img [src]="postMedia(c.media_urls![0], 0)" class="max-w-[250px] max-h-[250px] object-contain">
                             }
                           </div>
                         }
@@ -219,9 +268,10 @@
                 </div>
               </div>
             }
+
           </article>
         }
-      }
+      </div>
     </div>
   </div>
 </div>
