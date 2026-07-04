@@ -7,6 +7,7 @@ import { UsuarioLayoutComponent } from './features/usuario/usuario-layout.compon
 import { UsuarioInicioComponent } from './features/usuario/pages/usuario-inicio.component';
 import { UsuarioEventosComponent } from './features/usuario/pages/usuario-eventos.component';
 import { UsuarioComunidadComponent } from './features/usuario/pages/usuario-comunidad.component';
+import { UsuarioPerfilComponent } from './features/usuario/pages/usuario-perfil.component';
 import { AdminLayoutComponent } from './features/admin/admin-layout.component';
 import { AdminDashboardComponent } from './features/admin/admin-dashboard.component';
 import { AdminPanelComponent } from './features/admin/admin-panel.component';
@@ -26,6 +27,7 @@ export const routes: Routes = [
       { path: 'inicio', component: UsuarioInicioComponent },
       { path: 'eventos', component: UsuarioEventosComponent },
       { path: 'comunidad', component: UsuarioComunidadComponent },
+      { path: 'perfil', component: UsuarioPerfilComponent },
     ],
   },
   {

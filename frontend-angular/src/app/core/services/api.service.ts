@@ -36,8 +36,8 @@ export class SocialService {
     return this.http.get<Publicacion[]>(`${this.base}/publicaciones`);
   }
 
-  crear(texto: string): Observable<Publicacion> {
-    return this.http.post<Publicacion>(`${this.base}/publicaciones`, { texto });
+  crear(texto: string, media_urls?: string[]): Observable<Publicacion> {
+    return this.http.post<Publicacion>(`${this.base}/publicaciones`, { texto, media_urls });
   }
 }
 

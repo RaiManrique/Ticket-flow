@@ -8,8 +8,25 @@
     <div class="composer-avatar">{{ (auth.getUser()?.username || 'U').slice(0, 2).toUpperCase() }}</div>
     <div class="composer-body">
       <textarea [(ngModel)]="text" rows="3" maxlength="180" placeholder="¿Que estas planeando ver?"></textarea>
-      <div class="composer-actions">
-        <span>{{ text.length }}/180</span>
+      
+      @if (previewUrl) {
+        <div style="margin-top: 10px; margin-bottom: 10px; border-radius: 8px; overflow: hidden; max-height: 200px; max-width: fit-content; background: var(--bg-elevated);">
+          @if (isVideo(selectedFile?.name)) {
+            <video [src]="previewUrl" controls style="max-width: 100%; max-height: 200px;"></video>
+          } @else {
+            <img [src]="previewUrl" alt="Preview" style="max-width: 100%; max-height: 200px; object-fit: contain;">
+          }
+        </div>
+      }
+
+      <div class="composer-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <label for="media-upload" class="btn btn-ghost btn-sm" style="cursor: pointer; padding: 4px 8px;">
+            📸 Media
+          </label>
+          <input id="media-upload" type="file" accept="image/*,video/*" (change)="onFileSelected($event)" style="display: none;">
+          <span style="color: var(--muted); font-size: 0.8rem;">{{ text.length }}/180</span>
+        </div>
         <button class="btn btn-glow btn-sm" type="button" [disabled]="loading" (click)="publish()">Publicar</button>
       </div>
       @if (msg) { <div class="alert success">{{ msg }}</div> }
@@ -33,7 +50,13 @@
           </div>
           <p class="feed-item-text">{{ p.texto }}</p>
           @if (p.media_urls?.length) {
-            <img class="feed-item-media" [src]="postMedia(p.media_urls![0], i)" alt="">
+            <div style="margin-top: 15px; border-radius: 12px; overflow: hidden; background: var(--bg-elevated); display: flex; justify-content: center;">
+              @if (isVideo(p.media_urls![0])) {
+                <video controls style="max-width: 100%; max-height: 400px;" [src]="p.media_urls![0]"></video>
+              } @else {
+                <img class="feed-item-media" style="max-width: 100%; max-height: 400px; object-fit: contain;" [src]="postMedia(p.media_urls![0], i)" alt="">
+              }
+            </div>
           }
         </article>
       }

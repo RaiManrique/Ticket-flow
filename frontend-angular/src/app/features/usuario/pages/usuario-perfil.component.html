@@ -1,0 +1,50 @@
+<div id="view-perfil" class="app-view active">
+  <div class="view-header">
+    <h2>Mi Perfil</h2>
+    <p>Actualiza tu informacion personal y foto de perfil</p>
+  </div>
+
+  <div class="admin-card" style="max-width: 600px;">
+    @if (msg) { <div class="alert success">{{ msg }}</div> }
+    @if (error) { <div class="alert error">{{ error }}</div> }
+
+    <form class="admin-form-grid" (ngSubmit)="saveProfile()">
+      
+      <div class="form-group" style="grid-column: 1/-1; display: flex; align-items: center; gap: 20px;">
+        <div class="avatar" style="width: 80px; height: 80px; font-size: 2rem;">
+          @if (previewUrl || user?.foto_perfil_url) {
+            <img [src]="previewUrl || profilePhoto(user!)" alt="Foto de perfil">
+          } @else {
+            <span>{{ (user?.username || 'U').slice(0,2).toUpperCase() }}</span>
+          }
+        </div>
+        
+        <div>
+          <label for="foto" class="btn btn-ghost btn-sm" style="cursor: pointer; display: inline-block;">Cambiar foto</label>
+          <input id="foto" type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;">
+          <p style="font-size: 0.8rem; color: var(--muted); margin-top: 8px;">Recomendado: 500x500px (Max 10MB)</p>
+        </div>
+      </div>
+
+      <div class="form-group" style="grid-column: 1/-1;">
+        <label for="nombre">Nombre Completo</label>
+        <input id="nombre" type="text" [(ngModel)]="nombreCompleto" name="nombre" required>
+      </div>
+
+      <div class="form-group" style="grid-column: 1/-1;">
+        <label for="username">Usuario (No modificable)</label>
+        <input id="username" type="text" [value]="user?.username" disabled style="opacity: 0.6;">
+      </div>
+
+      <div class="form-group" style="grid-column: 1/-1;">
+        <label for="email">Correo electronico (No modificable)</label>
+        <input id="email" type="text" [value]="user?.email" disabled style="opacity: 0.6;">
+      </div>
+
+      <button class="btn btn-glow" type="submit" [disabled]="loading" style="grid-column: 1/-1;">
+        {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
+      </button>
+
+    </form>
+  </div>
+</div>

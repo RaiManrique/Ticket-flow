@@ -6,6 +6,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { Publicacion } from '../../../core/models/ticketflow.models';
 import { timeAgo } from '../../../core/utils/format.util';
 import { postMedia, profilePhoto } from '../../../core/utils/images.util';
+import { UploadService } from '../../../core/services/upload.service';
 
 @Component({
   selector: 'app-usuario-comunidad',
@@ -16,12 +17,15 @@ import { postMedia, profilePhoto } from '../../../core/utils/images.util';
 export class UsuarioComunidadComponent implements OnInit {
   private readonly social = inject(SocialService);
   readonly auth = inject(AuthService);
+  private readonly uploadService = inject(UploadService);
 
   posts: Publicacion[] = [];
   text = '';
   msg = '';
   error = '';
   loading = false;
+  selectedFile: File | null = null;
+  previewUrl: string | null = null;
 
   ngOnInit(): void {
     this.load();
@@ -34,15 +38,42 @@ export class UsuarioComunidadComponent implements OnInit {
     });
   }
 
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => this.previewUrl = e.target?.result as string;
+      reader.readAsDataURL(file);
+    }
+  }
+
   publish(): void {
     if (this.text.trim().length < 5) {
       this.msg = 'Escribe al menos 5 caracteres.';
       return;
     }
     this.loading = true;
-    this.social.crear(this.text.trim()).subscribe({
+
+    if (this.selectedFile) {
+      this.uploadService.uploadFile(this.selectedFile).subscribe({
+        next: (res) => this.submitPost([res.url]),
+        error: (err) => {
+          this.msg = 'Error al subir archivo: ' + (err.error?.error || err.message);
+          this.loading = false;
+        }
+      });
+    } else {
+      this.submitPost();
+    }
+  }
+
+  private submitPost(mediaUrls?: string[]): void {
+    this.social.crear(this.text.trim(), mediaUrls).subscribe({
       next: () => {
         this.text = '';
+        this.selectedFile = null;
+        this.previewUrl = null;
         this.msg = 'Publicacion publicada.';
         this.loading = false;
         this.load();
@@ -52,6 +83,12 @@ export class UsuarioComunidadComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  isVideo(url: string | undefined): boolean {
+    if (!url) return false;
+    const lowerUrl = url.toLowerCase();
+    return lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.webm') || lowerUrl.endsWith('.mov') || lowerUrl.includes('video');
   }
 
   timeAgo = timeAgo;
