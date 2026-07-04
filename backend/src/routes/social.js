@@ -153,7 +153,7 @@ router.get("/publicaciones/:id/comentarios", async (req, res) => {
 
     const usuarioIds = [...new Set(comentarios.map((c) => String(c.usuario_id)))];
     const usuarios = await Usuario.find({ _id: { $in: usuarioIds } })
-      .select("username nombre_completo")
+      .select("username nombre_completo foto_perfil_url")
       .lean();
 
     const usuariosMap = Object.fromEntries(usuarios.map((u) => [String(u._id), u]));
@@ -171,9 +171,10 @@ router.get("/publicaciones/:id/comentarios", async (req, res) => {
 
 router.post("/publicaciones/:id/comentarios", requireAuth, async (req, res) => {
   const texto = String(req.body.texto || "").trim();
+  const media_urls = Array.isArray(req.body.media_urls) ? req.body.media_urls : [];
 
-  if (texto.length < 2) {
-    return res.status(400).json({ error: "El comentario es muy corto" });
+  if (texto.length < 2 && media_urls.length === 0) {
+    return res.status(400).json({ error: "El comentario debe tener texto o una imagen/video" });
   }
 
   try {
@@ -185,6 +186,7 @@ router.post("/publicaciones/:id/comentarios", requireAuth, async (req, res) => {
       publicacion_id: req.params.id,
       usuario_id: req.user._id,
       texto,
+      media_urls,
       fecha_comentario: new Date(),
     });
 
@@ -193,6 +195,7 @@ router.post("/publicaciones/:id/comentarios", requireAuth, async (req, res) => {
       autor: {
         username: req.user.username,
         nombre_completo: req.user.nombre_completo,
+        foto_perfil_url: req.user.foto_perfil_url,
       },
     });
   } catch (error) {

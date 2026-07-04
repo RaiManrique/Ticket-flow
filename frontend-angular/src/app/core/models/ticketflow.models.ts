@@ -62,6 +62,14 @@ export interface Publicacion {
   autor?: User;
 }
 
+export interface Comentario {
+  _id: string;
+  texto: string;
+  fecha_comentario: string;
+  media_urls?: string[];
+  autor?: User;
+}
+
 export interface DemoLoginInfo {
   password: string;
   accounts: { login: string; rol: string; label: string }[];

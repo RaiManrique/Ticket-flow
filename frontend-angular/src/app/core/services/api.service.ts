@@ -39,6 +39,14 @@ export class SocialService {
   crear(texto: string, media_urls?: string[]): Observable<Publicacion> {
     return this.http.post<Publicacion>(`${this.base}/publicaciones`, { texto, media_urls });
   }
+
+  comentarios(id: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/publicaciones/${id}/comentarios`);
+  }
+
+  crearComentario(id: string, texto: string, media_urls?: string[]): Observable<any> {
+    return this.http.post<any>(`${this.base}/publicaciones/${id}/comentarios`, { texto, media_urls });
+  }
 }
 
 @Injectable({ providedIn: 'root' })

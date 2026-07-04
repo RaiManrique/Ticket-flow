@@ -46,6 +46,7 @@ const comentarioSchema = new mongoose.Schema(
     publicacion_id: mongoose.Schema.Types.ObjectId,
     usuario_id: mongoose.Schema.Types.ObjectId,
     texto: String,
+    media_urls: [String],
     fecha_comentario: Date,
   },
   { collection: "comentarios" }

@@ -63,11 +63,74 @@
             </div>
           }
           
-          <div class="feed-actions" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 12px;">
+          <div class="feed-actions" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 12px; display: flex; gap: 15px;">
             <button class="btn btn-ghost btn-sm" style="border: none; padding: 4px 8px; color: var(--muted);">
               ❤️ {{ p.usuarios_likes?.length || 0 }} Me gusta
             </button>
+            <button class="btn btn-ghost btn-sm" style="border: none; padding: 4px 8px; color: var(--muted);" (click)="toggleComments(p._id)">
+              💬 Comentar
+            </button>
           </div>
+
+          @if (showComments[p._id]) {
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+              <!-- Comment Composer -->
+              <div class="composer-body" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <div class="avatar sm">{{ (auth.getUser()?.username || 'U').slice(0, 2).toUpperCase() }}</div>
+                <div style="flex: 1;">
+                  <textarea [(ngModel)]="commentDrafts[p._id].text" rows="2" style="width: 100%; border-radius: 8px; padding: 8px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text);" placeholder="Escribe tu comentario..."></textarea>
+                  
+                  @if (commentDrafts[p._id].previewUrl) {
+                    <div style="margin-top: 10px; border-radius: 8px; overflow: hidden; max-height: 150px; background: var(--bg-elevated);">
+                      @if (isVideo(commentDrafts[p._id].file?.name)) {
+                        <video [src]="commentDrafts[p._id].previewUrl" controls style="max-height: 150px;"></video>
+                      } @else {
+                        <img [src]="commentDrafts[p._id].previewUrl" alt="Preview" style="max-height: 150px;">
+                      }
+                    </div>
+                  }
+
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                    <label [for]="'comment-media-' + p._id" class="btn btn-ghost btn-sm" style="cursor: pointer; padding: 4px 8px; color: var(--muted);">
+                      📸 Media
+                    </label>
+                    <input [id]="'comment-media-' + p._id" type="file" accept="image/*,video/*" (change)="onCommentFileSelected(p._id, $event)" style="display: none;">
+                    
+                    <button class="btn btn-primary btn-sm" [disabled]="commentDrafts[p._id].loading" (click)="publishComment(p._id)">Responder</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Comments List -->
+              <div style="display: flex; flex-direction: column; gap: 15px;">
+                @for (c of comments[p._id]; track c._id) {
+                  <div style="display: flex; gap: 10px;">
+                    <div class="avatar sm" [class.has-photo]="profilePhoto(c.autor)">
+                      <img [src]="profilePhoto(c.autor)" alt="">
+                      <span>{{ (c.autor?.username || 'U').slice(0, 2).toUpperCase() }}</span>
+                    </div>
+                    <div style="flex: 1; background: var(--bg-elevated); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <strong>{{ c.autor?.nombre_completo || c.autor?.username }}</strong>
+                        <span style="font-size: 0.8rem; color: var(--muted);">{{ timeAgo(c.fecha_comentario) }}</span>
+                      </div>
+                      <p style="margin: 0; font-size: 0.95rem;">{{ c.texto }}</p>
+                      
+                      @if (c.media_urls?.length) {
+                        <div style="margin-top: 10px; border-radius: 8px; overflow: hidden;">
+                          @if (isVideo(c.media_urls![0])) {
+                            <video controls style="max-width: 100%; max-height: 250px;" [src]="c.media_urls![0]"></video>
+                          } @else {
+                            <img style="max-width: 100%; max-height: 250px; object-fit: contain;" [src]="postMedia(c.media_urls![0], 0)" alt="">
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
         </article>
       }
     }
