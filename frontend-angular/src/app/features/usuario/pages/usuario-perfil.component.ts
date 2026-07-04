@@ -84,4 +84,21 @@ export class UsuarioPerfilComponent implements OnInit {
       }
     });
   }
+
+  deleteAccount(): void {
+    if (!confirm('ATENCIÓN: Esta acción eliminará tu cuenta, todas tus publicaciones y comentarios de forma permanente. ¿Estás absolutamente seguro de continuar?')) {
+      return;
+    }
+
+    this.loading = true;
+    this.auth.eliminarCuenta().subscribe({
+      next: () => {
+        this.auth.logout();
+      },
+      error: (err) => {
+        this.error = 'Error al eliminar cuenta: ' + (err.error?.error || err.message);
+        this.loading = false;
+      }
+    });
+  }
 }

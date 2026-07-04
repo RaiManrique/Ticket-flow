@@ -47,6 +47,14 @@ export class SocialService {
   crearComentario(id: string, texto: string, media_urls?: string[]): Observable<any> {
     return this.http.post<any>(`${this.base}/publicaciones/${id}/comentarios`, { texto, media_urls });
   }
+
+  editarComentario(postId: string, commentId: string, texto: string, media_urls?: string[]): Observable<any> {
+    return this.http.put<any>(`${this.base}/publicaciones/${postId}/comentarios/${commentId}`, { texto, media_urls });
+  }
+
+  eliminarComentario(postId: string, commentId: string): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(`${this.base}/publicaciones/${postId}/comentarios/${commentId}`);
+  }
 }
 
 @Injectable({ providedIn: 'root' })

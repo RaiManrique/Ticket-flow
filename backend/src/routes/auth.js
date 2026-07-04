@@ -180,8 +180,19 @@ router.put("/me", requireAuth, async (req, res) => {
 
 router.delete("/me", requireAuth, async (req, res) => {
   try {
-    await Usuario.findByIdAndDelete(req.user._id);
-    res.json({ mensaje: "Usuario eliminado correctamente" });
+    const userId = req.user._id;
+    
+    // Eliminar comentarios del usuario
+    const { Comentario, Publicacion } = require("../models");
+    await Comentario.deleteMany({ usuario_id: userId });
+    
+    // Eliminar publicaciones del usuario
+    await Publicacion.deleteMany({ usuario_id: userId });
+
+    // Finalmente eliminar el usuario
+    await Usuario.findByIdAndDelete(userId);
+    
+    res.json({ mensaje: "Cuenta y todos sus datos asociados eliminados correctamente" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

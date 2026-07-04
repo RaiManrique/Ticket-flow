@@ -203,6 +203,63 @@ router.post("/publicaciones/:id/comentarios", requireAuth, async (req, res) => {
   }
 });
 
+router.put("/publicaciones/:id/comentarios/:comentarioId", requireAuth, async (req, res) => {
+  try {
+    requireObjectId(req.params.id, "publicacion_id");
+    requireObjectId(req.params.comentarioId, "comentario_id");
+    
+    const { texto, media_urls } = req.body;
+    const comentario = await Comentario.findById(req.params.comentarioId);
+    
+    if (!comentario) return res.status(404).json({ error: "Comentario no encontrado" });
+    if (comentario.usuario_id.toString() !== req.user._id.toString() && req.user.rol !== "admin") {
+      return res.status(403).json({ error: "No tienes permiso para modificar este comentario" });
+    }
+
+    if (texto !== undefined) comentario.texto = String(texto).trim();
+    if (Array.isArray(media_urls)) comentario.media_urls = media_urls;
+
+    if (comentario.texto.length < 2 && comentario.media_urls.length === 0) {
+      return res.status(400).json({ error: "El comentario debe tener texto o una imagen/video" });
+    }
+
+    await comentario.save();
+
+    res.json({
+      ...comentario.toObject(),
+      autor: {
+        username: req.user.username,
+        nombre_completo: req.user.nombre_completo,
+        foto_perfil_url: req.user.foto_perfil_url,
+      },
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+});
+
+router.delete("/publicaciones/:id/comentarios/:comentarioId", requireAuth, async (req, res) => {
+  try {
+    requireObjectId(req.params.id, "publicacion_id");
+    requireObjectId(req.params.comentarioId, "comentario_id");
+    
+    const comentario = await Comentario.findById(req.params.comentarioId);
+    if (!comentario) return res.status(404).json({ error: "Comentario no encontrado" });
+
+    const pub = await Publicacion.findById(req.params.id);
+    const isPubOwner = pub && pub.usuario_id.toString() === req.user._id.toString();
+
+    if (comentario.usuario_id.toString() !== req.user._id.toString() && !isPubOwner && req.user.rol !== "admin") {
+      return res.status(403).json({ error: "No tienes permiso para eliminar este comentario" });
+    }
+
+    await Comentario.findByIdAndDelete(req.params.comentarioId);
+    res.json({ mensaje: "Comentario eliminado correctamente" });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+});
+
 router.get("/usuarios", requireAuth, requireStaff, async (_req, res) => {
   try {
     const usuarios = await Usuario.find()

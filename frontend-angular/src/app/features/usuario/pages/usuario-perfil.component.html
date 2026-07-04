@@ -47,4 +47,14 @@
 
     </form>
   </div>
+
+  <div class="admin-card" style="max-width: 600px; margin-top: 2rem; border-color: rgba(239, 68, 68, 0.4);">
+    <h3 style="color: var(--danger); margin-bottom: 1rem;">Zona de Peligro</h3>
+    <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+      Al eliminar tu cuenta, borrarás permanentemente toda tu información, incluyendo tus publicaciones, comentarios y me gustas. Esta acción no se puede deshacer.
+    </p>
+    <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); width: 100%; padding: 12px; font-weight: 700; border-radius: var(--radius-sm);" (click)="deleteAccount()" [disabled]="loading">
+      Eliminar Cuenta Definitivamente
+    </button>
+  </div>
 </div>

@@ -144,6 +144,15 @@ export class AuthService {
     );
   }
 
+  eliminarCuenta(): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(`${this.base}/auth/me`).pipe(
+      tap(() => {
+        this.clearSession();
+        this.clearUserContext();
+      })
+    );
+  }
+
   logout(): void {
     this.clearSession();
     this.clearUserContext();

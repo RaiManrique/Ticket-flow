@@ -31,6 +31,9 @@ export class UsuarioComunidadComponent implements OnInit {
   comments: { [postId: string]: Comentario[] } = {};
   showComments: { [postId: string]: boolean } = {};
   commentDrafts: { [postId: string]: { text: string, file: File | null, previewUrl: string | null, loading: boolean } } = {};
+  
+  editingCommentId: string | null = null;
+  editDraftText: string = '';
 
   ngOnInit(): void {
     this.load();
@@ -151,6 +154,47 @@ export class UsuarioComunidadComponent implements OnInit {
       },
       error: () => {
         draft.loading = false;
+      }
+    });
+  }
+
+  startEditComment(c: Comentario): void {
+    this.editingCommentId = c._id;
+    this.editDraftText = c.texto;
+  }
+
+  cancelEditComment(): void {
+    this.editingCommentId = null;
+    this.editDraftText = '';
+  }
+
+  saveEditComment(postId: string, commentId: string): void {
+    if (this.editDraftText.trim().length < 2) return;
+    this.social.editarComentario(postId, commentId, this.editDraftText.trim()).subscribe({
+      next: (updated) => {
+        const comms = this.comments[postId];
+        if (comms) {
+          const idx = comms.findIndex((c) => c._id === commentId);
+          if (idx > -1) comms[idx] = updated;
+        }
+        this.cancelEditComment();
+      },
+      error: (err) => {
+        this.msg = err.error?.error || err.message;
+      }
+    });
+  }
+
+  deleteComment(postId: string, commentId: string): void {
+    if (!confirm('¿Estás seguro de eliminar este comentario?')) return;
+    this.social.eliminarComentario(postId, commentId).subscribe({
+      next: () => {
+        if (this.comments[postId]) {
+          this.comments[postId] = this.comments[postId].filter((c) => c._id !== commentId);
+        }
+      },
+      error: (err) => {
+        this.msg = err.error?.error || err.message;
       }
     });
   }

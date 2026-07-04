@@ -1,23 +1,23 @@
 :root {
-  --bg: #15202b;
-  --bg-elevated: #192734;
-  --surface: #1e2732;
-  --surface-hover: #22303c;
+  --bg: #0b0b0c;
+  --bg-elevated: #131314;
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-hover: rgba(255, 255, 255, 0.08);
   --border: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.18);
-  --text: #ffffff;
-  --muted: #8899a6;
-  --accent: #1d9bf0;
-  --accent-2: #8a2be2; /* Un degradado hacia violeta moderno */
-  --accent-blue: #1d9bf0;
-  --accent-glow: rgba(29, 155, 240, 0.35);
-  --success: #00ba7c;
-  --warning: #ffd400;
-  --danger: #f91880;
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --text: #e5e2e3;
+  --muted: #988d9f;
+  --accent: #a855f7;
+  --accent-2: #ec4899;
+  --accent-blue: #06b6d4;
+  --accent-glow: rgba(168, 85, 247, 0.4);
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
   --radius: 16px;
-  --radius-sm: 10px;
-  --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-  --font: "Plus Jakarta Sans", system-ui, sans-serif;
+  --radius-sm: 8px;
+  --shadow: 0 12px 32px rgba(168, 85, 247, 0.15);
+  --font: "Inter", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -269,7 +269,10 @@ body {
 
 .featured-card {
   background: var(--surface);
+  backdrop-filter: blur(20px);
   border: 1px solid var(--border);
+  border-top-color: rgba(255, 255, 255, 0.2);
+  border-left-color: rgba(255, 255, 255, 0.2);
   border-radius: 24px;
   overflow: hidden;
   box-shadow: var(--shadow);
@@ -364,7 +367,10 @@ body {
 
 .event-card {
   background: var(--surface);
+  backdrop-filter: blur(20px);
   border: 1px solid var(--border);
+  border-top-color: rgba(255, 255, 255, 0.15);
+  border-left-color: rgba(255, 255, 255, 0.15);
   border-radius: var(--radius);
   overflow: hidden;
   transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
@@ -636,7 +642,10 @@ body {
 
 .info-card {
   background: var(--surface);
+  backdrop-filter: blur(20px);
   border: 1px solid var(--border);
+  border-top-color: rgba(255, 255, 255, 0.15);
+  border-left-color: rgba(255, 255, 255, 0.15);
   border-radius: var(--radius);
   padding: 1.25rem;
   position: sticky;
@@ -664,7 +673,10 @@ body {
 
 .feed-card {
   background: var(--surface);
+  backdrop-filter: blur(20px);
   border: 1px solid var(--border);
+  border-top-color: rgba(255, 255, 255, 0.15);
+  border-left-color: rgba(255, 255, 255, 0.15);
   border-radius: var(--radius);
   padding: 1.25rem;
   transition: border-color 0.2s;
