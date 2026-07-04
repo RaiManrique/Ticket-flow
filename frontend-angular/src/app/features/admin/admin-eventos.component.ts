@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { AdminService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { UploadService } from '../../core/services/upload.service';
 import { Evento, User } from '../../core/models/ticketflow.models';
 import { CATEGORY_LABEL, formatDate } from '../../core/utils/format.util';
 import { eventFlyer } from '../../core/utils/images.util';
@@ -17,6 +18,7 @@ import { eventFlyer } from '../../core/utils/images.util';
 export class AdminEventosComponent implements OnInit, OnDestroy {
   private readonly admin = inject(AdminService);
   private readonly auth = inject(AuthService);
+  private readonly uploadService = inject(UploadService);
   private sessionSub?: Subscription;
 
   eventos: Evento[] = [];
@@ -36,6 +38,7 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
   categoria = 'concierto';
   ciudad = 'Lima';
   fecha_evento = '';
+  selectedFile: File | null = null;
 
   readonly categorias = ['concierto', 'festival', 'teatro', 'deporte', 'otro'];
   readonly isAdmin = this.auth.getUser()?.rol === 'admin';
@@ -115,6 +118,13 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
     this.detailError = '';
   }
 
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+    }
+  }
+
   create(): void {
     this.error = '';
     this.success = '';
@@ -128,6 +138,23 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
     }
 
     this.saving = true;
+
+    if (this.selectedFile) {
+      this.uploadService.uploadFile(this.selectedFile).subscribe({
+        next: (res) => {
+          this.submitEvento(res.url);
+        },
+        error: (err) => {
+          this.error = 'Error al subir la imagen: ' + (err.error?.error || err.message);
+          this.saving = false;
+        }
+      });
+    } else {
+      this.submitEvento();
+    }
+  }
+
+  private submitEvento(flyerUrl?: string): void {
     this.admin
       .createEvento({
         titulo: this.titulo.trim(),
@@ -135,6 +162,7 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
         categoria: this.categoria,
         ciudad: this.ciudad.trim(),
         fecha_evento: new Date(this.fecha_evento).toISOString(),
+        flyer_url: flyerUrl
       })
       .subscribe({
         next: (res) => {
@@ -144,6 +172,7 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
           this.titulo = '';
           this.descripcion = '';
           this.fecha_evento = '';
+          this.selectedFile = null;
           this.showCreateForm = false;
           this.saving = false;
           this.load();

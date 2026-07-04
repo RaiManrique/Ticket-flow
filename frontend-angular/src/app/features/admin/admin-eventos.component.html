@@ -44,6 +44,10 @@
         <label for="descripcion">Descripción</label>
         <textarea id="descripcion" rows="3" [(ngModel)]="descripcion" name="descripcion" placeholder="Describe el evento..."></textarea>
       </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label for="flyer">Flyer del evento (Opcional)</label>
+        <input id="flyer" type="file" accept="image/*" (change)="onFileSelected($event)">
+      </div>
       <button class="btn btn-glow" type="submit" [disabled]="saving">
         {{ saving ? 'Publicando...' : 'Publicar evento' }}
       </button>

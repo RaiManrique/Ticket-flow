@@ -10,6 +10,7 @@ const socialRouter = require("./routes/social");
 const authRouter = require("./routes/auth");
 const adminRouter = require("./routes/admin");
 const demoRouter = require("./routes/demo");
+const uploadRouter = require("./routes/upload");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -68,6 +69,7 @@ app.use("/api/eventos", eventosRouter);
 app.use("/api/social", socialRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/demo", demoRouter);
+app.use("/api/upload", uploadRouter);
 
 app.use((err, req, res, next) => {
   if (err?.type === "entity.parse.failed") {
