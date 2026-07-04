@@ -1,84 +1,140 @@
-<div id="view-perfil" class="app-view active">
-  <div class="view-header" style="margin-bottom: 2rem;">
-    <h2>Mi Dashboard</h2>
-    <p>Administra tu perfil, privacidad y cuenta</p>
-  </div>
+<div id="view-perfil" class="app-view active" style="padding-top: 0;">
+  @if (msg) { <div class="alert success" style="margin: 1rem;">{{ msg }}</div> }
+  @if (error) { <div class="alert error" style="margin: 1rem;">{{ error }}</div> }
 
-  @if (msg) { <div class="alert success">{{ msg }}</div> }
-  @if (error) { <div class="alert error">{{ error }}</div> }
-
-  <div class="bento-grid">
-    <!-- Bento 1: Resumen de Perfil (Span 2) -->
-    <div class="bento-item bento-span-2" style="display: flex; align-items: center; gap: 1.5rem; background: linear-gradient(135deg, rgba(168,85,247,0.1), rgba(6,182,212,0.1)); border-color: rgba(168,85,247,0.3);">
-      <div class="avatar" style="width: 100px; height: 100px; font-size: 2.5rem; flex-shrink: 0;">
-        @if (previewUrl || user?.foto_perfil_url) {
-          <img [src]="previewUrl || profilePhoto(user!)" alt="Foto de perfil">
-        } @else {
-          <span>{{ (user?.username || 'U').slice(0,2).toUpperCase() }}</span>
-        }
-      </div>
-      <div>
-        <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.2rem;">{{ nombreCompleto || user?.username }}</h3>
-        <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem;">&#64;{{ user?.username }}</p>
-        <label for="foto" class="btn btn-glow btn-sm" style="cursor: pointer;">Actualizar Foto</label>
+  <!-- Profile Header (Cover + Info) -->
+  <div style="position: relative; width: 100%; height: 300px; margin-bottom: 4rem; border-radius: 0 0 var(--radius) var(--radius); overflow: hidden;">
+    <!-- Cover Image -->
+    <div style="position: absolute; inset: 0; background: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAjS8-_jlvk2riPCHW-hxOFzZ0WtUrZM5e9ZlLIfUx41lgrAOc3W_u3BUe5hUPW0zOklX55XNALlmrNCqGqYAi4DUe1So6NvtNZ-m8BRGvl4LPi6_PibvT6HizW9xLMMHMCEDBHIgRDAnigs7J5BbHRZDMR42WmFnHXJ2Pv5oPHGx-eUQRV9AqcUM8vqA1Ikx_DgXE00d5ETBna50lCawjf3q4xmTNHNd8CgF48pJOjWGFXvAuqu6Cq6SkvvAaubMKUK7N5BJddIh4') center/cover;">
+      <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, var(--background));"></div>
+    </div>
+    
+    <!-- Profile Info Overlay -->
+    <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 0 2rem; transform: translateY(50%); display: flex; align-items: flex-end; gap: 2rem;">
+      
+      <!-- Avatar with Update Button -->
+      <div style="position: relative; flex-shrink: 0;">
+        <div style="width: 140px; height: 140px; border-radius: 24px; overflow: hidden; border: 3px solid var(--primary); background: var(--bg-elevated); box-shadow: 0 0 30px rgba(168,85,247,0.3);">
+          @if (previewUrl || user?.foto_perfil_url) {
+            <img [src]="previewUrl || profilePhoto(user!)" alt="Foto de perfil" style="width: 100%; height: 100%; object-fit: cover;">
+          } @else {
+            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold;">
+              {{ (user?.username || 'U').slice(0,2).toUpperCase() }}
+            </div>
+          }
+        </div>
+        <label for="foto" style="position: absolute; bottom: -5px; right: -5px; background: var(--primary); color: var(--on-primary); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid var(--background); transition: transform 0.2s;">
+          ✏️
+        </label>
         <input id="foto" type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;">
       </div>
+
+      <!-- User Stats -->
+      <div style="padding-bottom: 2rem;">
+        <h1 style="font-size: 2.2rem; font-weight: 800; margin: 0; text-shadow: 0 0 10px rgba(168,85,247,0.5);">{{ nombreCompleto || user?.username }}</h1>
+        <p style="color: var(--muted); font-size: 1.1rem; margin-bottom: 1rem;">&#64;{{ user?.username }}</p>
+        
+        <div style="display: flex; gap: 2rem;">
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">{{ myPosts.length }}</span>
+            <span style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Publicaciones</span>
+          </div>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 1.2rem; font-weight: 700; color: var(--secondary);">{{ myEvents.length }}</span>
+            <span style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Eventos</span>
+          </div>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 1.2rem; font-weight: 700; color: var(--tertiary);">{{ myMedia.length }}</span>
+            <span style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Momentos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bento-grid" style="padding: 0 2rem;">
+
+    <!-- Mis Eventos -->
+    <div class="bento-item bento-span-3">
+      <div class="bento-header">
+        <h3>Próximos Eventos</h3>
+      </div>
+      @if (myEvents.length > 0) {
+        <div style="display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem;">
+          @for (e of myEvents; track e._id) {
+            <div style="min-width: 280px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border); overflow: hidden;">
+              <div style="height: 120px; background: url({{e.flyer_url}}) center/cover;"></div>
+              <div style="padding: 1rem;">
+                <h4 style="font-size: 1.1rem; margin-bottom: 0.2rem;">{{ e.titulo }}</h4>
+                <p style="color: var(--muted); font-size: 0.9rem;">{{ e.fecha_evento | date:'mediumDate' }} • {{ e.ciudad }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p style="color: var(--muted);">No te has apuntado a ningún evento aún.</p>
+      }
     </div>
 
-    <!-- Bento 2: Información Personal -->
+    <!-- Momentos (Galería) -->
+    <div class="bento-item bento-span-3">
+      <div class="bento-header">
+        <h3>Momentos (Galería)</h3>
+      </div>
+      @if (myMedia.length > 0) {
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
+          @for (media of myMedia; track media) {
+            <div style="border-radius: var(--radius-sm); overflow: hidden; height: 150px; background: #000;">
+              @if (isVideo(media)) {
+                <video [src]="media" style="width: 100%; height: 100%; object-fit: cover;"></video>
+              } @else {
+                <img [src]="media" style="width: 100%; height: 100%; object-fit: cover;" alt="Momento">
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <p style="color: var(--muted);">No has compartido ninguna foto o video en la comunidad.</p>
+      }
+    </div>
+
+    <!-- Ajustes del Perfil -->
     <div class="bento-item bento-span-2">
       <div class="bento-header">
-        <h3>Información Personal</h3>
-        <p>Actualiza tus datos basicos</p>
+        <h3>Editar Información</h3>
       </div>
       <form (ngSubmit)="saveProfile()">
         <div class="form-group">
           <label for="nombre">Nombre Completo</label>
-          <input id="nombre" type="text" [(ngModel)]="nombreCompleto" name="nombre" required style="width: 100%; padding: 0.75rem; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius-sm);">
+          <input id="nombre" type="text" [(ngModel)]="nombreCompleto" name="nombre" required style="width: 100%; padding: 0.75rem; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius-sm); font-size: 1rem;">
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
           <div class="form-group">
-            <label>Usuario (Solo lectura)</label>
+            <label>Usuario</label>
             <input type="text" [value]="user?.username" disabled style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius-sm);">
           </div>
           <div class="form-group">
-            <label>Correo Electrónico (Solo lectura)</label>
+            <label>Correo Electrónico</label>
             <input type="text" [value]="user?.email" disabled style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius-sm);">
           </div>
         </div>
-        <button class="btn btn-glow" type="submit" [disabled]="loading" style="margin-top: 1rem;">
+        <button class="btn btn-glow" type="submit" [disabled]="loading" style="margin-top: 1rem; width: 100%;">
           {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
         </button>
       </form>
     </div>
 
-    <!-- Bento 3: Privacidad -->
-    <div class="bento-item">
-      <div class="bento-header">
-        <h3>Privacidad</h3>
-        <p>Tu cuenta es publica por defecto.</p>
-      </div>
-      <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-top: 1rem;">
-        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-          <input type="checkbox" disabled checked> Perfil Publico
-        </label>
-      </div>
-    </div>
-
-    <!-- Bento 4: Zona de Peligro -->
-    <div class="bento-item bento-span-3" style="border-color: rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(239,68,68,0.05), transparent);">
+    <!-- Zona de Peligro -->
+    <div class="bento-item" style="border-color: rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(239,68,68,0.05), transparent);">
       <div class="bento-header">
         <h3 style="color: var(--danger);">Zona de Peligro</h3>
-        <p>Acciones irreversibles sobre tu cuenta</p>
       </div>
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <p style="color: var(--muted); font-size: 0.9rem; max-width: 600px;">
-          Al eliminar tu cuenta, borrarás permanentemente toda tu información, incluyendo tus publicaciones, comentarios y me gustas. Esta acción no se puede deshacer.
-        </p>
-        <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); padding: 10px 20px; font-weight: 700; border-radius: var(--radius-sm);" (click)="deleteAccount()" [disabled]="loading">
-          Eliminar Cuenta Definitivamente
-        </button>
-      </div>
+      <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+        Al eliminar tu cuenta, borrarás permanentemente toda tu información, incluyendo tus publicaciones, comentarios y me gustas. Esta acción no se puede deshacer.
+      </p>
+      <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); width: 100%; padding: 10px; font-weight: 700; border-radius: var(--radius-sm);" (click)="deleteAccount()" [disabled]="loading">
+        Eliminar Cuenta
+      </button>
     </div>
   </div>
 </div>

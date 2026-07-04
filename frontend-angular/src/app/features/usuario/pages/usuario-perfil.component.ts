@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { UploadService } from '../../../core/services/upload.service';
 import { profilePhoto } from '../../../core/utils/images.util';
-import { User } from '../../../core/models/ticketflow.models';
+import { Evento, Publicacion, User } from '../../../core/models/ticketflow.models';
+import { SocialService, EventosService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-usuario-perfil',
@@ -15,6 +16,8 @@ import { User } from '../../../core/models/ticketflow.models';
 export class UsuarioPerfilComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly uploadService = inject(UploadService);
+  private readonly social = inject(SocialService);
+  private readonly eventosService = inject(EventosService);
 
   user: User | null = null;
   nombreCompleto = '';
@@ -25,13 +28,51 @@ export class UsuarioPerfilComponent implements OnInit {
   msg = '';
   error = '';
   
+  myPosts: Publicacion[] = [];
+  myEvents: Evento[] = [];
+  myMedia: string[] = [];
+  
   profilePhoto = profilePhoto;
 
   ngOnInit(): void {
     this.user = this.auth.getUser();
     if (this.user) {
       this.nombreCompleto = this.user.nombre_completo || '';
+      this.loadProfileData();
     }
+  }
+
+  private loadProfileData(): void {
+    if (!this.user) return;
+    const userId = this.user._id;
+
+    // Load Posts & Media
+    this.social.publicaciones().subscribe({
+      next: (posts) => {
+        this.myPosts = posts.filter(p => p.autor?._id === userId || (p as any).usuario_id === userId);
+        
+        // Extract Media
+        this.myMedia = [];
+        this.myPosts.forEach(p => {
+          if (p.media_urls) {
+            this.myMedia.push(...p.media_urls);
+          }
+        });
+      },
+      error: (err) => console.error('Error fetching posts:', err)
+    });
+
+    // Load Events
+    this.eventosService.list().subscribe({
+      next: (events) => {
+        this.myEvents = events.filter(e => e.asistentes?.includes(userId));
+      },
+      error: (err) => console.error('Error fetching events:', err)
+    });
+  }
+
+  isVideo(url: string | undefined): boolean {
+    return !!url && url.match(/\.(mp4|webm|ogg)$/i) !== null;
   }
 
   onFileSelected(event: any): void {
