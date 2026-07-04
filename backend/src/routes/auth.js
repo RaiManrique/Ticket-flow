@@ -15,6 +15,7 @@ function publicUser(user) {
     nombre_completo: user.nombre_completo,
     rol: user.rol,
     foto_perfil_url: user.foto_perfil_url,
+    foto_portada_url: user.foto_portada_url,
   };
 }
 
@@ -164,12 +165,13 @@ router.get("/me", requireAuth, (req, res) => {
 
 router.put("/me", requireAuth, async (req, res) => {
   try {
-    const { nombre_completo, foto_perfil_url } = req.body;
+    const { nombre_completo, foto_perfil_url, foto_portada_url } = req.body;
     const user = await Usuario.findById(req.user._id);
     if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
 
     if (nombre_completo) user.nombre_completo = String(nombre_completo).trim();
     if (foto_perfil_url) user.foto_perfil_url = String(foto_perfil_url).trim();
+    if (foto_portada_url !== undefined) user.foto_portada_url = foto_portada_url ? String(foto_portada_url).trim() : '';
 
     await user.save();
     res.json(publicUser(user.toObject()));

@@ -3,137 +3,167 @@
   @if (error) { <div class="alert error" style="margin: 1rem;">{{ error }}</div> }
 
   <!-- Profile Header (Cover + Info) -->
-  <div style="position: relative; width: 100%; height: 300px; margin-bottom: 4rem; border-radius: 0 0 var(--radius) var(--radius); overflow: hidden;">
+  <div style="position: relative; width: 100%; height: 350px; margin-bottom: 4rem; border-radius: 0 0 var(--radius) var(--radius); overflow: hidden; background: var(--bg-elevated);">
+    
     <!-- Cover Image -->
-    <div style="position: absolute; inset: 0; background: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAjS8-_jlvk2riPCHW-hxOFzZ0WtUrZM5e9ZlLIfUx41lgrAOc3W_u3BUe5hUPW0zOklX55XNALlmrNCqGqYAi4DUe1So6NvtNZ-m8BRGvl4LPi6_PibvT6HizW9xLMMHMCEDBHIgRDAnigs7J5BbHRZDMR42WmFnHXJ2Pv5oPHGx-eUQRV9AqcUM8vqA1Ikx_DgXE00d5ETBna50lCawjf3q4xmTNHNd8CgF48pJOjWGFXvAuqu6Cq6SkvvAaubMKUK7N5BJddIh4') center/cover;">
-      <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, var(--background));"></div>
-    </div>
+    @if (coverPreviewUrl || user?.foto_portada_url) {
+      <img [src]="coverPreviewUrl || user?.foto_portada_url" alt="Cover" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;">
+    } @else {
+      <div style="position: absolute; inset: 0; background: linear-gradient(135deg, var(--accent), var(--accent-blue));"></div>
+    }
+    
+    <!-- Cover Overlay -->
+    <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, var(--bg));"></div>
+
+    <!-- Edit Cover Button -->
+    <label for="coverInput" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); padding: 0.5rem 1rem; border-radius: 999px; cursor: pointer; color: white; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border-strong); transition: all 0.2s; z-index: 10;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='rgba(0,0,0,0.5)'">
+      📸 Cambiar Portada
+    </label>
+    <input id="coverInput" type="file" accept="image/*" (change)="onFileSelected($event, 'cover')" style="display: none;">
     
     <!-- Profile Info Overlay -->
-    <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 0 2rem; transform: translateY(50%); display: flex; align-items: flex-end; gap: 2rem;">
+    <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 0 2rem; transform: translateY(30%); display: flex; align-items: flex-end; gap: 2rem;">
       
       <!-- Avatar with Update Button -->
       <div style="position: relative; flex-shrink: 0;">
-        <div style="width: 140px; height: 140px; border-radius: 24px; overflow: hidden; border: 3px solid var(--primary); background: var(--bg-elevated); box-shadow: 0 0 30px rgba(168,85,247,0.3);">
+        <div style="width: 150px; height: 150px; border-radius: 24px; overflow: hidden; border: 4px solid var(--bg); background: var(--bg-elevated); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
           @if (previewUrl || user?.foto_perfil_url) {
             <img [src]="previewUrl || profilePhoto(user!)" alt="Foto de perfil" style="width: 100%; height: 100%; object-fit: cover;">
           } @else {
-            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold;">
+            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; background: rgba(168,85,247,0.2);">
               {{ (user?.username || 'U').slice(0,2).toUpperCase() }}
             </div>
           }
         </div>
-        <label for="foto" style="position: absolute; bottom: -5px; right: -5px; background: var(--primary); color: var(--on-primary); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid var(--background); transition: transform 0.2s;">
-          ✏️
+        <label for="avatarInput" style="position: absolute; bottom: -5px; right: -5px; background: var(--accent); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 4px solid var(--bg); transition: transform 0.2s; box-shadow: 0 4px 10px var(--accent-glow);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
         </label>
-        <input id="foto" type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;">
+        <input id="avatarInput" type="file" accept="image/*" (change)="onFileSelected($event, 'avatar')" style="display: none;">
       </div>
 
       <!-- User Stats -->
-      <div style="padding-bottom: 2rem;">
-        <h1 style="font-size: 2.2rem; font-weight: 800; margin: 0; text-shadow: 0 0 10px rgba(168,85,247,0.5);">{{ nombreCompleto || user?.username }}</h1>
-        <p style="color: var(--muted); font-size: 1.1rem; margin-bottom: 1rem;">&#64;{{ user?.username }}</p>
+      <div style="padding-bottom: 2rem; flex: 1;">
+        <h1 style="font-size: 2.2rem; font-weight: 800; margin: 0; text-shadow: 0 0 10px rgba(0,0,0,0.8);">{{ nombreCompleto || user?.username }}</h1>
+        <p style="color: var(--accent-blue); font-size: 1.1rem; margin-bottom: 1rem; font-weight: 500;">&#64;{{ user?.username }}</p>
         
         <div style="display: flex; gap: 2rem;">
           <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">{{ myPosts.length }}</span>
-            <span style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Publicaciones</span>
+            <span style="font-size: 1.2rem; font-weight: 700; color: white;">{{ myPosts.length }}</span>
+            <span style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Posts</span>
           </div>
           <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 1.2rem; font-weight: 700; color: var(--secondary);">{{ myEvents.length }}</span>
-            <span style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Eventos</span>
+            <span style="font-size: 1.2rem; font-weight: 700; color: white;">{{ myEvents.length }}</span>
+            <span style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Eventos</span>
           </div>
           <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 1.2rem; font-weight: 700; color: var(--tertiary);">{{ myMedia.length }}</span>
-            <span style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Momentos</span>
+            <span style="font-size: 1.2rem; font-weight: 700; color: white;">{{ myMedia.length }}</span>
+            <span style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Media</span>
           </div>
         </div>
       </div>
+      
+      <!-- Save Profile Button (if changes exist) -->
+      @if (selectedFile || selectedCoverFile || nombreCompleto !== user?.nombre_completo) {
+        <div style="padding-bottom: 2rem;">
+          <button class="btn btn-glow" style="padding: 0.8rem 1.5rem; border-radius: var(--radius-sm);" (click)="saveProfile()" [disabled]="loading">
+            {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
+          </button>
+        </div>
+      }
     </div>
   </div>
 
-  <div class="bento-grid" style="padding: 0 2rem;">
+  <div class="bento-grid" style="padding: 0 2rem; margin-top: 5rem;">
 
     <!-- Mis Eventos -->
     <div class="bento-item bento-span-3">
       <div class="bento-header">
-        <h3>Próximos Eventos</h3>
+        <h3>🎟️ Mis Próximos Eventos</h3>
       </div>
       @if (myEvents.length > 0) {
-        <div style="display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem;">
+        <div style="display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1rem; scroll-behavior: smooth;">
           @for (e of myEvents; track e._id) {
-            <div style="min-width: 280px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border); overflow: hidden;">
-              <div style="height: 120px; background: url({{e.flyer_url}}) center/cover;"></div>
+            <div style="min-width: 280px; background: var(--bg-elevated); border-radius: var(--radius-sm); border: 1px solid var(--border); overflow: hidden; transition: transform 0.2s, border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="height: 140px; background: url({{e.flyer_url}}) center/cover; position: relative;">
+                <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 50%; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
+                <span style="position: absolute; bottom: 10px; left: 10px; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">{{ e.categoria }}</span>
+              </div>
               <div style="padding: 1rem;">
-                <h4 style="font-size: 1.1rem; margin-bottom: 0.2rem;">{{ e.titulo }}</h4>
-                <p style="color: var(--muted); font-size: 0.9rem;">{{ e.fecha_evento | date:'mediumDate' }} • {{ e.ciudad }}</p>
+                <h4 style="font-size: 1.1rem; margin-bottom: 0.4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ e.titulo }}</h4>
+                <p style="color: var(--muted); font-size: 0.85rem;">{{ e.fecha_evento | date:'mediumDate' }} • {{ e.ciudad }}</p>
               </div>
             </div>
           }
         </div>
       } @else {
-        <p style="color: var(--muted);">No te has apuntado a ningún evento aún.</p>
+        <div style="text-align: center; padding: 2rem; border: 1px dashed var(--border); border-radius: var(--radius-sm); color: var(--muted);">
+          No te has apuntado a ningún evento aún.
+        </div>
       }
     </div>
 
     <!-- Momentos (Galería) -->
     <div class="bento-item bento-span-3">
       <div class="bento-header">
-        <h3>Momentos (Galería)</h3>
+        <h3>📸 Galería de Momentos</h3>
       </div>
       @if (myMedia.length > 0) {
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
           @for (media of myMedia; track media) {
-            <div style="border-radius: var(--radius-sm); overflow: hidden; height: 150px; background: #000;">
+            <div style="border-radius: var(--radius-sm); overflow: hidden; aspect-ratio: 1; background: var(--bg-elevated); border: 1px solid var(--border); position: relative;">
               @if (isVideo(media)) {
                 <video [src]="media" style="width: 100%; height: 100%; object-fit: cover;"></video>
+                <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2);">
+                  <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  </div>
+                </div>
               } @else {
-                <img [src]="media" style="width: 100%; height: 100%; object-fit: cover;" alt="Momento">
+                <img [src]="media" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" alt="Momento">
               }
             </div>
           }
         </div>
       } @else {
-        <p style="color: var(--muted);">No has compartido ninguna foto o video en la comunidad.</p>
+        <div style="text-align: center; padding: 2rem; border: 1px dashed var(--border); border-radius: var(--radius-sm); color: var(--muted);">
+          No has compartido ninguna foto o video en la comunidad.
+        </div>
       }
     </div>
 
     <!-- Ajustes del Perfil -->
     <div class="bento-item bento-span-2">
       <div class="bento-header">
-        <h3>Editar Información</h3>
+        <h3>⚙️ Configuración Pública</h3>
       </div>
       <form (ngSubmit)="saveProfile()">
         <div class="form-group">
           <label for="nombre">Nombre Completo</label>
-          <input id="nombre" type="text" [(ngModel)]="nombreCompleto" name="nombre" required style="width: 100%; padding: 0.75rem; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius-sm); font-size: 1rem;">
+          <input id="nombre" type="text" [(ngModel)]="nombreCompleto" name="nombre" required style="width: 100%; padding: 0.85rem; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius-sm); font-size: 1rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
         </div>
         <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
           <div class="form-group">
-            <label>Usuario</label>
-            <input type="text" [value]="user?.username" disabled style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius-sm);">
+            <label>Usuario (Solo Lectura)</label>
+            <input type="text" [value]="user?.username" disabled style="width: 100%; padding: 0.85rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius-sm);">
           </div>
           <div class="form-group">
-            <label>Correo Electrónico</label>
-            <input type="text" [value]="user?.email" disabled style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius-sm);">
+            <label>Correo Electrónico (Solo Lectura)</label>
+            <input type="text" [value]="user?.email" disabled style="width: 100%; padding: 0.85rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius-sm);">
           </div>
         </div>
-        <button class="btn btn-glow" type="submit" [disabled]="loading" style="margin-top: 1rem; width: 100%;">
-          {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
-        </button>
       </form>
     </div>
 
     <!-- Zona de Peligro -->
     <div class="bento-item" style="border-color: rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(239,68,68,0.05), transparent);">
       <div class="bento-header">
-        <h3 style="color: var(--danger);">Zona de Peligro</h3>
+        <h3 style="color: var(--danger);">⚠️ Zona de Peligro</h3>
       </div>
-      <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
-        Al eliminar tu cuenta, borrarás permanentemente toda tu información, incluyendo tus publicaciones, comentarios y me gustas. Esta acción no se puede deshacer.
+      <p style="color: var(--muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+        Al eliminar tu cuenta, borrarás permanentemente toda tu información, incluyendo tus publicaciones, comentarios y multimedia. Esta acción no se puede deshacer.
       </p>
-      <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); width: 100%; padding: 10px; font-weight: 700; border-radius: var(--radius-sm);" (click)="deleteAccount()" [disabled]="loading">
-        Eliminar Cuenta
+      <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); width: 100%; padding: 12px; font-weight: 700; border-radius: var(--radius-sm); transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.25)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.15)'" (click)="deleteAccount()" [disabled]="loading">
+        Eliminar Cuenta Definitivamente
       </button>
     </div>
   </div>
