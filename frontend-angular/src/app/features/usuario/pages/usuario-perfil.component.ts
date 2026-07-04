@@ -24,9 +24,6 @@ export class UsuarioPerfilComponent implements OnInit {
   selectedFile: File | null = null;
   previewUrl: string | null = null;
   
-  selectedCoverFile: File | null = null;
-  coverPreviewUrl: string | null = null;
-  
   loading = false;
   msg = '';
   error = '';
@@ -78,22 +75,17 @@ export class UsuarioPerfilComponent implements OnInit {
     return !!url && url.match(/\.(mp4|webm|ogg)$/i) !== null;
   }
 
-  onFileSelected(event: any, type: 'avatar' | 'cover'): void {
+  onFileSelected(event: any): void {
     const file = event.target.files[0];
     if (file) {
+      this.selectedFile = file;
       const reader = new FileReader();
-      if (type === 'avatar') {
-        this.selectedFile = file;
-        reader.onload = (e) => this.previewUrl = e.target?.result as string;
-      } else {
-        this.selectedCoverFile = file;
-        reader.onload = (e) => this.coverPreviewUrl = e.target?.result as string;
-      }
+      reader.onload = (e) => this.previewUrl = e.target?.result as string;
       reader.readAsDataURL(file);
     }
   }
 
-  async saveProfile(): Promise<void> {
+  saveProfile(): void {
     if (!this.nombreCompleto.trim()) {
       this.error = 'El nombre completo es obligatorio';
       return;
@@ -102,39 +94,29 @@ export class UsuarioPerfilComponent implements OnInit {
     this.loading = true;
     this.error = '';
     this.msg = '';
-    
-    try {
-        let avatarUrl: string | undefined;
-        let coverUrl: string | undefined;
-        
-        if (this.selectedFile) {
-            const res = await this.uploadService.uploadFile(this.selectedFile).toPromise();
-            avatarUrl = res?.url;
+
+    if (this.selectedFile) {
+      this.uploadService.uploadFile(this.selectedFile).subscribe({
+        next: (res) => this.submitUpdate(res.url),
+        error: (err) => {
+          this.error = 'Error al subir la imagen: ' + (err.error?.error || err.message);
+          this.loading = false;
         }
-        
-        if (this.selectedCoverFile) {
-            const res = await this.uploadService.uploadFile(this.selectedCoverFile).toPromise();
-            coverUrl = res?.url;
-        }
-        
-        this.submitUpdate(avatarUrl, coverUrl);
-    } catch (err: any) {
-        this.error = 'Error al subir imagenes: ' + (err.error?.error || err.message);
-        this.loading = false;
+      });
+    } else {
+      this.submitUpdate();
     }
   }
 
-  private submitUpdate(fotoUrl?: string, portadaUrl?: string): void {
+  private submitUpdate(fotoUrl?: string): void {
     const data: any = { nombre_completo: this.nombreCompleto.trim() };
     if (fotoUrl) data.foto_perfil_url = fotoUrl;
-    if (portadaUrl) data.foto_portada_url = portadaUrl;
 
     this.auth.updateProfile(data).subscribe({
       next: (updatedUser) => {
         this.user = updatedUser;
         this.msg = 'Perfil actualizado correctamente';
         this.selectedFile = null;
-        this.selectedCoverFile = null;
         this.loading = false;
       },
       error: (err) => {
@@ -145,7 +127,7 @@ export class UsuarioPerfilComponent implements OnInit {
   }
 
   deleteAccount(): void {
-    if (!confirm('ATENCIÓN: Esta acción eliminará tu cuenta de forma permanente. ¿Estás seguro?')) {
+    if (!confirm('ATENCIÓN: Esta acción eliminará tu cuenta, todas tus publicaciones y comentarios de forma permanente. ¿Estás absolutamente seguro de continuar?')) {
       return;
     }
 

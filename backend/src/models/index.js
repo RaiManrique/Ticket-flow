@@ -7,7 +7,6 @@ const usuarioSchema = new mongoose.Schema(
     username: String,
     nombre_completo: String,
     foto_perfil_url: String,
-    foto_portada_url: String,
     fecha_registro: Date,
     rol: String,
   },

@@ -1,186 +1,140 @@
-<div class="min-h-screen bg-[#0b0b0c] text-[#e5e2e3] font-sans pb-20">
-  @if (msg) { <div class="m-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">{{ msg }}</div> }
-  @if (error) { <div class="m-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400">{{ error }}</div> }
+<div id="view-perfil" class="app-view active" style="padding-top: 0;">
+  @if (msg) { <div class="alert success" style="margin: 1rem;">{{ msg }}</div> }
+  @if (error) { <div class="alert error" style="margin: 1rem;">{{ error }}</div> }
 
-  <!-- Cover Photo Area -->
-  <div class="relative w-full h-[300px] md:h-[400px] bg-neutral-900 overflow-hidden group">
-    @if (coverPreviewUrl || user?.foto_portada_url) {
-      <img [src]="coverPreviewUrl || user?.foto_portada_url" alt="Cover" class="w-full h-full object-cover">
-    } @else {
-      <div class="w-full h-full bg-gradient-to-br from-indigo-900 to-purple-900"></div>
-    }
+  <!-- Profile Header (Cover + Info) -->
+  <div style="position: relative; width: 100%; height: 300px; margin-bottom: 4rem; border-radius: 0 0 var(--radius) var(--radius); overflow: hidden;">
+    <!-- Cover Image -->
+    <div style="position: absolute; inset: 0; background: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAjS8-_jlvk2riPCHW-hxOFzZ0WtUrZM5e9ZlLIfUx41lgrAOc3W_u3BUe5hUPW0zOklX55XNALlmrNCqGqYAi4DUe1So6NvtNZ-m8BRGvl4LPi6_PibvT6HizW9xLMMHMCEDBHIgRDAnigs7J5BbHRZDMR42WmFnHXJ2Pv5oPHGx-eUQRV9AqcUM8vqA1Ikx_DgXE00d5ETBna50lCawjf3q4xmTNHNd8CgF48pJOjWGFXvAuqu6Cq6SkvvAaubMKUK7N5BJddIh4') center/cover;">
+      <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, var(--background));"></div>
+    </div>
     
-    <!-- Cover Edit Button -->
-    <label for="coverInput" class="absolute top-4 right-4 bg-black/50 hover:bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-full cursor-pointer border border-white/20 transition flex items-center gap-2 text-sm font-medium opacity-0 group-hover:opacity-100">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-      Cambiar Portada
-    </label>
-    <input id="coverInput" type="file" accept="image/*" (change)="onFileSelected($event, 'cover')" class="hidden">
-    
-    <div class="absolute inset-0 bg-gradient-to-t from-[#0b0b0c] via-[#0b0b0c]/40 to-transparent"></div>
-  </div>
-
-  <!-- Profile Content Area -->
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 relative z-10">
-    <div class="flex flex-col md:flex-row gap-6 md:gap-10 items-start md:items-end mb-10">
-      <!-- Avatar -->
-      <div class="relative shrink-0">
-        <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#0b0b0c] bg-neutral-800 overflow-hidden shadow-2xl">
+    <!-- Profile Info Overlay -->
+    <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 0 2rem; transform: translateY(50%); display: flex; align-items: flex-end; gap: 2rem;">
+      
+      <!-- Avatar with Update Button -->
+      <div style="position: relative; flex-shrink: 0;">
+        <div style="width: 140px; height: 140px; border-radius: 24px; overflow: hidden; border: 3px solid var(--primary); background: var(--bg-elevated); box-shadow: 0 0 30px rgba(168,85,247,0.3);">
           @if (previewUrl || user?.foto_perfil_url) {
-            <img [src]="previewUrl || profilePhoto(user!)" alt="Avatar" class="w-full h-full object-cover">
+            <img [src]="previewUrl || profilePhoto(user!)" alt="Foto de perfil" style="width: 100%; height: 100%; object-fit: cover;">
           } @else {
-            <div class="w-full h-full flex items-center justify-center text-4xl font-bold bg-purple-900/50">
+            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold;">
               {{ (user?.username || 'U').slice(0,2).toUpperCase() }}
             </div>
           }
         </div>
-        <label for="avatarInput" class="absolute bottom-1 right-1 bg-purple-600 hover:bg-purple-500 text-white w-10 h-10 rounded-full flex items-center justify-center cursor-pointer border-4 border-[#0b0b0c] transition shadow-lg">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+        <label for="foto" style="position: absolute; bottom: -5px; right: -5px; background: var(--primary); color: var(--on-primary); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid var(--background); transition: transform 0.2s;">
+          ✏️
         </label>
-        <input id="avatarInput" type="file" accept="image/*" (change)="onFileSelected($event, 'avatar')" class="hidden">
+        <input id="foto" type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;">
       </div>
 
-      <!-- User Info -->
-      <div class="flex-1 pb-4">
-        <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">{{ nombreCompleto || user?.username }}</h1>
-        <p class="text-purple-400 font-medium text-lg mt-1">&#64;{{ user?.username }}</p>
+      <!-- User Stats -->
+      <div style="padding-bottom: 2rem;">
+        <h1 style="font-size: 2.2rem; font-weight: 800; margin: 0; text-shadow: 0 0 10px rgba(168,85,247,0.5);">{{ nombreCompleto || user?.username }}</h1>
+        <p style="color: var(--muted); font-size: 1.1rem; margin-bottom: 1rem;">&#64;{{ user?.username }}</p>
         
-        <div class="flex gap-6 mt-4">
-          <div class="flex flex-col">
-            <span class="text-2xl font-bold text-white">{{ myPosts.length }}</span>
-            <span class="text-xs text-neutral-400 uppercase tracking-wider font-semibold">Posts</span>
+        <div style="display: flex; gap: 2rem;">
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">{{ myPosts.length }}</span>
+            <span style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Publicaciones</span>
           </div>
-          <div class="flex flex-col">
-            <span class="text-2xl font-bold text-white">{{ myEvents.length }}</span>
-            <span class="text-xs text-neutral-400 uppercase tracking-wider font-semibold">Eventos</span>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 1.2rem; font-weight: 700; color: var(--secondary);">{{ myEvents.length }}</span>
+            <span style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Eventos</span>
           </div>
-          <div class="flex flex-col">
-            <span class="text-2xl font-bold text-white">{{ myMedia.length }}</span>
-            <span class="text-xs text-neutral-400 uppercase tracking-wider font-semibold">Media</span>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Save Button (Only visible if changes made) -->
-      @if (selectedFile || selectedCoverFile || nombreCompleto !== user?.nombre_completo) {
-        <div class="w-full md:w-auto pb-4">
-          <button (click)="saveProfile()" [disabled]="loading" class="w-full md:w-auto bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-bold transition shadow-[0_0_20px_rgba(168,85,247,0.4)] disabled:opacity-50">
-            {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
-          </button>
-        </div>
-      }
-    </div>
-
-    <!-- Main Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      
-      <!-- Left Column: Edit Info & Danger Zone -->
-      <div class="space-y-6">
-        <!-- Edit Form -->
-        <div class="bg-white/[0.03] border border-white/10 rounded-3xl p-6 backdrop-blur-xl">
-          <h3 class="text-lg font-bold text-white mb-4">Detalles del Perfil</h3>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Nombre Completo</label>
-              <input type="text" [(ngModel)]="nombreCompleto" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Usuario (Solo lectura)</label>
-              <input type="text" [value]="user?.username" disabled class="w-full bg-black/30 border border-white/5 rounded-xl px-4 py-3 text-neutral-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Email (Solo lectura)</label>
-              <input type="text" [value]="user?.email" disabled class="w-full bg-black/30 border border-white/5 rounded-xl px-4 py-3 text-neutral-500">
-            </div>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 1.2rem; font-weight: 700; color: var(--tertiary);">{{ myMedia.length }}</span>
+            <span style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Momentos</span>
           </div>
         </div>
-        
-        <!-- Danger Zone -->
-        <div class="bg-red-500/5 border border-red-500/20 rounded-3xl p-6 backdrop-blur-xl">
-          <h3 class="text-lg font-bold text-red-500 mb-2">Zona de Peligro</h3>
-          <p class="text-sm text-neutral-400 mb-4">Eliminar tu cuenta borrará permanentemente todos tus posts, comentarios y datos.</p>
-          <button (click)="deleteAccount()" [disabled]="loading" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 px-4 py-3 rounded-xl font-semibold transition">
-            Eliminar Cuenta
-          </button>
-        </div>
-      </div>
-
-      <!-- Right Column: Gallery & Events -->
-      <div class="lg:col-span-2 space-y-6">
-        
-        <!-- Moments Gallery -->
-        <div class="bg-white/[0.03] border border-white/10 rounded-3xl p-6 backdrop-blur-xl">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-white flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-500"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-              Galería de Momentos
-            </h3>
-          </div>
-          
-          @if (myMedia.length > 0) {
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              @for (media of myMedia; track media) {
-                <div class="aspect-square rounded-2xl overflow-hidden bg-black/50 border border-white/5 group relative">
-                  @if (isVideo(media)) {
-                    <video [src]="media" class="w-full h-full object-cover group-hover:scale-105 transition duration-500"></video>
-                    <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/0 transition">
-                      <div class="w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                      </div>
-                    </div>
-                  } @else {
-                    <img [src]="media" alt="Momento" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                  }
-                </div>
-              }
-            </div>
-          } @else {
-            <div class="text-center py-10 bg-black/20 rounded-2xl border border-white/5 border-dashed">
-              <p class="text-neutral-500 text-sm">Aún no has compartido fotos ni videos.</p>
-            </div>
-          }
-        </div>
-
-        <!-- Upcoming Events -->
-        <div class="bg-white/[0.03] border border-white/10 rounded-3xl p-6 backdrop-blur-xl">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-white flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-pink-500"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-              Próximos Eventos
-            </h3>
-          </div>
-          
-          @if (myEvents.length > 0) {
-            <div class="flex gap-4 overflow-x-auto pb-4 snap-x hide-scrollbar">
-              @for (e of myEvents; track e._id) {
-                <div class="min-w-[260px] snap-start bg-black/40 border border-white/5 rounded-2xl overflow-hidden group">
-                  <div class="h-32 relative">
-                    <img [src]="e.flyer_url" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Flyer">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                    <div class="absolute bottom-3 left-3">
-                      <span class="px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-pink-500/80 backdrop-blur-md text-white rounded-md">{{ e.categoria }}</span>
-                    </div>
-                  </div>
-                  <div class="p-4">
-                    <h4 class="text-white font-bold text-base truncate">{{ e.titulo }}</h4>
-                    <p class="text-neutral-400 text-xs mt-1">{{ e.fecha_evento | date:'mediumDate' }} • {{ e.ciudad }}</p>
-                  </div>
-                </div>
-              }
-            </div>
-          } @else {
-            <div class="text-center py-10 bg-black/20 rounded-2xl border border-white/5 border-dashed">
-              <p class="text-neutral-500 text-sm">No te has apuntado a ningún evento aún.</p>
-            </div>
-          }
-        </div>
-
       </div>
     </div>
   </div>
-</div>
 
-<style>
-  .hide-scrollbar::-webkit-scrollbar { display: none; }
-  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-</style>
+  <div class="bento-grid" style="padding: 0 2rem;">
+
+    <!-- Mis Eventos -->
+    <div class="bento-item bento-span-3">
+      <div class="bento-header">
+        <h3>Próximos Eventos</h3>
+      </div>
+      @if (myEvents.length > 0) {
+        <div style="display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem;">
+          @for (e of myEvents; track e._id) {
+            <div style="min-width: 280px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border); overflow: hidden;">
+              <div style="height: 120px; background: url({{e.flyer_url}}) center/cover;"></div>
+              <div style="padding: 1rem;">
+                <h4 style="font-size: 1.1rem; margin-bottom: 0.2rem;">{{ e.titulo }}</h4>
+                <p style="color: var(--muted); font-size: 0.9rem;">{{ e.fecha_evento | date:'mediumDate' }} • {{ e.ciudad }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p style="color: var(--muted);">No te has apuntado a ningún evento aún.</p>
+      }
+    </div>
+
+    <!-- Momentos (Galería) -->
+    <div class="bento-item bento-span-3">
+      <div class="bento-header">
+        <h3>Momentos (Galería)</h3>
+      </div>
+      @if (myMedia.length > 0) {
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
+          @for (media of myMedia; track media) {
+            <div style="border-radius: var(--radius-sm); overflow: hidden; height: 150px; background: #000;">
+              @if (isVideo(media)) {
+                <video [src]="media" style="width: 100%; height: 100%; object-fit: cover;"></video>
+              } @else {
+                <img [src]="media" style="width: 100%; height: 100%; object-fit: cover;" alt="Momento">
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <p style="color: var(--muted);">No has compartido ninguna foto o video en la comunidad.</p>
+      }
+    </div>
+
+    <!-- Ajustes del Perfil -->
+    <div class="bento-item bento-span-2">
+      <div class="bento-header">
+        <h3>Editar Información</h3>
+      </div>
+      <form (ngSubmit)="saveProfile()">
+        <div class="form-group">
+          <label for="nombre">Nombre Completo</label>
+          <input id="nombre" type="text" [(ngModel)]="nombreCompleto" name="nombre" required style="width: 100%; padding: 0.75rem; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius-sm); font-size: 1rem;">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label>Usuario</label>
+            <input type="text" [value]="user?.username" disabled style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius-sm);">
+          </div>
+          <div class="form-group">
+            <label>Correo Electrónico</label>
+            <input type="text" [value]="user?.email" disabled style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius-sm);">
+          </div>
+        </div>
+        <button class="btn btn-glow" type="submit" [disabled]="loading" style="margin-top: 1rem; width: 100%;">
+          {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Zona de Peligro -->
+    <div class="bento-item" style="border-color: rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(239,68,68,0.05), transparent);">
+      <div class="bento-header">
+        <h3 style="color: var(--danger);">Zona de Peligro</h3>
+      </div>
+      <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+        Al eliminar tu cuenta, borrarás permanentemente toda tu información, incluyendo tus publicaciones, comentarios y me gustas. Esta acción no se puede deshacer.
+      </p>
+      <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); width: 100%; padding: 10px; font-weight: 700; border-radius: var(--radius-sm);" (click)="deleteAccount()" [disabled]="loading">
+        Eliminar Cuenta
+      </button>
+    </div>
+  </div>
+</div>
