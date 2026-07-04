@@ -34,6 +34,9 @@ export class UsuarioComunidadComponent implements OnInit {
   
   editingCommentId: string | null = null;
   editDraftText: string = '';
+  editDraftFile: File | null = null;
+  editDraftPreview: string | null = null;
+  editLoading: boolean = false;
 
   ngOnInit(): void {
     this.load();
@@ -161,16 +164,50 @@ export class UsuarioComunidadComponent implements OnInit {
   startEditComment(c: Comentario): void {
     this.editingCommentId = c._id;
     this.editDraftText = c.texto;
+    this.editDraftFile = null;
+    this.editDraftPreview = c.media_urls?.[0] || null;
+    this.editLoading = false;
   }
 
   cancelEditComment(): void {
     this.editingCommentId = null;
     this.editDraftText = '';
+    this.editDraftFile = null;
+    this.editDraftPreview = null;
+    this.editLoading = false;
+  }
+
+  onEditFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.editDraftFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => this.editDraftPreview = e.target?.result as string;
+      reader.readAsDataURL(file);
+    }
   }
 
   saveEditComment(postId: string, commentId: string): void {
-    if (this.editDraftText.trim().length < 2) return;
-    this.social.editarComentario(postId, commentId, this.editDraftText.trim()).subscribe({
+    if (this.editDraftText.trim().length < 2 && !this.editDraftFile && !this.editDraftPreview) return;
+    this.editLoading = true;
+    
+    if (this.editDraftFile) {
+      this.uploadService.uploadFile(this.editDraftFile).subscribe({
+        next: (res) => this.submitEditComment(postId, commentId, [res.url]),
+        error: (err) => {
+          this.msg = 'Error subiendo archivo: ' + (err.error?.error || err.message);
+          this.editLoading = false;
+        }
+      });
+    } else {
+      // If we still have the preview, keep the old media url
+      const mediaUrls = this.editDraftPreview ? [this.editDraftPreview] : [];
+      this.submitEditComment(postId, commentId, mediaUrls);
+    }
+  }
+
+  private submitEditComment(postId: string, commentId: string, mediaUrls: string[]): void {
+    this.social.editarComentario(postId, commentId, this.editDraftText.trim(), mediaUrls).subscribe({
       next: (updated) => {
         const comms = this.comments[postId];
         if (comms) {
@@ -181,6 +218,7 @@ export class UsuarioComunidadComponent implements OnInit {
       },
       error: (err) => {
         this.msg = err.error?.error || err.message;
+        this.editLoading = false;
       }
     });
   }

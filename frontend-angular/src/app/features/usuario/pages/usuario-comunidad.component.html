@@ -1,153 +1,189 @@
 <div id="view-comunidad" class="app-view active">
-  <div class="view-header">
+  <div class="view-header" style="margin-bottom: 2rem;">
     <h2>Comunidad Live</h2>
     <p>Comparte y coordina con otros asistentes</p>
   </div>
 
-  <section class="community-composer">
-    <div class="composer-avatar">{{ (auth.getUser()?.username || 'U').slice(0, 2).toUpperCase() }}</div>
-    <div class="composer-body">
-      <textarea [(ngModel)]="text" rows="3" maxlength="180" placeholder="¿Que estas planeando ver?"></textarea>
-      
-      @if (previewUrl) {
-        <div style="margin-top: 10px; margin-bottom: 10px; border-radius: 8px; overflow: hidden; max-height: 200px; max-width: fit-content; background: var(--bg-elevated);">
-          @if (isVideo(selectedFile?.name)) {
-            <video [src]="previewUrl" controls style="max-width: 100%; max-height: 200px;"></video>
-          } @else {
-            <img [src]="previewUrl" alt="Preview" style="max-width: 100%; max-height: 200px; object-fit: contain;">
-          }
-        </div>
-      }
+  <div class="bento-grid" style="align-items: start;">
+    <!-- Bento Composer -->
+    <div class="bento-item" style="position: sticky; top: 90px; z-index: 10;">
+      <div class="bento-header">
+        <h3>Nueva Publicación</h3>
+        <p>¿Qué tienes en mente?</p>
+      </div>
+      <div class="composer-body" style="display: flex; flex-direction: column; gap: 10px;">
+        <textarea [(ngModel)]="text" rows="4" maxlength="180" placeholder="Escribe algo increíble..." style="width: 100%; border-radius: var(--radius-sm); padding: 12px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); resize: none;"></textarea>
+        
+        @if (previewUrl) {
+          <div style="border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-elevated); position: relative;">
+            @if (isVideo(selectedFile?.name)) {
+              <video [src]="previewUrl" controls style="width: 100%; max-height: 200px; display: block;"></video>
+            } @else {
+              <img [src]="previewUrl" alt="Preview" style="width: 100%; max-height: 200px; object-fit: cover; display: block;">
+            }
+            <button class="btn btn-sm" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white;" (click)="previewUrl = null; selectedFile = null">X</button>
+          </div>
+        }
 
-      <div class="composer-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <label for="media-upload" class="btn btn-ghost btn-sm" style="cursor: pointer; padding: 4px 8px;">
-            📸 Media
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+          <label for="media-upload" class="btn btn-ghost btn-sm" style="cursor: pointer; padding: 6px 12px; border-radius: 999px;">
+            📸 Adjuntar Media
           </label>
           <input id="media-upload" type="file" accept="image/*,video/*" (change)="onFileSelected($event)" style="display: none;">
           <span style="color: var(--muted); font-size: 0.8rem;">{{ text.length }}/180</span>
         </div>
-        <button class="btn btn-glow btn-sm" type="button" [disabled]="loading" (click)="publish()">Publicar</button>
+        <button class="btn btn-glow" style="width: 100%; margin-top: 10px; padding: 12px; font-weight: 700;" type="button" [disabled]="loading" (click)="publish()">Publicar</button>
+        @if (msg) { <div class="alert success" style="margin-top: 10px;">{{ msg }}</div> }
       </div>
-      @if (msg) { <div class="alert success">{{ msg }}</div> }
     </div>
-  </section>
 
-  <div id="feed-list" class="feed-list">
-    @if (error) {
-      <div class="alert error">{{ error }}</div>
-    } @else if (!posts.length) {
-      <div class="empty-state">Aun no hay publicaciones.</div>
-    } @else {
-      @for (p of posts; track p._id; let i = $index) {
-        <article class="feed-card">
-          <div class="feed-header">
-            <div class="avatar sm" [class.has-photo]="profilePhoto(p.autor)">
-              <img [src]="profilePhoto(p.autor)" alt="">
-              <span>{{ (p.autor?.username || 'U').slice(0, 2).toUpperCase() }}</span>
-            </div>
-            <div style="display: flex; flex-direction: column;">
-              <span class="name">{{ p.autor?.nombre_completo || p.autor?.username }}</span>
-              <span class="handle">&#64;{{ p.autor?.username }}</span>
-            </div>
-            <span class="time">{{ timeAgo(p.fecha_publicacion) }}</span>
-          </div>
-          <p class="feed-text">{{ p.texto }}</p>
-          @if (p.media_urls?.length) {
-            <div style="margin-top: 10px; border-radius: 12px; overflow: hidden; background: var(--bg-elevated); display: flex; justify-content: center; border: 1px solid var(--border);">
-              @if (isVideo(p.media_urls![0])) {
-                <video controls style="max-width: 100%; max-height: 450px; display: block;" [src]="p.media_urls![0]"></video>
-              } @else {
-                <img style="max-width: 100%; max-height: 450px; object-fit: contain; display: block;" [src]="postMedia(p.media_urls![0], i)" alt="">
-              }
-            </div>
-          }
-          
-          <div class="feed-actions" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 12px; display: flex; gap: 15px;">
-            <button class="btn btn-ghost btn-sm" style="border: none; padding: 4px 8px; color: var(--muted);">
-              ❤️ {{ p.usuarios_likes?.length || 0 }} Me gusta
-            </button>
-            <button class="btn btn-ghost btn-sm" style="border: none; padding: 4px 8px; color: var(--muted);" (click)="toggleComments(p._id)">
-              💬 Comentar
-            </button>
-          </div>
-
-          @if (showComments[p._id]) {
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
-              <!-- Comment Composer -->
-              <div class="composer-body" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <div class="avatar sm">{{ (auth.getUser()?.username || 'U').slice(0, 2).toUpperCase() }}</div>
-                <div style="flex: 1;">
-                  <textarea [(ngModel)]="commentDrafts[p._id].text" rows="2" style="width: 100%; border-radius: 8px; padding: 8px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text);" placeholder="Escribe tu comentario..."></textarea>
-                  
-                  @if (commentDrafts[p._id].previewUrl) {
-                    <div style="margin-top: 10px; border-radius: 8px; overflow: hidden; max-height: 150px; background: var(--bg-elevated);">
-                      @if (isVideo(commentDrafts[p._id].file?.name)) {
-                        <video [src]="commentDrafts[p._id].previewUrl" controls style="max-height: 150px;"></video>
-                      } @else {
-                        <img [src]="commentDrafts[p._id].previewUrl" alt="Preview" style="max-height: 150px;">
-                      }
-                    </div>
-                  }
-
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                    <label [for]="'comment-media-' + p._id" class="btn btn-ghost btn-sm" style="cursor: pointer; padding: 4px 8px; color: var(--muted);">
-                      📸 Media
-                    </label>
-                    <input [id]="'comment-media-' + p._id" type="file" accept="image/*,video/*" (change)="onCommentFileSelected(p._id, $event)" style="display: none;">
-                    
-                    <button class="btn btn-primary btn-sm" [disabled]="commentDrafts[p._id].loading" (click)="publishComment(p._id)">Responder</button>
-                  </div>
-                </div>
+    <!-- Bento Feed (Span 2) -->
+    <div class="bento-span-2" style="display: flex; flex-direction: column; gap: 1.5rem;">
+      @if (error) {
+        <div class="alert error">{{ error }}</div>
+      } @else if (!posts.length) {
+        <div class="bento-item" style="text-align: center; padding: 4rem 2rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+          <h3>Aún no hay publicaciones</h3>
+          <p style="color: var(--muted);">Sé el primero en compartir algo con la comunidad.</p>
+        </div>
+      } @else {
+        @for (p of posts; track p._id; let i = $index) {
+          <article class="bento-item" style="padding: 1.5rem;">
+            <div class="feed-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;">
+              <div class="avatar" style="width: 48px; height: 48px; font-size: 1.2rem; flex-shrink: 0;" [class.has-photo]="profilePhoto(p.autor)">
+                <img [src]="profilePhoto(p.autor)" alt="">
+                <span>{{ (p.autor?.username || 'U').slice(0, 2).toUpperCase() }}</span>
               </div>
-
-              <!-- Comments List -->
-              <div style="display: flex; flex-direction: column; gap: 15px;">
-                @for (c of comments[p._id]; track c._id) {
-                  <div style="display: flex; gap: 10px;">
-                    <div class="avatar sm" [class.has-photo]="profilePhoto(c.autor)">
-                      <img [src]="profilePhoto(c.autor)" alt="">
-                      <span>{{ (c.autor?.username || 'U').slice(0, 2).toUpperCase() }}</span>
-                    </div>
-                    <div style="flex: 1; background: var(--bg-elevated); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
-                      <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <strong>{{ c.autor?.nombre_completo || c.autor?.username }}</strong>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                          <span style="font-size: 0.8rem; color: var(--muted);">{{ timeAgo(c.fecha_comentario) }}</span>
-                          @if (c.autor?._id === auth.getUser()?._id) {
-                            <button class="btn btn-ghost btn-sm" style="padding: 2px 6px; font-size: 0.75rem;" (click)="startEditComment(c)">✏️</button>
-                            <button class="btn btn-ghost btn-sm" style="padding: 2px 6px; font-size: 0.75rem; color: var(--danger);" (click)="deleteComment(p._id, c._id)">🗑️</button>
-                          }
-                        </div>
-                      </div>
-                      
-                      @if (editingCommentId === c._id) {
-                        <textarea [(ngModel)]="editDraftText" rows="2" style="width: 100%; border-radius: 8px; padding: 8px; background: var(--bg-elevated); border: 1px solid var(--accent); color: var(--text);"></textarea>
-                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
-                          <button class="btn btn-ghost btn-sm" (click)="cancelEditComment()">Cancelar</button>
-                          <button class="btn btn-primary btn-sm" style="background: var(--accent); color: white;" (click)="saveEditComment(p._id, c._id)">Guardar</button>
-                        </div>
-                      } @else {
-                        <p style="margin: 0; font-size: 0.95rem;">{{ c.texto }}</p>
-                      }
-                      
-                      @if (c.media_urls?.length) {
-                        <div style="margin-top: 10px; border-radius: 8px; overflow: hidden;">
-                          @if (isVideo(c.media_urls![0])) {
-                            <video controls style="max-width: 100%; max-height: 250px;" [src]="c.media_urls![0]"></video>
-                          } @else {
-                            <img style="max-width: 100%; max-height: 250px; object-fit: contain;" [src]="postMedia(c.media_urls![0], 0)" alt="">
-                          }
-                        </div>
-                      }
-                    </div>
-                  </div>
+              <div style="display: flex; flex-direction: column;">
+                <strong style="font-size: 1.05rem;">{{ p.autor?.nombre_completo || p.autor?.username }}</strong>
+                <span style="color: var(--muted); font-size: 0.85rem;">&#64;{{ p.autor?.username }}</span>
+              </div>
+              <span style="margin-left: auto; color: var(--muted); font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px;">{{ timeAgo(p.fecha_publicacion) }}</span>
+            </div>
+            
+            <p style="font-size: 1rem; line-height: 1.6; margin-bottom: 1.2rem; color: var(--text);">{{ p.texto }}</p>
+            
+            @if (p.media_urls?.length) {
+              <div style="margin-bottom: 1.2rem; border-radius: var(--radius); overflow: hidden; background: var(--bg-elevated); display: flex; justify-content: center; border: 1px solid var(--border);">
+                @if (isVideo(p.media_urls![0])) {
+                  <video controls style="max-width: 100%; max-height: 500px; display: block;" [src]="p.media_urls![0]"></video>
+                } @else {
+                  <img style="max-width: 100%; max-height: 500px; object-fit: contain; display: block;" [src]="postMedia(p.media_urls![0], i)" alt="">
                 }
               </div>
+            }
+            
+            <div style="display: flex; gap: 15px; padding-top: 1rem; border-top: 1px solid var(--border);">
+              <button class="btn btn-ghost" style="border: none; padding: 6px 12px; border-radius: 999px;">
+                ❤️ {{ p.usuarios_likes?.length || 0 }} Me gusta
+              </button>
+              <button class="btn btn-ghost" style="border: none; padding: 6px 12px; border-radius: 999px;" (click)="toggleComments(p._id)">
+                💬 {{ showComments[p._id] ? 'Ocultar' : 'Comentar' }}
+              </button>
             </div>
-          }
-        </article>
+
+            <!-- Comments Section -->
+            @if (showComments[p._id]) {
+              <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed rgba(255,255,255,0.1);">
+                <!-- Comment Composer -->
+                <div style="display: flex; gap: 12px; margin-bottom: 1.5rem; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                  <div class="avatar" style="width: 36px; height: 36px; font-size: 0.9rem; flex-shrink: 0;">
+                    {{ (auth.getUser()?.username || 'U').slice(0, 2).toUpperCase() }}
+                  </div>
+                  <div style="flex: 1;">
+                    <textarea [(ngModel)]="commentDrafts[p._id].text" rows="2" style="width: 100%; border-radius: 8px; padding: 10px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); resize: none;" placeholder="Escribe una respuesta..."></textarea>
+                    
+                    @if (commentDrafts[p._id].previewUrl) {
+                      <div style="margin-top: 10px; border-radius: 8px; overflow: hidden; max-height: 150px; position: relative;">
+                        @if (isVideo(commentDrafts[p._id].file?.name)) {
+                          <video [src]="commentDrafts[p._id].previewUrl" controls style="max-height: 150px; display: block;"></video>
+                        } @else {
+                          <img [src]="commentDrafts[p._id].previewUrl" alt="Preview" style="max-height: 150px; display: block;">
+                        }
+                        <button class="btn btn-sm" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white;" (click)="commentDrafts[p._id].previewUrl = null; commentDrafts[p._id].file = null">X</button>
+                      </div>
+                    }
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                      <label [for]="'comment-media-' + p._id" class="btn btn-ghost btn-sm" style="cursor: pointer; padding: 4px 10px; border-radius: 999px;">
+                        📸 Adjuntar
+                      </label>
+                      <input [id]="'comment-media-' + p._id" type="file" accept="image/*,video/*" (change)="onCommentFileSelected(p._id, $event)" style="display: none;">
+                      
+                      <button class="btn btn-glow btn-sm" style="padding: 6px 16px; border-radius: 999px;" [disabled]="commentDrafts[p._id].loading" (click)="publishComment(p._id)">Responder</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Comments List -->
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                  @for (c of comments[p._id]; track c._id) {
+                    <div style="display: flex; gap: 12px;">
+                      <div class="avatar" style="width: 36px; height: 36px; font-size: 0.9rem; flex-shrink: 0;" [class.has-photo]="profilePhoto(c.autor)">
+                        <img [src]="profilePhoto(c.autor)" alt="">
+                        <span>{{ (c.autor?.username || 'U').slice(0, 2).toUpperCase() }}</span>
+                      </div>
+                      <div style="flex: 1; background: rgba(255,255,255,0.03); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                          <strong style="font-size: 0.95rem;">{{ c.autor?.nombre_completo || c.autor?.username }}</strong>
+                          <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 0.75rem; color: var(--muted);">{{ timeAgo(c.fecha_comentario) }}</span>
+                            @if (c.autor?._id === auth.getUser()?._id) {
+                              <button class="btn btn-ghost btn-sm" style="padding: 2px 6px; font-size: 0.75rem;" (click)="startEditComment(c)">✏️</button>
+                              <button class="btn btn-ghost btn-sm" style="padding: 2px 6px; font-size: 0.75rem; color: var(--danger);" (click)="deleteComment(p._id, c._id)">🗑️</button>
+                            }
+                          </div>
+                        </div>
+                        
+                        @if (editingCommentId === c._id) {
+                          <textarea [(ngModel)]="editDraftText" rows="2" style="width: 100%; border-radius: 8px; padding: 10px; background: var(--bg-elevated); border: 1px solid var(--accent); color: var(--text); resize: none; margin-bottom: 10px;"></textarea>
+                          
+                          @if (editDraftPreview) {
+                            <div style="margin-bottom: 10px; border-radius: 8px; overflow: hidden; max-height: 150px; background: var(--bg-elevated); position: relative; display: inline-block;">
+                              @if (isVideo(editDraftFile ? editDraftFile.name : editDraftPreview)) {
+                                <video [src]="editDraftPreview" controls style="max-height: 150px; display: block;"></video>
+                              } @else {
+                                <img [src]="editDraftPreview" alt="Preview" style="max-height: 150px; display: block;">
+                              }
+                              <button class="btn btn-sm" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 6px;" (click)="editDraftPreview = null; editDraftFile = null">X</button>
+                            </div>
+                          }
+
+                          <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                              <label [for]="'edit-comment-media-' + c._id" class="btn btn-ghost btn-sm" style="cursor: pointer; padding: 4px 10px; border-radius: 999px;">📸 Adjuntar</label>
+                              <input [id]="'edit-comment-media-' + c._id" type="file" accept="image/*,video/*" (change)="onEditFileSelected($event)" style="display: none;">
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                              <button class="btn btn-ghost btn-sm" style="border-radius: 999px;" (click)="cancelEditComment()">Cancelar</button>
+                              <button class="btn btn-glow btn-sm" style="border-radius: 999px;" (click)="saveEditComment(p._id, c._id)" [disabled]="editLoading">
+                                {{ editLoading ? 'Guardando...' : 'Guardar' }}
+                              </button>
+                            </div>
+                          </div>
+                        } @else {
+                          <p style="margin: 0; font-size: 0.95rem; line-height: 1.5; color: var(--text);">{{ c.texto }}</p>
+                        }
+                        
+                        @if (c.media_urls?.length && editingCommentId !== c._id) {
+                          <div style="margin-top: 12px; border-radius: 8px; overflow: hidden; display: flex; justify-content: flex-start;">
+                            @if (isVideo(c.media_urls![0])) {
+                              <video controls style="max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid var(--border);" [src]="c.media_urls![0]"></video>
+                            } @else {
+                              <img style="max-width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px; border: 1px solid var(--border);" [src]="postMedia(c.media_urls![0], 0)" alt="">
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </article>
+        }
       }
-    }
+    </div>
   </div>
 </div>

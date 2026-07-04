@@ -1,60 +1,84 @@
 <div id="view-perfil" class="app-view active">
-  <div class="view-header">
-    <h2>Mi Perfil</h2>
-    <p>Actualiza tu informacion personal y foto de perfil</p>
+  <div class="view-header" style="margin-bottom: 2rem;">
+    <h2>Mi Dashboard</h2>
+    <p>Administra tu perfil, privacidad y cuenta</p>
   </div>
 
-  <div class="admin-card" style="max-width: 600px;">
-    @if (msg) { <div class="alert success">{{ msg }}</div> }
-    @if (error) { <div class="alert error">{{ error }}</div> }
+  @if (msg) { <div class="alert success">{{ msg }}</div> }
+  @if (error) { <div class="alert error">{{ error }}</div> }
 
-    <form class="admin-form-grid" (ngSubmit)="saveProfile()">
-      
-      <div class="form-group" style="grid-column: 1/-1; display: flex; align-items: center; gap: 20px;">
-        <div class="avatar" style="width: 80px; height: 80px; font-size: 2rem;">
-          @if (previewUrl || user?.foto_perfil_url) {
-            <img [src]="previewUrl || profilePhoto(user!)" alt="Foto de perfil">
-          } @else {
-            <span>{{ (user?.username || 'U').slice(0,2).toUpperCase() }}</span>
-          }
+  <div class="bento-grid">
+    <!-- Bento 1: Resumen de Perfil (Span 2) -->
+    <div class="bento-item bento-span-2" style="display: flex; align-items: center; gap: 1.5rem; background: linear-gradient(135deg, rgba(168,85,247,0.1), rgba(6,182,212,0.1)); border-color: rgba(168,85,247,0.3);">
+      <div class="avatar" style="width: 100px; height: 100px; font-size: 2.5rem; flex-shrink: 0;">
+        @if (previewUrl || user?.foto_perfil_url) {
+          <img [src]="previewUrl || profilePhoto(user!)" alt="Foto de perfil">
+        } @else {
+          <span>{{ (user?.username || 'U').slice(0,2).toUpperCase() }}</span>
+        }
+      </div>
+      <div>
+        <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.2rem;">{{ nombreCompleto || user?.username }}</h3>
+        <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem;">&#64;{{ user?.username }}</p>
+        <label for="foto" class="btn btn-glow btn-sm" style="cursor: pointer;">Actualizar Foto</label>
+        <input id="foto" type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;">
+      </div>
+    </div>
+
+    <!-- Bento 2: Información Personal -->
+    <div class="bento-item bento-span-2">
+      <div class="bento-header">
+        <h3>Información Personal</h3>
+        <p>Actualiza tus datos basicos</p>
+      </div>
+      <form (ngSubmit)="saveProfile()">
+        <div class="form-group">
+          <label for="nombre">Nombre Completo</label>
+          <input id="nombre" type="text" [(ngModel)]="nombreCompleto" name="nombre" required style="width: 100%; padding: 0.75rem; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius-sm);">
         </div>
-        
-        <div>
-          <label for="foto" class="btn btn-ghost btn-sm" style="cursor: pointer; display: inline-block;">Cambiar foto</label>
-          <input id="foto" type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;">
-          <p style="font-size: 0.8rem; color: var(--muted); margin-top: 8px;">Recomendado: 500x500px (Max 10MB)</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label>Usuario (Solo lectura)</label>
+            <input type="text" [value]="user?.username" disabled style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius-sm);">
+          </div>
+          <div class="form-group">
+            <label>Correo Electrónico (Solo lectura)</label>
+            <input type="text" [value]="user?.email" disabled style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius-sm);">
+          </div>
         </div>
+        <button class="btn btn-glow" type="submit" [disabled]="loading" style="margin-top: 1rem;">
+          {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Bento 3: Privacidad -->
+    <div class="bento-item">
+      <div class="bento-header">
+        <h3>Privacidad</h3>
+        <p>Tu cuenta es publica por defecto.</p>
       </div>
-
-      <div class="form-group" style="grid-column: 1/-1;">
-        <label for="nombre">Nombre Completo</label>
-        <input id="nombre" type="text" [(ngModel)]="nombreCompleto" name="nombre" required>
+      <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-top: 1rem;">
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" disabled checked> Perfil Publico
+        </label>
       </div>
+    </div>
 
-      <div class="form-group" style="grid-column: 1/-1;">
-        <label for="username">Usuario (No modificable)</label>
-        <input id="username" type="text" [value]="user?.username" disabled style="opacity: 0.6;">
+    <!-- Bento 4: Zona de Peligro -->
+    <div class="bento-item bento-span-3" style="border-color: rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(239,68,68,0.05), transparent);">
+      <div class="bento-header">
+        <h3 style="color: var(--danger);">Zona de Peligro</h3>
+        <p>Acciones irreversibles sobre tu cuenta</p>
       </div>
-
-      <div class="form-group" style="grid-column: 1/-1;">
-        <label for="email">Correo electronico (No modificable)</label>
-        <input id="email" type="text" [value]="user?.email" disabled style="opacity: 0.6;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <p style="color: var(--muted); font-size: 0.9rem; max-width: 600px;">
+          Al eliminar tu cuenta, borrarás permanentemente toda tu información, incluyendo tus publicaciones, comentarios y me gustas. Esta acción no se puede deshacer.
+        </p>
+        <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); padding: 10px 20px; font-weight: 700; border-radius: var(--radius-sm);" (click)="deleteAccount()" [disabled]="loading">
+          Eliminar Cuenta Definitivamente
+        </button>
       </div>
-
-      <button class="btn btn-glow" type="submit" [disabled]="loading" style="grid-column: 1/-1;">
-        {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
-      </button>
-
-    </form>
-  </div>
-
-  <div class="admin-card" style="max-width: 600px; margin-top: 2rem; border-color: rgba(239, 68, 68, 0.4);">
-    <h3 style="color: var(--danger); margin-bottom: 1rem;">Zona de Peligro</h3>
-    <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
-      Al eliminar tu cuenta, borrarás permanentemente toda tu información, incluyendo tus publicaciones, comentarios y me gustas. Esta acción no se puede deshacer.
-    </p>
-    <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); width: 100%; padding: 12px; font-weight: 700; border-radius: var(--radius-sm);" (click)="deleteAccount()" [disabled]="loading">
-      Eliminar Cuenta Definitivamente
-    </button>
+    </div>
   </div>
 </div>
