@@ -7,12 +7,12 @@
   <div class="bento-grid" style="align-items: start;">
     <!-- Bento Composer -->
     <div class="bento-item" style="position: sticky; top: 90px; z-index: 10;">
-      <div class="bento-header">
-        <h3>Nueva Publicación</h3>
-        <p>¿Qué tienes en mente?</p>
+      <div class="bento-header" style="margin-bottom: 1.5rem;">
+        <h3 style="font-size: 1.3rem;">Nueva Publicación</h3>
+        <p>¿Qué tienes en mente para este evento?</p>
       </div>
-      <div class="composer-body" style="display: flex; flex-direction: column; gap: 10px;">
-        <textarea [(ngModel)]="text" rows="4" maxlength="180" placeholder="Escribe algo increíble..." style="width: 100%; border-radius: var(--radius-sm); padding: 12px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); resize: none;"></textarea>
+      <div class="composer-body" style="display: flex; flex-direction: column; gap: 12px;">
+        <textarea [(ngModel)]="text" rows="5" maxlength="280" placeholder="Escribe algo increíble..." style="width: 100%; border-radius: var(--radius-sm); padding: 16px; font-size: 1.1rem; background: var(--bg-elevated); border: 2px solid transparent; color: var(--text); resize: none; transition: all 0.3s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='transparent'"></textarea>
         
         @if (previewUrl) {
           <div style="border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-elevated); position: relative;">
@@ -59,19 +59,57 @@
                 <strong style="font-size: 1.05rem;">{{ p.autor?.nombre_completo || p.autor?.username }}</strong>
                 <span style="color: var(--muted); font-size: 0.85rem;">&#64;{{ p.autor?.username }}</span>
               </div>
-              <span style="margin-left: auto; color: var(--muted); font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px;">{{ timeAgo(p.fecha_publicacion) }}</span>
-            </div>
-            
-            <p style="font-size: 1rem; line-height: 1.6; margin-bottom: 1.2rem; color: var(--text);">{{ p.texto }}</p>
-            
-            @if (p.media_urls?.length) {
-              <div style="margin-bottom: 1.2rem; border-radius: var(--radius); overflow: hidden; background: var(--bg-elevated); display: flex; justify-content: center; border: 1px solid var(--border);">
-                @if (isVideo(p.media_urls![0])) {
-                  <video controls style="max-width: 100%; max-height: 500px; display: block;" [src]="p.media_urls![0]"></video>
-                } @else {
-                  <img style="max-width: 100%; max-height: 500px; object-fit: contain; display: block;" [src]="postMedia(p.media_urls![0], i)" alt="">
+              
+              <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+                <span style="color: var(--muted); font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px;">{{ timeAgo(p.fecha_publicacion) }}</span>
+                @if (p.autor?._id === auth.getUser()?._id) {
+                  <button class="btn btn-ghost btn-sm" style="padding: 4px 8px; font-size: 0.8rem;" (click)="startEditPost(p)">✏️</button>
+                  <button class="btn btn-ghost btn-sm" style="padding: 4px 8px; font-size: 0.8rem; color: var(--danger);" (click)="deletePost(p._id)">🗑️</button>
                 }
               </div>
+            </div>
+            
+            @if (editingPostId === p._id) {
+              <!-- Edit Post Composer -->
+              <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: var(--radius-sm); border: 1px solid var(--accent); margin-bottom: 1.2rem;">
+                <textarea [(ngModel)]="editPostDraftText" rows="4" style="width: 100%; border-radius: 8px; padding: 12px; background: var(--bg-elevated); border: 1px solid transparent; color: var(--text); resize: none; margin-bottom: 12px; font-size: 1.05rem;"></textarea>
+                
+                @if (editPostDraftPreview) {
+                  <div style="margin-bottom: 12px; border-radius: 8px; overflow: hidden; max-height: 200px; background: var(--bg-elevated); position: relative; display: inline-block;">
+                    @if (isVideo(editPostDraftFile ? editPostDraftFile.name : editPostDraftPreview)) {
+                      <video [src]="editPostDraftPreview" controls style="max-height: 200px; display: block;"></video>
+                    } @else {
+                      <img [src]="editPostDraftPreview" alt="Preview" style="max-height: 200px; display: block;">
+                    }
+                    <button class="btn btn-sm" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 8px;" (click)="editPostDraftPreview = null; editPostDraftFile = null">X</button>
+                  </div>
+                }
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <label [for]="'edit-post-media-' + p._id" class="btn btn-ghost btn-sm" style="cursor: pointer; padding: 6px 12px; border-radius: 999px;">📸 Adjuntar Media</label>
+                    <input [id]="'edit-post-media-' + p._id" type="file" accept="image/*,video/*" (change)="onEditPostFileSelected($event)" style="display: none;">
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-ghost btn-sm" style="border-radius: 999px; padding: 6px 16px;" (click)="cancelEditPost()">Cancelar</button>
+                    <button class="btn btn-glow btn-sm" style="border-radius: 999px; padding: 6px 16px;" (click)="saveEditPost(p._id)" [disabled]="editPostLoading">
+                      {{ editPostLoading ? 'Guardando...' : 'Guardar' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <p style="font-size: 1.05rem; line-height: 1.6; margin-bottom: 1.2rem; color: var(--text);">{{ p.texto }}</p>
+              
+              @if (p.media_urls?.length) {
+                <div style="margin-bottom: 1.2rem; border-radius: var(--radius); overflow: hidden; background: var(--bg-elevated); display: flex; justify-content: center; border: 1px solid var(--border);">
+                  @if (isVideo(p.media_urls![0])) {
+                    <video controls style="max-width: 100%; max-height: 500px; display: block;" [src]="p.media_urls![0]"></video>
+                  } @else {
+                    <img style="max-width: 100%; max-height: 500px; object-fit: contain; display: block;" [src]="postMedia(p.media_urls![0], i)" alt="">
+                  }
+                </div>
+              }
             }
             
             <div style="display: flex; gap: 15px; padding-top: 1rem; border-top: 1px solid var(--border);">

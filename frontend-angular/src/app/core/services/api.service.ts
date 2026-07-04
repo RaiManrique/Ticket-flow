@@ -40,6 +40,14 @@ export class SocialService {
     return this.http.post<Publicacion>(`${this.base}/publicaciones`, { texto, media_urls });
   }
 
+  editarPublicacion(id: string, texto: string, media_urls?: string[]): Observable<Publicacion> {
+    return this.http.put<Publicacion>(`${this.base}/publicaciones/${id}`, { texto, media_urls });
+  }
+
+  eliminarPublicacion(id: string): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(`${this.base}/publicaciones/${id}`);
+  }
+
   comentarios(id: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.base}/publicaciones/${id}/comentarios`);
   }

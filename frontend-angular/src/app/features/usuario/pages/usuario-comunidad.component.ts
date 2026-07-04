@@ -27,6 +27,13 @@ export class UsuarioComunidadComponent implements OnInit {
   selectedFile: File | null = null;
   previewUrl: string | null = null;
 
+  // Post Edit state
+  editingPostId: string | null = null;
+  editPostDraftText: string = '';
+  editPostDraftFile: File | null = null;
+  editPostDraftPreview: string | null = null;
+  editPostLoading: boolean = false;
+
   // Comments state
   comments: { [postId: string]: Comentario[] } = {};
   showComments: { [postId: string]: boolean } = {};
@@ -93,6 +100,81 @@ export class UsuarioComunidadComponent implements OnInit {
         this.msg = err.error?.error || err.message;
         this.loading = false;
       },
+    });
+  }
+
+  // --- Post Edit & Delete Methods ---
+  startEditPost(p: Publicacion): void {
+    this.editingPostId = p._id;
+    this.editPostDraftText = p.texto;
+    this.editPostDraftFile = null;
+    this.editPostDraftPreview = p.media_urls?.[0] || null;
+    this.editPostLoading = false;
+  }
+
+  cancelEditPost(): void {
+    this.editingPostId = null;
+    this.editPostDraftText = '';
+    this.editPostDraftFile = null;
+    this.editPostDraftPreview = null;
+    this.editPostLoading = false;
+  }
+
+  onEditPostFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.editPostDraftFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => this.editPostDraftPreview = e.target?.result as string;
+      reader.readAsDataURL(file);
+    }
+  }
+
+  saveEditPost(postId: string): void {
+    if (this.editPostDraftText.trim().length < 2 && !this.editPostDraftFile && !this.editPostDraftPreview) return;
+    this.editPostLoading = true;
+    
+    if (this.editPostDraftFile) {
+      this.uploadService.uploadFile(this.editPostDraftFile).subscribe({
+        next: (res) => this.submitEditPost(postId, [res.url]),
+        error: (err) => {
+          this.msg = 'Error subiendo archivo: ' + (err.error?.error || err.message);
+          this.editPostLoading = false;
+        }
+      });
+    } else {
+      const mediaUrls = this.editPostDraftPreview ? [this.editPostDraftPreview] : [];
+      this.submitEditPost(postId, mediaUrls);
+    }
+  }
+
+  private submitEditPost(postId: string, mediaUrls: string[]): void {
+    this.social.editarPublicacion(postId, this.editPostDraftText.trim(), mediaUrls).subscribe({
+      next: (updated) => {
+        const idx = this.posts.findIndex((p) => p._id === postId);
+        if (idx > -1) {
+          // Mantener información que no retorna completa del backend como autor, si es necesario
+          this.posts[idx] = { ...this.posts[idx], texto: updated.texto, media_urls: updated.media_urls };
+        }
+        this.cancelEditPost();
+      },
+      error: (err) => {
+        this.msg = err.error?.error || err.message;
+        this.editPostLoading = false;
+      }
+    });
+  }
+
+  deletePost(postId: string): void {
+    if (!confirm('¿Estás seguro de eliminar esta publicación de forma definitiva?')) return;
+    this.social.eliminarPublicacion(postId).subscribe({
+      next: () => {
+        this.posts = this.posts.filter((p) => p._id !== postId);
+        this.msg = 'Publicación eliminada correctamente.';
+      },
+      error: (err) => {
+        this.msg = err.error?.error || err.message;
+      }
     });
   }
 
