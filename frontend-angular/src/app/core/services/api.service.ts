@@ -63,6 +63,10 @@ export class SocialService {
   eliminarComentario(postId: string, commentId: string): Observable<{ mensaje: string }> {
     return this.http.delete<{ mensaje: string }>(`${this.base}/publicaciones/${postId}/comentarios/${commentId}`);
   }
+
+  toggleLike(id: string): Observable<{ liked: boolean; publicacion: Publicacion }> {
+    return this.http.post<{ liked: boolean; publicacion: Publicacion }>(`${this.base}/publicaciones/${id}/like`, {});
+  }
 }
 
 @Injectable({ providedIn: 'root' })

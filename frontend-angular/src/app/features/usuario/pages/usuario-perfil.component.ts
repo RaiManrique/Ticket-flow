@@ -69,7 +69,7 @@ export class UsuarioPerfilComponent implements OnInit {
     // Load Events
     this.eventosService.list().subscribe({
       next: (events) => {
-        this.myEvents = events.filter(e => e.asistentes?.includes(userId));
+        this.myEvents = events.filter(e => e.asistentes?.map(String).includes(String(userId)));
       },
       error: (err) => console.error('Error fetching events:', err)
     });

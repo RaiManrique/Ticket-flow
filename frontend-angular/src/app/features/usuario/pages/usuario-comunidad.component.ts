@@ -131,7 +131,11 @@ export class UsuarioComunidadComponent implements OnInit {
   }
 
   saveEditPost(postId: string): void {
-    if (this.editPostDraftText.trim().length < 2 && !this.editPostDraftFile && !this.editPostDraftPreview) return;
+    const hasMedia = !!this.editPostDraftFile || !!this.editPostDraftPreview;
+    if (this.editPostDraftText.trim().length < 5 && !hasMedia) {
+      this.msg = 'La publicación debe tener al menos 5 caracteres o incluir media.';
+      return;
+    }
     this.editPostLoading = true;
     
     if (this.editPostDraftFile) {
@@ -323,6 +327,32 @@ export class UsuarioComunidadComponent implements OnInit {
     if (!url) return false;
     const lowerUrl = url.toLowerCase();
     return lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.webm') || lowerUrl.endsWith('.mov') || lowerUrl.includes('video');
+  }
+
+  isLiked(p: Publicacion): boolean {
+    const userId = this.auth.getUser()?._id;
+    if (!userId) return false;
+    return (p.usuarios_likes || []).map(String).includes(String(userId));
+  }
+
+  toggleLike(p: Publicacion): void {
+    this.social.toggleLike(p._id).subscribe({
+      next: (res) => {
+        const idx = this.posts.findIndex((post) => post._id === p._id);
+        if (idx > -1) {
+          this.posts[idx] = { ...this.posts[idx], ...res.publicacion };
+        }
+      },
+      error: (err) => {
+        this.msg = err.error?.error || err.message;
+      },
+    });
+  }
+
+  isOwner(p: Publicacion): boolean {
+    const userId = this.auth.getUser()?._id;
+    if (!userId) return false;
+    return String(p.autor?._id) === String(userId);
   }
 
   timeAgo = timeAgo;

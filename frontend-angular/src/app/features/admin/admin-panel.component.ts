@@ -78,7 +78,7 @@ export class AdminPanelComponent implements OnInit, OnDestroy {
 
   cell(row: Record<string, unknown>, col: string): string {
     const v = row[col];
-    if (col === 'fecha_solicitud' || col === 'fecha_venta') return formatDate(String(v));
+    if (col === 'fecha_registro' || col === 'fecha_evento') return formatDate(String(v));
     return String(v ?? '—');
   }
 }

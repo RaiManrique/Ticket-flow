@@ -1,6 +1,6 @@
 # TicketFlow — Arquitectura de 3 Capas
 
-Plataforma de **venta de boletos** y **red social de eventos** en el Perú. Proyecto académico UPC (Sistemas Operativos) con arquitectura de tres niveles desplegada en Docker.
+Plataforma **social de eventos** en el Perú. Proyecto académico UPC (Sistemas Operativos) con arquitectura de tres niveles desplegada en Docker.
 
 ## Arquitectura completa
 
@@ -8,13 +8,13 @@ Plataforma de **venta de boletos** y **red social de eventos** en el Perú. Proy
 ┌──────────────────────────────────────────────────────────────┐
 │  CAPA DE PRESENTACION                                        │
 │  TicketFlow-Web (Angular 19 + Nginx) — http://127.0.0.1:8090 │
-│  Login, eventos, checkout, billetera, comunidad, panel admin │
+│  Login, eventos, asistencia, comunidad, panel admin │
 └────────────────────────────┬─────────────────────────────────┘
                              │ /api/*
 ┌────────────────────────────▼─────────────────────────────────┐
 │  CAPA DE APLICACION                                          │
 │  TicketFlow-API (Node.js + Express) — http://127.0.0.1:3000  │
-│  REST API: auth JWT, eventos, compras, reembolsos, social, admin │
+│  REST API: auth JWT, eventos, asistencia, social, upload, admin │
 └────────────────────────────┬─────────────────────────────────┘
                              │ mongo:27017 (red interna)
 ┌────────────────────────────▼─────────────────────────────────┐
@@ -289,11 +289,11 @@ Si falta el header o el token expiro: `401` con `"Sesion invalida o expirada"`.
 3. Token no expirado (default **24 h**, variable `JWT_EXPIRES`)
 4. Usuario existe en MongoDB
 
-Rutas **sin token** (publicas): `GET /api/health`, `GET /api/eventos`, `POST /api/auth/login`, `POST /api/auth/register`, `GET /api/politicas`, `GET /api/demo/login-info`.
+Rutas **sin token** (publicas): `GET /api/health`, `GET /api/eventos`, `POST /api/auth/login`, `POST /api/auth/register`, `GET /api/demo/login-info`.
 
-Rutas **con token usuario**: `/api/ventas/mis-boletos`, `/api/ventas/mias`, `GET /api/auth/me`, `POST /api/social/publicaciones`, etc.
+Rutas **con token usuario**: `POST /api/eventos/:id/asistir`, `GET /api/auth/me`, `POST /api/social/publicaciones`, `POST /api/upload`, etc.
 
-Rutas **token organizador/admin**: `/api/ventas/panel`, `/api/admin/*` (organizador ve solo sus datos; admin ve todo).
+Rutas **token organizador/admin**: `/api/admin/*` (organizador ve solo sus datos; admin ve todo).
 
 ### Postman (API)
 
@@ -329,7 +329,7 @@ En la carpeta `postman/` del repo:
 
 | Archivo | Uso |
 |---------|-----|
-| `TicketFlow-API.postman_collection.json` | Todas las rutas (auth, eventos, ventas, admin, social) |
+| `TicketFlow-API.postman_collection.json` | Todas las rutas (auth, eventos, asistencia, social, admin, upload) |
 | `TicketFlow-Local.postman_environment.json` | Variables: `base_url`, `token`, IDs demo |
 
 **Importar en Postman:** File → Import → selecciona ambos JSON. Activa el entorno **TicketFlow Local**.
@@ -338,13 +338,13 @@ En la carpeta `postman/` del repo:
 
 1. Activa el entorno **TicketFlow Local** (esquina superior derecha en Postman).
 2. `00 - Health` → Health check (`mongo: connected`).
-3. `01 - Auth` → **Login usuario** → Send (**obligatorio antes de ventas/admin**).
+3. `01 - Auth` → **Login usuario** → Send (**obligatorio antes de rutas protegidas**).
 4. `01 - Auth` → **Verificar token (GET /me)** → debe dar `200`.
-5. `02 - Eventos` → Listar y boletos.
-6. `03 - Ventas` → Cupo, mis boletos (usa el token guardado).
+5. `02 - Eventos` → Listar y detalle.
+6. `03 - Asistencia` → Confirmar asistencia a un evento.
 7. Para admin: **Login organizador** o **Login admin**, luego carpeta `05 - Admin`.
 
-Si `{{token}}` esta vacio y llamas `/ventas/mis-boletos`, recibiras **401**. Vuelve al paso 3.
+Si `{{token}}` esta vacio y llamas rutas con auth, recibiras **401**. Vuelve al paso 3.
 
 Variables del entorno:
 
@@ -355,7 +355,6 @@ Variables del entorno:
 | `demo_password` | `TicketFlow2026` | Contrasena cuentas demo |
 | `token` | *(vacio)* | Se llena sola al hacer Login |
 | `evento_id` | ID teatro demo | Se actualiza al listar eventos |
-| `boleto_id` | ID boleto demo | Se actualiza al listar boletos |
 
 ### Iniciar sesión
 
@@ -363,8 +362,8 @@ Abre: **http://127.0.0.1:8090**
 
 | Cuenta demo | Contraseña | Vista |
 |-------------|------------|-------|
-| `rai_manrique` | `TicketFlow2026` | Usuario — eventos, compra, billetera, comunidad |
-| `victor_arapa` | `TicketFlow2026` | Admin — panel organizador |
+| `rai_manrique` | `TicketFlow2026` | Usuario — eventos, favoritos, asistencia, comunidad |
+| `victor_arapa` | `TicketFlow2026` | Organizador — panel de eventos |
 | `admin_ticketflow` | `TicketFlow2026` | Admin — panel administrador |
 
 Rutas Angular según rol:
@@ -462,13 +461,11 @@ docker compose up -d --build
 
 | Módulo | Prefijo | Responsabilidad |
 |--------|---------|-----------------|
-| Auth | `/api/auth` | Login, registro, JWT |
-| Eventos | `/api/eventos` | Catálogo público |
-| **Ventas** | `/api/ventas` | Compras, billetera, reembolsos y **panel staff** |
-| Social | `/api/social` | Publicaciones y comunidad |
+| Auth | `/api/auth` | Login, registro, JWT, perfil |
+| Eventos | `/api/eventos` | Catálogo público y asistencia |
+| Social | `/api/social` | Publicaciones, likes y comentarios |
+| Upload | `/api/upload` | Media optimizada (DigitalOcean Spaces) |
 | Admin | `/api/admin` | Dashboard, eventos staff, usuarios (solo admin) |
-
-> **Ventas no van en `/api/admin`.** Toda la lógica de compras y el panel de ventas del organizador están en `/api/ventas` (colección `ventas` en MongoDB = capa de datos).
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
@@ -477,14 +474,11 @@ docker compose up -d --build
 | POST | `/api/auth/register` | Crear cuenta **solo rol usuario** |
 | GET | `/api/auth/me` | Usuario en sesión |
 | GET | `/api/eventos` | Listar eventos |
-| GET | `/api/eventos/:id/detalle` | Detalle + zonas/precios |
-| GET | `/api/eventos/:id/boletos` | Boletos disponibles |
-| POST | `/api/ventas` | Comprar (requiere auth) |
-| GET | `/api/ventas/mis-boletos` | Billetera del usuario |
-| GET | `/api/ventas/panel` | Panel ventas (organizador/admin) |
-| POST | `/api/ventas/reembolso` | Solicitar reembolso |
-| GET | `/api/politicas` | Condiciones de compra/reembolso |
+| GET | `/api/eventos/:id/detalle` | Detalle del evento |
+| POST | `/api/eventos/:id/asistir` | Confirmar / quitar asistencia (auth) |
+| POST | `/api/upload` | Subir imagen o video (auth) |
 | GET | `/api/social/publicaciones` | Feed social |
+| POST | `/api/social/publicaciones/:id/like` | Like / unlike |
 | GET | `/api/admin/dashboard` | Métricas (staff) |
 
 ---
@@ -532,6 +526,7 @@ Variables principales en `.env`:
 | `API_BIND_IP` | Interfaz del puerto API (default `0.0.0.0`) |
 | `MONGO_BIND_IP` | Interfaz Mongo (default `127.0.0.1`, solo local) |
 | `CORS_ORIGINS` | Origenes permitidos (incluye `:4200` para ng serve) |
+| `DO_SPACES_*` | Credenciales DigitalOcean Spaces para media |
 
 ---
 
@@ -540,10 +535,7 @@ Variables principales en `.env`:
 | Colección | Uso |
 |-----------|-----|
 | `usuarios` | Perfiles y roles |
-| `eventos` | Catálogo con geolocalización |
-| `boletos` | Inventario de entradas |
-| `ventas` | Registro de compras |
-| `reembolsos` | Solicitudes de reembolso |
+| `eventos` | Catálogo con geolocalización y asistentes |
 | `publicaciones` | Feed social |
 | `comentarios` | Interacciones |
 | `follows` | Seguidores |

@@ -1,6 +1,6 @@
 // =============================================================
 //  TicketFlow — Capa de Datos (MongoDB orientado a documentos)
-//  Plataforma de venta de boletos + red social de eventos (Perú)
+//  Plataforma social de eventos (Perú)
 // =============================================================
 
 db = db.getSiblingDB('ticketflow_social');

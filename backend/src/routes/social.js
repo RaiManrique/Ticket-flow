@@ -8,7 +8,7 @@ const router = express.Router();
 async function enrichPublicaciones(publicaciones) {
   const usuarioIds = [...new Set(publicaciones.map((p) => String(p.usuario_id)))];
   const usuarios = await Usuario.find({ _id: { $in: usuarioIds } })
-    .select("username nombre_completo foto_perfil_url")
+    .select("_id username nombre_completo foto_perfil_url")
     .lean();
 
   const usuariosMap = Object.fromEntries(usuarios.map((u) => [String(u._id), u]));
@@ -59,7 +59,6 @@ router.post("/publicaciones", requireAuth, async (req, res) => {
       evento_id: evento_id || undefined,
       texto,
       media_urls,
-      fecha_commission: new Date(),
       fecha_publicacion: new Date(),
       usuarios_likes: [],
     });
@@ -153,7 +152,7 @@ router.get("/publicaciones/:id/comentarios", async (req, res) => {
 
     const usuarioIds = [...new Set(comentarios.map((c) => String(c.usuario_id)))];
     const usuarios = await Usuario.find({ _id: { $in: usuarioIds } })
-      .select("username nombre_completo foto_perfil_url")
+      .select("_id username nombre_completo foto_perfil_url")
       .lean();
 
     const usuariosMap = Object.fromEntries(usuarios.map((u) => [String(u._id), u]));
