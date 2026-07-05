@@ -10,7 +10,8 @@
     { "key": "demo_password", "value": "TicketFlow2026" },
     { "key": "token", "value": "" },
     { "key": "evento_id", "value": "64f0b0010000000000000003" },
-    { "key": "publicacion_id", "value": "" }
+    { "key": "publicacion_id", "value": "" },
+    { "key": "media_url", "value": "" }
   ],
   "item": [
     {
@@ -314,7 +315,72 @@
               "raw": "{\n  \"texto\": \"Probando feed desde Postman\",\n  \"evento_id\": \"{{evento_id}}\"\n}"
             },
             "url": "{{base_url}}/social/publicaciones"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const j = pm.response.json();",
+                  "  pm.collectionVariables.set('publicacion_id', j._id);",
+                  "  pm.environment.set('publicacion_id', j._id);",
+                  "}",
+                  "pm.test('Publicacion creada', () => pm.response.to.have.status(201));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear publicacion con imagen (media_urls)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Publicacion con imagen desde Postman — prueba Spaces\",\n  \"media_urls\": [\"{{media_url}}\"]\n}"
+            },
+            "url": "{{base_url}}/social/publicaciones",
+            "description": "Ejecuta antes **06 - Upload imagen** para llenar {{media_url}}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const j = pm.response.json();",
+                  "  pm.collectionVariables.set('publicacion_id', j._id);",
+                  "  pm.environment.set('publicacion_id', j._id);",
+                  "}",
+                  "pm.test('Publicacion con media OK', () => pm.response.to.have.status(201));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar publicacion",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "DELETE",
+            "url": "{{base_url}}/social/publicaciones/{{publicacion_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Eliminada OK', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Like publicacion",
@@ -383,6 +449,170 @@
         {
           "name": "Demo login info",
           "request": { "method": "GET", "url": "{{base_url}}/demo/login-info" }
+        },
+        {
+          "name": "Upload imagen (Spaces)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Selecciona una imagen JPG/PNG (max 10MB)"
+                }
+              ]
+            },
+            "url": "{{base_url}}/upload",
+            "description": "Sube imagen a DigitalOcean Spaces. Guarda la URL en {{media_url}}.\nRequiere token (Login primero)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Upload OK (200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  pm.test('URL en Spaces', () => {",
+                  "    pm.expect(j.url).to.include('digitaloceanspaces.com');",
+                  "  });",
+                  "  pm.collectionVariables.set('media_url', j.url);",
+                  "  pm.environment.set('media_url', j.url);",
+                  "  console.log('media_url guardada:', j.url);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 - Validaciones (pruebas SO)",
+      "description": "Mismas validaciones que scripts/pruebas-storage. Ejecuta la carpeta con Collection Runner o una por una.",
+      "item": [
+        {
+          "name": "❌ Register invalido (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mal\",\n  \"username\": \"x\",\n  \"nombre_completo\": \"a\",\n  \"password\": \"123\"\n}"
+            },
+            "url": "{{base_url}}/auth/register"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Rechaza registro invalido', () => pm.response.to.have.status(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "✅ Register valido (201)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"postman_{{$timestamp}}@ticketflow.test\",\n  \"username\": \"pm{{$timestamp}}\",\n  \"nombre_completo\": \"Usuario Postman SO\",\n  \"password\": \"TicketFlow2026!\"\n}"
+            },
+            "url": "{{base_url}}/auth/register"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Registro OK', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const j = pm.response.json();",
+                  "  pm.collectionVariables.set('token', j.token);",
+                  "  pm.environment.set('token', j.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "❌ Publicacion texto corto (400)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"texto\": \"hola\"\n}" },
+            "url": "{{base_url}}/social/publicaciones"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Rechaza texto corto', () => pm.response.to.have.status(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Flujo completo storage (orden sugerido)",
+          "description": "1. Register valido o Login\n2. Upload imagen\n3. Crear publicacion con imagen\n4. Eliminar publicacion",
+          "item": [
+            {
+              "name": "1 Login usuario",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"login\": \"rai_manrique\",\n  \"password\": \"{{demo_password}}\"\n}" },
+                "url": "{{base_url}}/auth/login"
+              },
+              "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code===200){pm.environment.set('token',pm.response.json().token);}"], "type": "text/javascript" } }]
+            },
+            {
+              "name": "2 Upload imagen",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+                "method": "POST",
+                "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": [] }] },
+                "url": "{{base_url}}/upload"
+              },
+              "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code===200){pm.environment.set('media_url',pm.response.json().url);}"], "type": "text/javascript" } }]
+            },
+            {
+              "name": "3 Crear publicacion con imagen",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"texto\": \"Prueba Postman upload Spaces {{$timestamp}}\",\n  \"media_urls\": [\"{{media_url}}\"]\n}" },
+                "url": "{{base_url}}/social/publicaciones"
+              },
+              "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code===201){pm.environment.set('publicacion_id',pm.response.json()._id);}"], "type": "text/javascript" } }]
+            },
+            {
+              "name": "4 Eliminar publicacion",
+              "request": {
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+                "method": "DELETE",
+                "url": "{{base_url}}/social/publicaciones/{{publicacion_id}}"
+              },
+              "event": [{ "listen": "test", "script": { "exec": ["pm.test('OK',()=>pm.response.to.have.status(200));"], "type": "text/javascript" } }]
+            }
+          ]
         }
       ]
     },

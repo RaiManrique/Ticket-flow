@@ -1,6 +1,11 @@
 # Ignorar los datos binarios de la base de datos local
 datos_locales/
 BD/
+BD_backup_/
+
+# Scripts de prueba locales (no subir node_modules ni capturas)
+scripts/**/node_modules/
+scripts/**/output/
 
 # Ignorar archivos del sistema operativo
 .DS_Store
