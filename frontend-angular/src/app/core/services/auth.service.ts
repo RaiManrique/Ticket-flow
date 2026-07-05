@@ -132,13 +132,14 @@ export class AuthService {
     );
   }
 
-  updateProfile(data: { nombre_completo?: string; foto_perfil_url?: string }): Observable<User> {
+  updateProfile(data: { nombre_completo?: string; foto_perfil_url?: string; foto_portada_url?: string }): Observable<User> {
     return this.http.put<User>(`${this.base}/auth/me`, data).pipe(
       tap((updatedUser) => {
         const session = this.getSession();
         if (session) {
           session.user = updatedUser;
           this.saveSession(session);
+          this.sessionChange.next(String(updatedUser._id));
         }
       })
     );

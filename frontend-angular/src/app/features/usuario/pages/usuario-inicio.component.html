@@ -1,9 +1,58 @@
 <div id="view-inicio" class="app-view active page-enter">
-  <section class="app-hero">
+  <section class="user-welcome-banner">
+    <div>
+      <p class="user-welcome-kicker">Tu espacio en TicketFlow</p>
+      <h2>Hola, {{ firstName() }} 👋</h2>
+      <p>Descubre eventos, confirma tu asistencia y comparte con la comunidad.</p>
+    </div>
+    <div class="user-quick-actions">
+      <a routerLink="/usuario/eventos" class="user-quick-btn">Explorar eventos</a>
+      <a routerLink="/usuario/eventos" [queryParams]="{ favoritos: 1 }" class="user-quick-btn user-quick-btn--ghost">Mis favoritos</a>
+      <a routerLink="/usuario/comunidad" class="user-quick-btn user-quick-btn--ghost">Comunidad</a>
+    </div>
+  </section>
+
+  <div class="user-stats-bar">
+    <div class="user-stat-item">
+      <strong>{{ attendingCount() }}</strong>
+      <span>Eventos confirmados</span>
+    </div>
+    <div class="user-stat-item user-stat-item--highlight">
+      <strong>{{ favCount() }}</strong>
+      <span>Favoritos guardados</span>
+    </div>
+    <div class="user-stat-item">
+      <strong>{{ state.all().length }}</strong>
+      <span>Eventos disponibles</span>
+    </div>
+  </div>
+
+  @if (attendingEvents().length) {
+    <section class="section-block user-attending-section">
+      <div class="section-title-row">
+        <h2>Voy a asistir</h2>
+        <a routerLink="/usuario/eventos" [queryParams]="{ asistiendo: 1 }" class="link-btn">Ver todos</a>
+      </div>
+      <div class="user-attending-scroll">
+        @for (e of attendingEvents(); track e._id) {
+          <a class="user-attending-card" [routerLink]="['/usuario/eventos']" [queryParams]="{ detalle: e._id }">
+            <div class="user-attending-poster" [style.background-image]="'url(' + eventFlyer(e) + ')'">
+              <span class="badge-attending">✓ Confirmado</span>
+            </div>
+            <div class="user-attending-body">
+              <h4>{{ e.titulo }}</h4>
+              <p>{{ e.ciudad }} · {{ formatDateCard(e.fecha_evento) }}</p>
+            </div>
+          </a>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="app-hero app-hero--compact">
     <div class="hero-text">
-      <p class="hero-kicker">TicketFlow Perú</p>
-      <h1>VIVE LA EMOCION</h1>
-      <p class="hero-sub">Encuentra tu próximo evento y conecta con la comunidad</p>
+      <p class="hero-kicker">Buscar</p>
+      <h1>Encuentra tu próximo evento</h1>
     </div>
     <div class="search-panel">
       <div class="search-input-wrap">
@@ -37,7 +86,7 @@
             <app-empty-state title="Sin eventos por ahora" description="Vuelve pronto o explora el catálogo completo." icon="🎫" />
           } @else {
             @for (e of trending(); track e._id; let i = $index) {
-              <app-event-card [evento]="e" [featured]="i === 0" [favorite]="isFav(e)"
+              <app-event-card [evento]="e" [featured]="i === 0" [favorite]="isFav(e)" [attending]="isAttending(e)"
                 (detail)="detail($event)" (share)="share($event)" (toggleFavorite)="toggleFav($event)" />
             }
           }

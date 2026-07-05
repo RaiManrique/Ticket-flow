@@ -1,5 +1,6 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, Injector, signal } from '@angular/core';
 import { EventosService } from './api.service';
+import { AuthService } from './auth.service';
 import { Evento } from '../models/ticketflow.models';
 import { FavoritesService } from './favorites.service';
 
@@ -8,6 +9,7 @@ export type SortOption = 'fecha-asc' | 'popularidad';
 @Injectable({ providedIn: 'root' })
 export class EventosStateService {
   private readonly api = inject(EventosService);
+  private readonly injector = inject(Injector);
   private readonly favs = inject(FavoritesService);
 
   readonly all = signal<Evento[]>([]);
@@ -18,12 +20,17 @@ export class EventosStateService {
   search = signal({ query: '', ciudad: '', fecha: '' });
   sort = signal<SortOption>('fecha-asc');
   favoritesOnly = signal(false);
+  attendingOnly = signal(false);
 
   filtered(): Evento[] {
     const favorites = this.favs.getIds();
     let list = this.all().filter((e) => {
       if (this.filter() !== 'todos' && e.categoria !== this.filter()) return false;
       if (this.favoritesOnly() && !favorites.has(String(e._id))) return false;
+      if (this.attendingOnly()) {
+        const userId = String(this.injector.get(AuthService).getUser()?._id || '');
+        if (!userId || !(e.asistentes || []).map(String).includes(userId)) return false;
+      }
       const s = this.search();
       if (s.ciudad && e.ciudad !== s.ciudad) return false;
       if (s.fecha) {
@@ -67,6 +74,7 @@ export class EventosStateService {
 
   resetUserPreferences(): void {
     this.favoritesOnly.set(false);
+    this.attendingOnly.set(false);
     this.filter.set('todos');
     this.search.set({ query: '', ciudad: '', fecha: '' });
   }

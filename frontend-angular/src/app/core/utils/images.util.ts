@@ -25,22 +25,34 @@ const IMG = {
   },
 };
 
+function isUsableMediaUrl(url?: string | null): boolean {
+  if (!url || !url.trim()) return false;
+  return url.startsWith('http') || url.startsWith('/') || url.startsWith('data:');
+}
+
 export function eventFlyer(evento?: Evento | null): string {
-  if (evento?.flyer_url && (evento.flyer_url.includes('digitaloceanspaces.com') || evento.flyer_url.startsWith('http'))) {
-    return evento.flyer_url;
+  if (isUsableMediaUrl(evento?.flyer_url)) {
+    return evento!.flyer_url!;
   }
   return IMG.eventos[evento?.categoria as keyof typeof IMG.eventos] || IMG.eventos.default;
 }
 
 export function profilePhoto(user?: User | null): string {
-  if (user?.foto_perfil_url && (user.foto_perfil_url.includes('digitaloceanspaces.com') || user.foto_perfil_url.startsWith('http'))) {
-    return user.foto_perfil_url;
+  if (isUsableMediaUrl(user?.foto_perfil_url)) {
+    return user!.foto_perfil_url!;
   }
   return IMG.perfiles[user?.username as keyof typeof IMG.perfiles] || IMG.perfiles.default;
 }
 
+export function coverPhoto(user?: User | null): string | null {
+  if (isUsableMediaUrl(user?.foto_portada_url)) {
+    return user!.foto_portada_url!;
+  }
+  return null;
+}
+
 export function postMedia(url: string | undefined, index = 0): string {
-  if (url && (url.includes('digitaloceanspaces.com') || url.startsWith('http'))) return url;
+  if (isUsableMediaUrl(url)) return url!;
   if (url && url.length > 5) return url;
   const keys = Object.values(IMG.posts);
   return keys[index % keys.length];

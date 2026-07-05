@@ -62,6 +62,10 @@ export class FavoritesService {
     return this.ids().has(String(id));
   }
 
+  count(): number {
+    return this.ids().size;
+  }
+
   toggle(id: string): void {
     if (!this.userId) return;
     const next = new Set(this.ids());

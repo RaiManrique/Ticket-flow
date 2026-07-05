@@ -7,10 +7,11 @@ import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 import { EventCardComponent } from '../../../shared/event-card/event-card.component';
 import { EventosStateService } from '../../../core/services/eventos-state.service';
 import { FavoritesService } from '../../../core/services/favorites.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { SocialService } from '../../../core/services/api.service';
 import { Evento, Publicacion } from '../../../core/models/ticketflow.models';
-import { timeAgo } from '../../../core/utils/format.util';
-import { postMedia, profilePhoto } from '../../../core/utils/images.util';
+import { formatDateCard, timeAgo } from '../../../core/utils/format.util';
+import { eventFlyer, postMedia, profilePhoto } from '../../../core/utils/images.util';
 
 @Component({
   selector: 'app-usuario-inicio',
@@ -21,6 +22,7 @@ import { postMedia, profilePhoto } from '../../../core/utils/images.util';
 export class UsuarioInicioComponent implements OnInit {
   readonly state = inject(EventosStateService);
   private readonly favs = inject(FavoritesService);
+  private readonly auth = inject(AuthService);
   private readonly social = inject(SocialService);
   private readonly router = inject(Router);
 
@@ -45,12 +47,41 @@ export class UsuarioInicioComponent implements OnInit {
     });
   }
 
+  firstName(): string {
+    const user = this.auth.getUser();
+    return (user?.nombre_completo || user?.username || 'Usuario').split(' ')[0];
+  }
+
+  favCount(): number {
+    return this.favs.count();
+  }
+
+  attendingCount(): number {
+    const userId = String(this.auth.getUser()?._id || '');
+    if (!userId) return 0;
+    return this.state.all().filter((e) => (e.asistentes || []).map(String).includes(userId)).length;
+  }
+
+  attendingEvents(): Evento[] {
+    const userId = String(this.auth.getUser()?._id || '');
+    if (!userId) return [];
+    return this.state
+      .all()
+      .filter((e) => (e.asistentes || []).map(String).includes(userId))
+      .slice(0, 4);
+  }
+
   trending(): Evento[] {
     return this.state.all().slice(0, 4);
   }
 
   isFav(e: Evento): boolean {
     return this.favs.isFavorite(e._id);
+  }
+
+  isAttending(e: Evento): boolean {
+    const userId = String(this.auth.getUser()?._id || '');
+    return !!userId && (e.asistentes || []).map(String).includes(userId);
   }
 
   search(): void {
@@ -73,6 +104,8 @@ export class UsuarioInicioComponent implements OnInit {
     this.favs.toggle(e._id);
   }
 
+  formatDateCard = formatDateCard;
+  eventFlyer = eventFlyer;
   timeAgo = timeAgo;
   postMedia = postMedia;
   profilePhoto = profilePhoto;

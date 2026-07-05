@@ -1,30 +1,30 @@
-<div id="view-perfil" class="app-view active page-enter">
+<div id="view-perfil" class="app-view profile-page active page-enter">
   @if (msg) { <div class="toast-banner success">{{ msg }}</div> }
   @if (error) { <div class="toast-banner error">{{ error }}</div> }
 
-  <div class="profile-hero">
-    @if (coverPreviewUrl || user?.foto_portada_url) {
-      <img class="profile-cover" [src]="coverPreviewUrl || user?.foto_portada_url" alt="Portada">
+  <section class="profile-hero">
+    @if (coverSrc()) {
+      <img class="profile-cover" [src]="coverSrc()!" alt="Portada de perfil">
     } @else {
       <div class="profile-cover-gradient"></div>
     }
     <div class="profile-cover-overlay"></div>
-
     <label class="profile-cover-btn">
       Cambiar portada
       <input type="file" accept="image/*" (change)="onFileSelected($event, 'cover')">
     </label>
+  </section>
 
-    <div class="profile-info-bar">
+  <section class="profile-header">
+    <div class="profile-header-main">
       <div class="profile-avatar-wrap">
         <div class="profile-avatar">
-          @if (previewUrl || user?.foto_perfil_url) {
-            <img [src]="previewUrl || profilePhoto(user!)" alt="Foto de perfil">
-          } @else {
-            <div class="profile-avatar-fallback">{{ (user?.username || 'U').slice(0,2).toUpperCase() }}</div>
+          <img [src]="avatarSrc()" [alt]="nombreCompleto || user?.username || 'Perfil'" (error)="onAvatarError($event)">
+          @if (avatarError) {
+            <div class="profile-avatar-fallback">{{ initials() }}</div>
           }
         </div>
-        <label class="profile-avatar-edit">
+        <label class="profile-avatar-edit" title="Cambiar foto">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 9.5-9.5z"/></svg>
           <input type="file" accept="image/*" (change)="onFileSelected($event, 'avatar')">
         </label>
@@ -36,11 +36,12 @@
         <div class="profile-stats">
           <div class="profile-stat"><strong>{{ myPosts.length }}</strong><span>Posts</span></div>
           <div class="profile-stat"><strong>{{ myEvents.length }}</strong><span>Eventos</span></div>
+          <div class="profile-stat"><strong>{{ favCount() }}</strong><span>Favoritos</span></div>
           <div class="profile-stat"><strong>{{ myMedia.length }}</strong><span>Media</span></div>
         </div>
       </div>
 
-      @if (selectedFile || selectedCoverFile || nombreCompleto !== user?.nombre_completo) {
+      @if (hasChanges()) {
         <div class="profile-save-wrap">
           <button class="btn btn-glow" type="button" (click)="saveProfile()" [disabled]="loading">
             {{ loading ? 'Guardando...' : 'Guardar cambios' }}
@@ -48,16 +49,22 @@
         </div>
       }
     </div>
-  </div>
 
-  <div class="profile-content">
-    <div class="bento-grid">
-      <div class="bento-item bento-span-3">
+    <div class="profile-quick-links">
+      <a routerLink="/usuario/eventos" class="user-quick-btn">Explorar eventos</a>
+      <a routerLink="/usuario/eventos" [queryParams]="{ asistiendo: 1 }" class="user-quick-btn user-quick-btn--ghost">Mis confirmados</a>
+      <a routerLink="/usuario/comunidad" class="user-quick-btn user-quick-btn--ghost">Comunidad</a>
+    </div>
+  </section>
+
+  <section class="profile-content">
+    <div class="bento-grid profile-bento">
+      <div class="bento-item bento-span-full">
         <div class="bento-header"><h3>Mis próximos eventos</h3></div>
         @if (myEvents.length) {
           <div class="profile-events-scroll">
             @for (e of myEvents; track e._id) {
-              <article class="profile-event-card">
+              <article class="profile-event-card profile-event-card--link" tabindex="0" role="button" (click)="goToEvent(e)" (keyup.enter)="goToEvent(e)">
                 <div class="profile-event-poster" [style.background-image]="'url(' + eventFlyer(e) + ')'">
                   <span class="profile-event-cat">{{ e.categoria }}</span>
                 </div>
@@ -73,16 +80,16 @@
         }
       </div>
 
-      <div class="bento-item bento-span-3">
+      <div class="bento-item bento-span-full">
         <div class="bento-header"><h3>Galería de momentos</h3></div>
         @if (myMedia.length) {
           <div class="profile-gallery">
             @for (media of myMedia; track media) {
               <div class="profile-gallery-item">
                 @if (isVideo(media)) {
-                  <video [src]="media" muted></video>
+                  <video [src]="media" muted playsinline></video>
                 } @else {
-                  <img [src]="media" alt="Momento">
+                  <img [src]="media" alt="Momento" loading="lazy">
                 }
               </div>
             }
@@ -92,27 +99,32 @@
         }
       </div>
 
-      <div class="bento-item bento-span-2">
+      <div class="bento-item">
         <div class="bento-header"><h3>Configuración pública</h3></div>
-        <form (ngSubmit)="saveProfile()">
+        <form class="profile-settings-form" (ngSubmit)="saveProfile()">
           <div class="form-group">
             <label for="nombre">Nombre completo</label>
             <input id="nombre" type="text" [(ngModel)]="nombreCompleto" name="nombre" required>
           </div>
           <div class="form-group">
-            <label>Usuario</label>
-            <input type="text" [value]="user?.username" disabled>
+            <label for="username">Usuario</label>
+            <input id="username" type="text" [value]="user?.username" disabled>
           </div>
           <div class="form-group">
-            <label>Correo electrónico</label>
-            <input type="text" [value]="user?.email" disabled>
+            <label for="email">Correo electrónico</label>
+            <input id="email" type="email" [value]="user?.email" disabled>
           </div>
+          @if (hasChanges()) {
+            <button class="btn btn-glow btn-sm" type="submit" [disabled]="loading">
+              {{ loading ? 'Guardando...' : 'Guardar cambios' }}
+            </button>
+          }
         </form>
       </div>
 
       <div class="bento-item danger-zone">
         <div class="bento-header"><h3>Zona de peligro</h3></div>
-        <p style="color:var(--muted);font-size:0.92rem;margin-bottom:1rem;">
+        <p class="danger-zone-text">
           Eliminar tu cuenta borra publicaciones, comentarios y multimedia de forma permanente.
         </p>
         <button class="btn-danger-outline" type="button" (click)="deleteAccount()" [disabled]="loading">
@@ -120,5 +132,5 @@
         </button>
       </div>
     </div>
-  </div>
+  </section>
 </div>

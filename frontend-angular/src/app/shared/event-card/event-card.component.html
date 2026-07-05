@@ -3,6 +3,9 @@
     <img class="trend-poster-img" [src]="flyer(evento)" [alt]="evento.titulo" loading="lazy">
     <div class="trend-badges">
       <span class="badge-cat" [ngClass]="evento.categoria">{{ categoryLabel[evento.categoria] || evento.categoria }}</span>
+      @if (attending) {
+        <span class="badge-attending">✓ Asistirás</span>
+      }
       <span class="badge-fans">{{ fansLabel(evento.asistentes?.length || 0) }}</span>
     </div>
     <button class="event-fav-btn" [class.active]="favorite" type="button" (click)="toggleFavorite.emit(evento)" aria-label="Favorito">

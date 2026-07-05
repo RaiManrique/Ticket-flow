@@ -14,6 +14,7 @@ export class EventCardComponent {
   @Input({ required: true }) evento!: Evento;
   @Input() featured = false;
   @Input() favorite = false;
+  @Input() attending = false;
 
   @Output() detail = new EventEmitter<Evento>();
   @Output() share = new EventEmitter<Evento>();

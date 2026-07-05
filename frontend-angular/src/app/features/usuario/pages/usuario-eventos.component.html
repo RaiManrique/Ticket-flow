@@ -1,10 +1,41 @@
 <div id="view-eventos" class="app-view active page-enter">
+  @if (toastMsg) { <div class="toast-banner success">{{ toastMsg }}</div> }
+
   <div class="view-header">
     <h2>Todos los eventos</h2>
     <p>Conciertos, festivales y teatro en Perú</p>
   </div>
 
-  <div class="category-pills" style="max-width:1280px;margin:0 auto;padding:0 1.5rem;">
+  <div class="user-stats-bar user-stats-bar--inline">
+    <div class="user-stat-item">
+      <strong>{{ attendingCount() }}</strong>
+      <span>Confirmados</span>
+    </div>
+    <div class="user-stat-item user-stat-item--highlight">
+      <strong>{{ favCount() }}</strong>
+      <span>Favoritos</span>
+    </div>
+    <div class="user-stat-item">
+      <strong>{{ list().length }}</strong>
+      <span>En catálogo</span>
+    </div>
+  </div>
+
+  <div class="events-search-bar">
+    <div class="search-input-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
+      <input type="search" placeholder="Buscar por título, ciudad..." [ngModel]="state.search().query"
+        (ngModelChange)="onSearchChange($event)">
+    </div>
+    <select class="chip-select" [ngModel]="state.search().ciudad" (ngModelChange)="onCiudadChange($event)">
+      <option value="">Todas las ciudades</option>
+      <option value="Lima">Lima</option>
+      <option value="Cusco">Cusco</option>
+      <option value="Arequipa">Arequipa</option>
+    </select>
+  </div>
+
+  <div class="category-pills events-category-pills">
     @for (f of ['todos', 'concierto', 'festival', 'teatro']; track f) {
       <button class="filter-btn" [class.active]="state.filter() === f" type="button" (click)="setFilter(f)">
         {{ f === 'todos' ? 'Todos' : f.charAt(0).toUpperCase() + f.slice(1) }}
@@ -21,19 +52,20 @@
         <option value="fecha-asc">Más cercanos</option>
         <option value="popularidad">Más populares</option>
       </select>
-      <button class="btn btn-ghost btn-sm" [class.active]="state.favoritesOnly()" type="button" (click)="toggleFavFilter()">Favoritos</button>
+      <button class="btn btn-ghost btn-sm" [class.active]="state.favoritesOnly()" type="button" (click)="toggleFavFilter()">★ Favoritos</button>
+      <button class="btn btn-ghost btn-sm" [class.active]="state.attendingOnly()" type="button" (click)="toggleAttendingFilter()">✓ Asistiendo</button>
       <button class="btn btn-ghost btn-sm" type="button" (click)="clearFilters()">Limpiar</button>
     </div>
   </div>
 
-  <div class="trending-list" style="max-width:1280px;margin:0 auto;padding:0 1.5rem 2rem;">
+  <div class="trending-list events-grid-wrap">
     @if (state.loading()) {
       <app-loading-skeleton variant="cards" [count]="4" />
     } @else if (!list().length) {
-      <app-empty-state title="No hay eventos con esos filtros" description="Prueba otra ciudad, categoría o quita el filtro de favoritos." icon="🔍" />
+      <app-empty-state title="No hay eventos con esos filtros" description="Prueba otra ciudad, categoría o quita los filtros activos." icon="🔍" />
     } @else {
       @for (e of list(); track e._id) {
-        <app-event-card [evento]="e" [favorite]="isFav(e)"
+        <app-event-card [evento]="e" [favorite]="isFav(e)" [attending]="isAttending(e)"
           (detail)="openDetail($event._id)" (share)="share($event)" (toggleFavorite)="toggleFav($event)" />
       }
     }
@@ -53,6 +85,7 @@
         <div class="event-detail-hero">
           <img class="event-detail-img" [src]="eventFlyer(detailEvento)" [alt]="detailEvento.titulo">
           <div class="event-detail-head">
+            <span class="badge-cat" [ngClass]="detailEvento.categoria">{{ categoryLabel[detailEvento.categoria] || detailEvento.categoria }}</span>
             <h2>{{ detailEvento.titulo }}</h2>
             <p class="event-detail-meta">{{ detailEvento.ciudad }} · {{ formatDate(detailEvento.fecha_evento) }}</p>
           </div>
@@ -62,7 +95,7 @@
         <div class="event-detail-stats">
           <div>
             <strong>{{ detailEvento.asistentes?.length || 0 }}</strong>
-            <span style="margin-left:6px;color:var(--muted);">personas asistirán</span>
+            <span class="event-detail-stat-label">personas asistirán</span>
           </div>
           @if (isAttending(detailEvento)) {
             <span class="attendance-badge">✓ Asistirás</span>
@@ -73,7 +106,11 @@
           <button class="btn btn-glow" type="button" (click)="toggleAttendance(detailEvento)" [disabled]="attendanceLoading">
             {{ attendanceLoading ? 'Guardando...' : (isAttending(detailEvento) ? 'Ya no asistiré' : '¡Asistiré!') }}
           </button>
+          <button class="btn btn-ghost" type="button" (click)="toggleFav(detailEvento)">
+            {{ isFav(detailEvento) ? '★ En favoritos' : '☆ Guardar favorito' }}
+          </button>
           <button class="btn btn-ghost" type="button" (click)="share(detailEvento)">Compartir</button>
+          <a class="btn btn-ghost" routerLink="/usuario/comunidad" (click)="closeDetail()">Ir a comunidad</a>
         </div>
       }
     </div>
