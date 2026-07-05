@@ -7,12 +7,14 @@ import { AuthService } from '../../core/services/auth.service';
 import { UploadService } from '../../core/services/upload.service';
 import { Evento, User } from '../../core/models/ticketflow.models';
 import { CATEGORY_LABEL, formatDate } from '../../core/utils/format.util';
-import { eventFlyer } from '../../core/utils/images.util';
+import { eventFlyer, profilePhoto } from '../../core/utils/images.util';
+import { LoadingSkeletonComponent } from '../../shared/ui/loading-skeleton.component';
+import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 
 @Component({
   selector: 'app-admin-eventos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LoadingSkeletonComponent, EmptyStateComponent],
   templateUrl: './admin-eventos.component.html',
 })
 export class AdminEventosComponent implements OnInit, OnDestroy {
@@ -39,12 +41,14 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
   ciudad = 'Lima';
   fecha_evento = '';
   selectedFile: File | null = null;
+  flyerPreview: string | null = null;
 
   readonly categorias = ['concierto', 'festival', 'teatro', 'deporte', 'otro'];
   readonly isAdmin = this.auth.getUser()?.rol === 'admin';
   readonly categoryLabel = CATEGORY_LABEL;
   formatDate = formatDate;
   eventFlyer = eventFlyer;
+  profilePhoto = profilePhoto;
 
   ngOnInit(): void {
     this.load();
@@ -118,10 +122,13 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
     this.detailError = '';
   }
 
-  onFileSelected(event: any): void {
-    const file = event.target.files[0];
+  onFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
       this.selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => (this.flyerPreview = e.target?.result as string);
+      reader.readAsDataURL(file);
     }
   }
 
@@ -173,9 +180,11 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
           this.descripcion = '';
           this.fecha_evento = '';
           this.selectedFile = null;
+          this.flyerPreview = null;
           this.showCreateForm = false;
           this.saving = false;
           this.load();
+          setTimeout(() => (this.success = ''), 4000);
         },
         error: (err) => {
           this.error = err.error?.error || err.message;

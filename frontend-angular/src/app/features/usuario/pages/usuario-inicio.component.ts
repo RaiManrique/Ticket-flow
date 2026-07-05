@@ -2,6 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { LoadingSkeletonComponent } from '../../../shared/ui/loading-skeleton.component';
+import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 import { EventCardComponent } from '../../../shared/event-card/event-card.component';
 import { EventosStateService } from '../../../core/services/eventos-state.service';
 import { FavoritesService } from '../../../core/services/favorites.service';
@@ -13,7 +15,7 @@ import { postMedia, profilePhoto } from '../../../core/utils/images.util';
 @Component({
   selector: 'app-usuario-inicio',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, EventCardComponent],
+  imports: [CommonModule, FormsModule, RouterLink, EventCardComponent, LoadingSkeletonComponent, EmptyStateComponent],
   templateUrl: './usuario-inicio.component.html',
 })
 export class UsuarioInicioComponent implements OnInit {
@@ -27,12 +29,19 @@ export class UsuarioInicioComponent implements OnInit {
   fecha = '';
   feed: Publicacion[] = [];
   feedError = '';
+  feedLoading = true;
 
   ngOnInit(): void {
     this.state.load();
     this.social.publicaciones().subscribe({
-      next: (p) => (this.feed = p.slice(0, 4)),
-      error: (err) => (this.feedError = err.message),
+      next: (p) => {
+        this.feed = p.slice(0, 4);
+        this.feedLoading = false;
+      },
+      error: (err) => {
+        this.feedError = err.message;
+        this.feedLoading = false;
+      },
     });
   }
 

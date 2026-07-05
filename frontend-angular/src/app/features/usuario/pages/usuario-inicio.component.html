@@ -1,24 +1,25 @@
-<div id="view-inicio" class="app-view active">
+<div id="view-inicio" class="app-view active page-enter">
   <section class="app-hero">
     <div class="hero-text">
       <p class="hero-kicker">TicketFlow Perú</p>
       <h1>VIVE LA EMOCION</h1>
-      <p class="hero-sub">Encuentra tu próximo latido</p>
+      <p class="hero-sub">Encuentra tu próximo evento y conecta con la comunidad</p>
     </div>
     <div class="search-panel">
       <div class="search-input-wrap">
-        <input type="search" [(ngModel)]="query" placeholder="¿A quién quieres ver?">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
+        <input type="search" [(ngModel)]="query" placeholder="Artista, festival o ciudad..." (keyup.enter)="search()">
       </div>
       <div class="search-filters">
         <select [(ngModel)]="ciudad" class="chip-select">
-          <option value="">Ciudad</option>
+          <option value="">Todas las ciudades</option>
           <option value="Lima">Lima</option>
           <option value="Cusco">Cusco</option>
           <option value="Arequipa">Arequipa</option>
         </select>
-        <input type="date" [(ngModel)]="fecha" class="chip-date">
+        <input type="date" [(ngModel)]="fecha" class="chip-date" aria-label="Fecha">
       </div>
-      <button class="btn btn-search" type="button" (click)="search()">BUSCAR</button>
+      <button class="btn btn-search" type="button" (click)="search()">Buscar eventos</button>
     </div>
   </section>
 
@@ -26,12 +27,14 @@
     <div class="app-main-col">
       <section class="section-block">
         <div class="section-title-row">
-          <h2>Eventos en Tendencia</h2>
+          <h2>Eventos en tendencia</h2>
           <a routerLink="/usuario/eventos" class="link-btn">Ver todos</a>
         </div>
         <div class="trending-list">
           @if (state.loading()) {
-            <p class="loading">Cargando eventos...</p>
+            <app-loading-skeleton variant="cards" [count]="3" />
+          } @else if (!trending().length) {
+            <app-empty-state title="Sin eventos por ahora" description="Vuelve pronto o explora el catálogo completo." icon="🎫" />
           } @else {
             @for (e of trending(); track e._id; let i = $index) {
               <app-event-card [evento]="e" [featured]="i === 0" [favorite]="isFav(e)"
@@ -43,15 +46,28 @@
     </div>
     <aside class="app-side-col">
       <section class="section-block community-block">
-        <h2>Comunidad Live</h2>
+        <div class="section-title-row">
+          <h2>Comunidad Live</h2>
+          <a routerLink="/usuario/comunidad" class="link-btn">Ir al feed</a>
+        </div>
         <div class="feed-preview">
-          @if (feedError) {
+          @if (feedLoading) {
+            <app-loading-skeleton variant="feed" [count]="3" />
+          } @else if (feedError) {
             <div class="alert error">{{ feedError }}</div>
+          } @else if (!feed.length) {
+            <p class="feed-preview-meta">Aún no hay publicaciones. ¡Sé el primero!</p>
           } @else {
             @for (p of feed; track p._id) {
-              <article class="feed-item">
-                <p class="feed-item-text">{{ p.texto }}</p>
-                <span>{{ timeAgo(p.fecha_publicacion) }}</span>
+              <article class="feed-preview-item">
+                <div class="avatar sm" [class.has-photo]="profilePhoto(p.autor)">
+                  <img [src]="profilePhoto(p.autor)" alt="">
+                  <span>{{ (p.autor?.username || 'U').slice(0, 2).toUpperCase() }}</span>
+                </div>
+                <div>
+                  <p class="feed-preview-text">{{ p.texto }}</p>
+                  <span class="feed-preview-meta">{{ p.autor?.username }} · {{ timeAgo(p.fecha_publicacion) }}</span>
+                </div>
               </article>
             }
           }

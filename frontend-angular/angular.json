@@ -52,7 +52,8 @@
               }
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css",
+              "src/styles-polish.css"
             ],
             "scripts": []
           },
@@ -113,7 +114,8 @@
               }
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css",
+              "src/styles-polish.css"
             ],
             "scripts": []
           }

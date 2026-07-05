@@ -1,68 +1,96 @@
-<header class="admin-topbar">
-  <div>
-    <h1>Dashboard</h1>
-    <p>{{ isOrganizerView() ? 'Panorama de tus eventos e interacciones sociales' : 'Panorama general de la Red Social TicketFlow' }}</p>
-  </div>
-  <span class="status-pill ok">{{ isOrganizerView() ? 'Vista organizador' : 'Vista administrador' }}</span>
-</header>
+<div class="admin-page">
+  <header class="admin-topbar">
+    <div>
+      <h1>Dashboard</h1>
+      <p>{{ isOrganizerView() ? 'Panorama de tus eventos y comunidad' : 'Panorama general de TicketFlow' }}</p>
+    </div>
+    <span class="status-pill ok">{{ isOrganizerView() ? 'Organizador' : 'Administrador' }}</span>
+  </header>
 
-@if (error) {
-  <div class="alert error">{{ error }}</div>
-} @else if (data && resumen()) {
-  <div class="metrics-grid">
-    @if (!isOrganizerView()) {
-      <div class="metric-card">
-        <span class="metric-label">Usuarios</span>
-        <strong class="metric-value">{{ resumen()!.usuarios }}</strong>
-        <small class="metric-hint">Registrados en la plataforma</small>
-      </div>
-    }
-    <div class="metric-card">
-      <span class="metric-label">Eventos</span>
-      <strong class="metric-value">{{ resumen()!.eventos }}</strong>
-      <small class="metric-hint">{{ isOrganizerView() ? 'Publicados por ti' : 'En catálogo' }}</small>
-    </div>
-    <div class="metric-card accent">
-      <span class="metric-label">Asistentes Totales</span>
-      <strong class="metric-value">{{ resumen()!.asistentes }}</strong>
-      <small class="metric-hint">Interacciones de "Asistiré"</small>
-    </div>
-    <div class="metric-card">
-      <span class="metric-label">Publicaciones</span>
-      <strong class="metric-value">{{ resumen()!.publicaciones }}</strong>
-      <small class="metric-hint">En el feed de la comunidad</small>
-    </div>
-  </div>
-
-  <div class="admin-grid-2" style="margin-top: 30px;">
-    <div class="admin-card">
-      <div class="admin-card-head">
-        <h3>Próximos eventos</h3>
-        <a routerLink="/admin/eventos" class="link-btn">Gestionar eventos</a>
-      </div>
-      @for (e of data.proximos_eventos; track e._id) {
-        <div class="org-rank-row">
-          <div>
-            <strong>{{ e.titulo }}</strong>
-            <small>{{ e.ciudad }} · {{ formatDate(e.fecha_evento) }}</small>
-          </div>
-          <span class="status-pill" [class]="e.estado === 'publicado' ? 'ok' : 'muted'">{{ e.estado || 'publicado' }}</span>
-        </div>
-      } @empty {
-        <p class="org-muted">No hay eventos programados.</p>
+  @if (error) {
+    <div class="alert error">{{ error }}</div>
+  } @else if (loading) {
+    <div class="metrics-grid metrics-grid--dashboard">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="metric-card"><app-loading-skeleton variant="lines" [count]="2" /></div>
       }
     </div>
-
-    <div class="admin-card">
-      <div class="admin-card-head">
-        <h3>Resumen Comunitario</h3>
-      </div>
-      <p style="color: #aaa; line-height: 1.6;">
-        Bienvenido al panel social de TicketFlow. Desde aquí puedes coordinar eventos y ver el nivel de asistencia.
-        Utiliza la sección de <strong>Eventos</strong> para crear nuevos meetups o conciertos, y la comunidad en el feed principal para comunicarte con los fans.
-      </p>
+  } @else if (data && resumen()) {
+    <div class="admin-quick-actions">
+      <a routerLink="/admin/eventos" class="admin-quick-action">
+        <span>📅</span> Gestionar eventos
+      </a>
+      @if (!isOrganizerView()) {
+        <a routerLink="/admin/usuarios" class="admin-quick-action">
+          <span>👥</span> Ver usuarios
+        </a>
+      }
+      <a routerLink="/usuario/comunidad" class="admin-quick-action">
+        <span>💬</span> Ir a comunidad
+      </a>
     </div>
-  </div>
-} @else {
-  <p class="loading">Cargando dashboard...</p>
-}
+
+    <div class="metrics-grid metrics-grid--dashboard">
+      @if (!isOrganizerView()) {
+        <div class="metric-card">
+          <div class="metric-card-icon">👥</div>
+          <span class="metric-label">Usuarios</span>
+          <strong class="metric-value">{{ resumen()!.usuarios }}</strong>
+          <small class="metric-hint">Registrados en la plataforma</small>
+        </div>
+      }
+      <div class="metric-card">
+        <div class="metric-card-icon">🎫</div>
+        <span class="metric-label">Eventos</span>
+        <strong class="metric-value">{{ resumen()!.eventos }}</strong>
+        <small class="metric-hint">{{ isOrganizerView() ? 'Publicados por ti' : 'En catálogo' }}</small>
+      </div>
+      <div class="metric-card accent">
+        <div class="metric-card-icon">✓</div>
+        <span class="metric-label">Asistentes</span>
+        <strong class="metric-value">{{ resumen()!.asistentes }}</strong>
+        <small class="metric-hint">Confirmaciones «Asistiré»</small>
+      </div>
+      <div class="metric-card">
+        <div class="metric-card-icon">💬</div>
+        <span class="metric-label">Publicaciones</span>
+        <strong class="metric-value">{{ resumen()!.publicaciones }}</strong>
+        <small class="metric-hint">En el feed social</small>
+      </div>
+    </div>
+
+    <div class="admin-grid-2" style="margin-top: 1.5rem;">
+      <div class="admin-card">
+        <div class="admin-card-head">
+          <h3>Próximos eventos</h3>
+          <a routerLink="/admin/eventos" class="link-btn">Ver todos</a>
+        </div>
+        @for (e of data.proximos_eventos; track e._id) {
+          <div class="org-rank-row">
+            <div>
+              <strong>{{ e.titulo }}</strong>
+              <small>{{ e.ciudad }} · {{ formatDate(e.fecha_evento) }} · {{ categoryLabel[e.categoria] || e.categoria }}</small>
+            </div>
+            <span class="status-pill" [class]="e.estado === 'publicado' ? 'ok' : 'muted'">{{ e.estado || 'publicado' }}</span>
+          </div>
+        } @empty {
+          <app-empty-state title="Sin eventos próximos" description="Crea un evento para verlo aquí." icon="📅" />
+        }
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card-head"><h3>Actividad reciente</h3></div>
+        <div class="org-muted" style="line-height:1.7;">
+          <p style="margin-bottom:0.75rem;">
+            <strong style="color:var(--text);">{{ resumen()!.asistentes }}</strong> personas confirmaron asistencia
+            en {{ resumen()!.eventos }} evento{{ resumen()!.eventos === 1 ? '' : 's' }}.
+          </p>
+          <p>
+            El feed tiene <strong style="color:var(--text);">{{ resumen()!.publicaciones }}</strong> publicaciones activas.
+            Usa la sección <a routerLink="/admin/eventos" class="link-btn">Eventos</a> para publicar nuevos meetups o conciertos.
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+</div>

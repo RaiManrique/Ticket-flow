@@ -1,10 +1,10 @@
-<div id="view-eventos" class="app-view active">
+<div id="view-eventos" class="app-view active page-enter">
   <div class="view-header">
     <h2>Todos los eventos</h2>
     <p>Conciertos, festivales y teatro en Perú</p>
   </div>
 
-  <div class="category-pills">
+  <div class="category-pills" style="max-width:1280px;margin:0 auto;padding:0 1.5rem;">
     @for (f of ['todos', 'concierto', 'festival', 'teatro']; track f) {
       <button class="filter-btn" [class.active]="state.filter() === f" type="button" (click)="setFilter(f)">
         {{ f === 'todos' ? 'Todos' : f.charAt(0).toUpperCase() + f.slice(1) }}
@@ -26,11 +26,11 @@
     </div>
   </div>
 
-  <div class="trending-list">
+  <div class="trending-list" style="max-width:1280px;margin:0 auto;padding:0 1.5rem 2rem;">
     @if (state.loading()) {
-      <p class="loading">Cargando...</p>
+      <app-loading-skeleton variant="cards" [count]="4" />
     } @else if (!list().length) {
-      <div class="empty-state">No hay eventos con esos filtros.</div>
+      <app-empty-state title="No hay eventos con esos filtros" description="Prueba otra ciudad, categoría o quita el filtro de favoritos." icon="🔍" />
     } @else {
       @for (e of list(); track e._id) {
         <app-event-card [evento]="e" [favorite]="isFav(e)"
@@ -43,10 +43,10 @@
 @if (detailEvento || detailLoading || detailError) {
   <div class="ticket-modal">
     <div class="ticket-modal-backdrop" (click)="closeDetail()"></div>
-    <div class="ticket-modal-card event-detail-card">
-      <button type="button" class="ticket-modal-close" (click)="closeDetail()">&times;</button>
+    <div class="ticket-modal-card event-detail-card page-enter">
+      <button type="button" class="ticket-modal-close" (click)="closeDetail()" aria-label="Cerrar">&times;</button>
       @if (detailLoading) {
-        <p class="loading">Cargando detalle...</p>
+        <app-loading-skeleton variant="lines" [count]="4" />
       } @else if (detailError) {
         <div class="alert error">{{ detailError }}</div>
       } @else if (detailEvento) {
@@ -59,23 +59,21 @@
         </div>
         <p class="event-detail-desc">{{ detailEvento.descripcion }}</p>
 
-        <div class="event-social-stats" style="margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <div class="event-detail-stats">
           <div>
-            <strong style="font-size: 1.2rem; color: var(--color-primary, #00f2fe);">{{ detailEvento.asistentes?.length || 0 }}</strong>
-            <span style="margin-left: 5px; color: #aaa;">personas asistirán a este evento</span>
+            <strong>{{ detailEvento.asistentes?.length || 0 }}</strong>
+            <span style="margin-left:6px;color:var(--muted);">personas asistirán</span>
           </div>
-          <div>
-            @if (isAttending(detailEvento)) {
-              <span class="status-live live" style="padding: 4px 8px; font-size: 0.8rem; background: rgba(0,242,254,0.15); color: #00f2fe; border-radius: 4px;">✓ Asistirás</span>
-            }
-          </div>
+          @if (isAttending(detailEvento)) {
+            <span class="attendance-badge">✓ Asistirás</span>
+          }
         </div>
 
-        <div class="event-detail-actions" style="margin-top: 25px; display: flex; gap: 15px;">
-          <button class="btn btn-glow" type="button" (click)="toggleAttendance(detailEvento)" style="flex: 1;">
-            {{ isAttending(detailEvento) ? 'Ya no asistiré' : '¡Asistiré!' }}
+        <div class="event-detail-actions">
+          <button class="btn btn-glow" type="button" (click)="toggleAttendance(detailEvento)" [disabled]="attendanceLoading">
+            {{ attendanceLoading ? 'Guardando...' : (isAttending(detailEvento) ? 'Ya no asistiré' : '¡Asistiré!') }}
           </button>
-          <button class="btn btn-secondary" type="button" (click)="share(detailEvento)">Compartir</button>
+          <button class="btn btn-ghost" type="button" (click)="share(detailEvento)">Compartir</button>
         </div>
       }
     </div>

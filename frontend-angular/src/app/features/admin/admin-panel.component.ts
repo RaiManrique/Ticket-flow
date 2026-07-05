@@ -1,33 +1,19 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AdminService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { formatDate } from '../../core/utils/format.util';
+import { formatDate, roleLabel } from '../../core/utils/format.util';
+import { LoadingSkeletonComponent } from '../../shared/ui/loading-skeleton.component';
+import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 
 @Component({
   selector: 'app-admin-panel',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <header class="admin-topbar"><div><h1>{{ title }}</h1></div></header>
-    <div class="admin-card">
-      @if (loading) { <p class="loading">Cargando...</p> }
-      @else if (error) { <div class="alert error">{{ error }}</div> }
-      @else if (!rows.length) { <p>Sin registros</p> }
-      @else {
-        <table class="data-table">
-          <thead><tr>@for (col of columns; track col) { <th>{{ col }}</th> }</tr></thead>
-          <tbody>
-            @for (row of rows; track $index) {
-              <tr>@for (col of columns; track col) { <td>{{ cell(row, col) }}</td> }</tr>
-            }
-          </tbody>
-        </table>
-      }
-    </div>
-  `,
+  imports: [CommonModule, FormsModule, LoadingSkeletonComponent, EmptyStateComponent],
+  templateUrl: './admin-panel.component.html',
 })
 export class AdminPanelComponent implements OnInit, OnDestroy {
   private readonly admin = inject(AdminService);
@@ -41,6 +27,12 @@ export class AdminPanelComponent implements OnInit, OnDestroy {
   rows: Record<string, unknown>[] = [];
   loading = true;
   error = '';
+  search = '';
+  roleLabel = roleLabel;
+
+  asString(v: unknown): string {
+    return String(v ?? '');
+  }
 
   ngOnInit(): void {
     this.initPanel();
@@ -51,14 +43,38 @@ export class AdminPanelComponent implements OnInit, OnDestroy {
     this.sessionSub?.unsubscribe();
   }
 
+  filteredRows(): Record<string, unknown>[] {
+    const q = this.search.trim().toLowerCase();
+    if (!q) return this.rows;
+    return this.rows.filter((row) =>
+      this.columns.some((col) => String(row[col] ?? '').toLowerCase().includes(q))
+    );
+  }
+
+  columnLabel(col: string): string {
+    return (
+      {
+        username: 'Usuario',
+        email: 'Email',
+        rol: 'Rol',
+        nombre_completo: 'Nombre',
+        titulo: 'Título',
+        categoria: 'Categoría',
+        ciudad: 'Ciudad',
+        estado: 'Estado',
+      }[col] || col
+    );
+  }
+
   private initPanel(): void {
     const path = this.route.snapshot.routeConfig?.path || 'usuarios';
     this.panel = path as typeof this.panel;
     this.loading = true;
     this.error = '';
     this.rows = [];
+    this.search = '';
     const cfg: Record<string, { title: string; cols: string[]; load: () => ReturnType<AdminService['usuarios']> }> = {
-      usuarios: { title: 'Usuarios', cols: ['username', 'email', 'rol', 'nombre_completo'], load: () => this.admin.usuarios() as never },
+      usuarios: { title: 'Usuarios', cols: ['username', 'nombre_completo', 'email', 'rol'], load: () => this.admin.usuarios() as never },
       eventos: { title: 'Eventos', cols: ['titulo', 'categoria', 'ciudad', 'estado'], load: () => this.admin.eventos() as never },
     };
     const c = cfg[this.panel];

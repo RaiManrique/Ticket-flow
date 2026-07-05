@@ -2,28 +2,66 @@
 <div class="admin-layout">
   <aside class="admin-sidebar">
     <a routerLink="/admin" class="brand">
-      <img src="/img/logo.png" alt="TicketFlow" width="42" height="42" style="border-radius:10px;">
+      <img src="/img/logo.png" alt="TicketFlow" width="42" height="42">
       <div>
         <strong>TicketFlow</strong>
         <small>{{ isAdmin ? 'Panel admin' : 'Panel organizador' }}</small>
       </div>
     </a>
-    <nav class="admin-nav">
-      <a class="admin-nav-btn" routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+
+    <nav class="admin-nav" aria-label="Panel de administración">
+      <a class="admin-nav-btn" routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
       @if (isAdmin) {
-        <a class="admin-nav-btn" routerLink="/admin/usuarios" routerLinkActive="active">Usuarios</a>
+        <a class="admin-nav-btn" routerLink="/admin/usuarios" routerLinkActive="active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Usuarios
+        </a>
       }
-      <a class="admin-nav-btn" routerLink="/admin/eventos" routerLinkActive="active">Eventos</a>
+      <a class="admin-nav-btn" routerLink="/admin/eventos" routerLinkActive="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Eventos
+      </a>
     </nav>
+
     <div class="admin-sidebar-footer">
-      <div class="user-info">
-        <strong>{{ user.nombre_completo || user.username }}</strong>
-        <small>{{ roleLabel(user.rol) }}</small>
+      <div class="admin-user-chip">
+        <div class="avatar sm has-photo">
+          <img [src]="photo()" [alt]="user.nombre_completo || user.username">
+          <span>{{ initials() }}</span>
+        </div>
+        <div>
+          <strong style="display:block;font-size:0.88rem;">{{ user.nombre_completo || user.username }}</strong>
+          <small style="color:var(--muted);">{{ roleLabel(user.rol) }}</small>
+        </div>
       </div>
-      <button class="btn btn-ghost btn-sm btn-block" type="button" (click)="logout()">Cerrar sesion</button>
+      <div class="admin-sidebar-actions">
+        <a routerLink="/usuario/inicio" class="btn btn-ghost btn-sm btn-block">Vista usuario</a>
+        <button class="btn btn-ghost btn-sm btn-block" type="button" (click)="logout()">Cerrar sesión</button>
+      </div>
     </div>
   </aside>
+
   <main class="admin-main">
     <router-outlet />
   </main>
 </div>
+
+<nav class="admin-mobile-nav" aria-label="Navegación admin móvil">
+  <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Inicio
+  </a>
+  @if (isAdmin) {
+    <a routerLink="/admin/usuarios" routerLinkActive="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Usuarios
+    </a>
+  }
+  <a routerLink="/admin/eventos" routerLinkActive="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    Eventos
+  </a>
+</nav>

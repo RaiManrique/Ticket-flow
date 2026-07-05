@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventCardComponent } from '../../../shared/event-card/event-card.component';
+import { LoadingSkeletonComponent } from '../../../shared/ui/loading-skeleton.component';
+import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 import { EventosStateService } from '../../../core/services/eventos-state.service';
 import { EventosService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -14,7 +16,7 @@ import { eventFlyer } from '../../../core/utils/images.util';
 @Component({
   selector: 'app-usuario-eventos',
   standalone: true,
-  imports: [CommonModule, FormsModule, EventCardComponent],
+  imports: [CommonModule, FormsModule, EventCardComponent, LoadingSkeletonComponent, EmptyStateComponent],
   templateUrl: './usuario-eventos.component.html',
 })
 export class UsuarioEventosComponent implements OnInit {
@@ -28,6 +30,7 @@ export class UsuarioEventosComponent implements OnInit {
   detailEvento: Evento | null = null;
   detailLoading = false;
   detailError = '';
+  attendanceLoading = false;
 
   ngOnInit(): void {
     this.state.load();
@@ -95,6 +98,7 @@ export class UsuarioEventosComponent implements OnInit {
   }
 
   toggleAttendance(e: Evento): void {
+    this.attendanceLoading = true;
     this.eventosApi.asistir(e._id).subscribe({
       next: (res) => {
         e.asistentes = res.asistentes;
@@ -102,7 +106,11 @@ export class UsuarioEventosComponent implements OnInit {
           this.detailEvento.asistentes = res.asistentes;
         }
         this.state.load();
-      }
+        this.attendanceLoading = false;
+      },
+      error: () => {
+        this.attendanceLoading = false;
+      },
     });
   }
 

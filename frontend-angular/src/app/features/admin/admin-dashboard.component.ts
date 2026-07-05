@@ -5,12 +5,14 @@ import { Subscription } from 'rxjs';
 import { AdminService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminDashboardData } from '../../core/models/ticketflow.models';
+import { LoadingSkeletonComponent } from '../../shared/ui/loading-skeleton.component';
+import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 import { CATEGORY_LABEL, formatDate } from '../../core/utils/format.util';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, LoadingSkeletonComponent, EmptyStateComponent],
   templateUrl: './admin-dashboard.component.html',
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
@@ -19,6 +21,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private sessionSub?: Subscription;
 
   data: AdminDashboardData | null = null;
+  loading = true;
   error = '';
   readonly isAdmin = this.auth.getUser()?.rol === 'admin';
   formatDate = formatDate;
@@ -34,11 +37,18 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   load(): void {
+    this.loading = true;
     this.data = null;
     this.error = '';
     this.admin.dashboard().subscribe({
-      next: (d) => (this.data = d),
-      error: (err) => (this.error = err.error?.error || err.message),
+      next: (d) => {
+        this.data = d;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = err.error?.error || err.message;
+        this.loading = false;
+      },
     });
   }
 

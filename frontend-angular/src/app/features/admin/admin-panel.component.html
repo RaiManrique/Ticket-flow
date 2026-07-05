@@ -1,0 +1,54 @@
+<div class="admin-page">
+  <header class="admin-topbar">
+    <div>
+      <h1>{{ title }}</h1>
+      <p>{{ panel === 'usuarios' ? 'Cuentas registradas en la plataforma' : 'Listado de eventos' }}</p>
+    </div>
+    <span class="status-pill">{{ filteredRows().length }} registros</span>
+  </header>
+
+  @if (!loading && rows.length) {
+    <div class="admin-toolbar-search">
+      <input type="search" [(ngModel)]="search" placeholder="Buscar por usuario, email o nombre...">
+    </div>
+  }
+
+  <div class="admin-card">
+    @if (loading) {
+      <app-loading-skeleton variant="lines" [count]="6" />
+    } @else if (error) {
+      <div class="alert error">{{ error }}</div>
+    } @else if (!rows.length) {
+      <app-empty-state title="Sin registros" description="No hay datos para mostrar." icon="📋" />
+    } @else if (!filteredRows().length) {
+      <app-empty-state title="Sin resultados" description="Prueba con otro término de búsqueda." icon="🔍" />
+    } @else {
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              @for (col of columns; track col) {
+                <th>{{ columnLabel(col) }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of filteredRows(); track $index) {
+              <tr>
+                @for (col of columns; track col) {
+                  <td>
+                    @if (col === 'rol') {
+                      <span class="role-badge" [ngClass]="asString(row[col])">{{ roleLabel(asString(row[col])) }}</span>
+                    } @else {
+                      {{ cell(row, col) }}
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

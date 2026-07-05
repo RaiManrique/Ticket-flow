@@ -7,11 +7,13 @@ import { Publicacion, Comentario } from '../../../core/models/ticketflow.models'
 import { timeAgo } from '../../../core/utils/format.util';
 import { postMedia, profilePhoto } from '../../../core/utils/images.util';
 import { UploadService } from '../../../core/services/upload.service';
+import { LoadingSkeletonComponent } from '../../../shared/ui/loading-skeleton.component';
+import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 
 @Component({
   selector: 'app-usuario-comunidad',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LoadingSkeletonComponent, EmptyStateComponent],
   templateUrl: './usuario-comunidad.component.html',
 })
 export class UsuarioComunidadComponent implements OnInit {
@@ -24,6 +26,7 @@ export class UsuarioComunidadComponent implements OnInit {
   msg = '';
   error = '';
   loading = false;
+  loadingFeed = true;
   selectedFile: File | null = null;
   previewUrl: string | null = null;
 
@@ -50,9 +53,16 @@ export class UsuarioComunidadComponent implements OnInit {
   }
 
   load(): void {
+    this.loadingFeed = true;
     this.social.publicaciones().subscribe({
-      next: (p) => (this.posts = p),
-      error: (err) => (this.error = err.message),
+      next: (p) => {
+        this.posts = p;
+        this.loadingFeed = false;
+      },
+      error: (err) => {
+        this.error = err.message;
+        this.loadingFeed = false;
+      },
     });
   }
 
@@ -92,9 +102,10 @@ export class UsuarioComunidadComponent implements OnInit {
         this.text = '';
         this.selectedFile = null;
         this.previewUrl = null;
-        this.msg = 'Publicacion publicada.';
+        this.msg = 'Publicación publicada.';
         this.loading = false;
         this.load();
+        setTimeout(() => (this.msg = ''), 3500);
       },
       error: (err) => {
         this.msg = err.error?.error || err.message;

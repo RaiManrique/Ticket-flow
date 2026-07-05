@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { UploadService } from '../../../core/services/upload.service';
-import { profilePhoto } from '../../../core/utils/images.util';
+import { profilePhoto, eventFlyer } from '../../../core/utils/images.util';
+import { EmptyStateComponent } from '../../../shared/ui/empty-state.component';
 import { Evento, Publicacion, User } from '../../../core/models/ticketflow.models';
 import { SocialService, EventosService } from '../../../core/services/api.service';
 import { firstValueFrom } from 'rxjs';
@@ -11,7 +12,7 @@ import { firstValueFrom } from 'rxjs';
 @Component({
   selector: 'app-usuario-perfil',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, EmptyStateComponent],
   templateUrl: './usuario-perfil.component.html',
 })
 export class UsuarioPerfilComponent implements OnInit {
@@ -37,6 +38,7 @@ export class UsuarioPerfilComponent implements OnInit {
   myMedia: string[] = [];
   
   profilePhoto = profilePhoto;
+  eventFlyer = eventFlyer;
 
   ngOnInit(): void {
     this.user = this.auth.getUser();
@@ -137,6 +139,7 @@ export class UsuarioPerfilComponent implements OnInit {
         this.selectedFile = null;
         this.selectedCoverFile = null;
         this.loading = false;
+        setTimeout(() => (this.msg = ''), 3500);
       },
       error: (err) => {
         this.error = err.error?.error || err.message;

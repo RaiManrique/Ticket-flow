@@ -1,99 +1,100 @@
-<header class="admin-topbar">
-  <div>
-    <h1>{{ isAdmin ? 'Eventos' : 'Mis eventos' }}</h1>
-    <p>{{ isAdmin ? 'Todos los eventos de la plataforma' : 'Gestiona y visualiza la asistencia a tus eventos' }}</p>
-  </div>
-  <button class="btn btn-glow btn-sm" type="button" (click)="showCreateForm = !showCreateForm">
-    {{ showCreateForm ? 'Ocultar formulario' : '+ Nuevo evento' }}
-  </button>
-</header>
+<div class="admin-page">
+  <header class="admin-topbar">
+    <div>
+      <h1>{{ isAdmin ? 'Eventos' : 'Mis eventos' }}</h1>
+      <p>{{ isAdmin ? 'Todos los eventos de la plataforma' : 'Gestiona asistencia y publica nuevos eventos' }}</p>
+    </div>
+    <button class="btn btn-glow btn-sm" type="button" (click)="showCreateForm = !showCreateForm">
+      {{ showCreateForm ? 'Ocultar' : '+ Nuevo evento' }}
+    </button>
+  </header>
 
-@if (success) {
-  <div class="alert success">{{ success }}</div>
-}
-@if (error) {
-  <div class="alert error">{{ error }}</div>
-}
+  @if (success) { <div class="toast-banner success">{{ success }}</div> }
+  @if (error) { <div class="alert error">{{ error }}</div> }
 
-@if (showCreateForm) {
-  <div class="admin-card org-create-card">
-    <h3>Publicar nuevo evento</h3>
-    <p class="org-hint">Al publicar, el evento aparece en el catálogo de todos los usuarios.</p>
-    <form class="admin-form-grid" (ngSubmit)="create()">
-      <div class="form-group" style="grid-column: 1/-1;">
-        <label for="titulo">Título</label>
-        <input id="titulo" type="text" [(ngModel)]="titulo" name="titulo" required minlength="5" placeholder="Ej. Megaconcierto BTS en Lima 2026">
-      </div>
-      <div class="form-group">
-        <label for="categoria">Categoría</label>
-        <select id="categoria" [(ngModel)]="categoria" name="categoria">
-          @for (c of categorias; track c) {
-            <option [value]="c">{{ categoryLabel[c] || c }}</option>
-          }
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="ciudad">Ciudad</label>
-        <input id="ciudad" type="text" [(ngModel)]="ciudad" name="ciudad" required>
-      </div>
-      <div class="form-group" style="grid-column: 1/-1;">
-        <label for="fecha">Fecha y hora</label>
-        <input id="fecha" type="datetime-local" [(ngModel)]="fecha_evento" name="fecha" required>
-      </div>
-      <div class="form-group" style="grid-column:1/-1;">
-        <label for="descripcion">Descripción</label>
-        <textarea id="descripcion" rows="3" [(ngModel)]="descripcion" name="descripcion" placeholder="Describe el evento..."></textarea>
-      </div>
-      <div class="form-group" style="grid-column:1/-1;">
-        <label for="flyer">Flyer del evento (Opcional)</label>
-        <input id="flyer" type="file" accept="image/*" (change)="onFileSelected($event)">
-      </div>
-      <button class="btn btn-glow" type="submit" [disabled]="saving">
-        {{ saving ? 'Publicando...' : 'Publicar evento' }}
-      </button>
-    </form>
-  </div>
-}
-
-@if (loading) {
-  <p class="loading">Cargando eventos...</p>
-} @else if (!eventos.length) {
-  <div class="admin-card org-empty">
-    <h3>Sin eventos aún</h3>
-    <p>Crea tu primer evento para empezar a recibir asistentes y ver métricas de interacción.</p>
-    <button class="btn btn-glow" type="button" (click)="showCreateForm = true">Crear mi primer evento</button>
-  </div>
-} @else {
-  <div class="org-events-grid">
-    @for (e of eventos; track e._id) {
-      <article class="org-event-card" [class.active]="selectedId === e._id">
-        <div class="org-event-cover">
-          <img [src]="eventFlyer(e)" [alt]="e.titulo" loading="lazy">
-          <span class="org-event-cat" [ngClass]="e.categoria">{{ categoryLabel[e.categoria] || e.categoria }}</span>
+  @if (showCreateForm) {
+    <div class="admin-card org-create-card page-enter">
+      <h3>Publicar nuevo evento</h3>
+      <p class="org-hint">Al publicar, el evento aparece en el catálogo de todos los usuarios.</p>
+      <form class="admin-form-grid" (ngSubmit)="create()">
+        <div class="form-group admin-form-span-full">
+          <label for="titulo">Título</label>
+          <input id="titulo" type="text" [(ngModel)]="titulo" name="titulo" required minlength="5" placeholder="Ej. Festival Selva Sonora 2026">
         </div>
-        <div class="org-event-body">
-          <div class="org-event-head">
-            <h3>{{ e.titulo }}</h3>
-            <span class="status-pill" [class]="estadoClass(e.estado)">{{ estadoLabel(e.estado) }}</span>
-          </div>
-          <p class="org-event-meta">{{ e.ciudad }} · {{ formatDate(e.fecha_evento) }}</p>
-          @if (e.descripcion) {
-            <p class="org-event-desc">{{ e.descripcion }}</p>
+        <div class="form-group">
+          <label for="categoria">Categoría</label>
+          <select id="categoria" [(ngModel)]="categoria" name="categoria">
+            @for (c of categorias; track c) {
+              <option [value]="c">{{ categoryLabel[c] || c }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="ciudad">Ciudad</label>
+          <input id="ciudad" type="text" [(ngModel)]="ciudad" name="ciudad" required>
+        </div>
+        <div class="form-group admin-form-span-full">
+          <label for="fecha">Fecha y hora</label>
+          <input id="fecha" type="datetime-local" [(ngModel)]="fecha_evento" name="fecha" required>
+        </div>
+        <div class="form-group admin-form-span-full">
+          <label for="descripcion">Descripción</label>
+          <textarea id="descripcion" rows="3" [(ngModel)]="descripcion" name="descripcion" placeholder="Describe el evento..."></textarea>
+        </div>
+        <div class="form-group admin-form-span-full">
+          <label for="flyer">Flyer (opcional)</label>
+          <input id="flyer" type="file" accept="image/*" (change)="onFileSelected($event)">
+          @if (flyerPreview) {
+            <div class="org-flyer-preview">
+              <img [src]="flyerPreview" alt="Vista previa del flyer">
+            </div>
           }
-          <div class="org-event-metrics" style="display: flex; gap: 10px; margin-top: 15px;">
-            <div style="background: rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 6px;">
-              <span style="font-size: 0.8rem; color: #aaa; display: block;">Asistentes</span>
-              <strong style="font-size: 1.2rem; color: var(--color-primary, #00f2fe);">{{ e.total_asistentes || 0 }}</strong>
+        </div>
+        <button class="btn btn-glow" type="submit" [disabled]="saving">
+          {{ saving ? 'Publicando...' : 'Publicar evento' }}
+        </button>
+      </form>
+    </div>
+  }
+
+  @if (loading) {
+    <app-loading-skeleton variant="cards" [count]="3" />
+  } @else if (!eventos.length) {
+    <app-empty-state title="Sin eventos aún" description="Crea tu primer evento para empezar a recibir asistentes." icon="🎫">
+      <button class="btn btn-glow" type="button" (click)="showCreateForm = true">Crear mi primer evento</button>
+    </app-empty-state>
+  } @else {
+    <div class="org-events-grid">
+      @for (e of eventos; track e._id) {
+        <article class="org-event-card" [class.active]="selectedId === e._id" (click)="openDetail(e._id)">
+          <div class="org-event-cover">
+            <img [src]="eventFlyer(e)" [alt]="e.titulo" loading="lazy">
+            <span class="org-event-cat" [ngClass]="e.categoria">{{ categoryLabel[e.categoria] || e.categoria }}</span>
+          </div>
+          <div class="org-event-body">
+            <div class="org-event-head">
+              <h3>{{ e.titulo }}</h3>
+              <span class="status-pill" [class]="estadoClass(e.estado)">{{ estadoLabel(e.estado) }}</span>
+            </div>
+            <p class="org-event-meta">{{ e.ciudad }} · {{ formatDate(e.fecha_evento) }}</p>
+            @if (e.descripcion) {
+              <p class="org-event-desc">{{ e.descripcion }}</p>
+            }
+            <div class="org-event-metrics--single">
+              <div class="org-metric-pill">
+                <span>Asistentes</span>
+                <strong>{{ e.total_asistentes || e.asistentes?.length || 0 }}</strong>
+              </div>
+            </div>
+            <div class="org-event-actions">
+              <button class="btn btn-ghost btn-sm" type="button" (click)="openDetail(e._id); $event.stopPropagation()">Ver detalle</button>
             </div>
           </div>
-          <div class="org-event-actions" style="margin-top: 15px;">
-            <button class="btn btn-ghost btn-sm" type="button" (click)="openDetail(e._id)">Ver detalle</button>
-          </div>
-        </div>
-      </article>
-    }
-  </div>
-}
+        </article>
+      }
+    </div>
+  }
+</div>
 
 @if (selectedId) {
   <div class="org-detail-backdrop" (click)="closeDetail()"></div>
@@ -107,37 +108,38 @@
     </header>
 
     @if (detailLoading) {
-      <p class="loading">Cargando detalle...</p>
+      <app-loading-skeleton variant="lines" [count]="5" />
     } @else if (detailError) {
       <div class="alert error">{{ detailError }}</div>
     } @else if (detail) {
       <div class="org-detail-hero">
         <img [src]="eventFlyer(detail.evento)" [alt]="detail.evento.titulo">
-        <div style="margin-top: 15px;">
+        <div>
           <p><strong>Ubicación:</strong> {{ detail.evento.ciudad }}</p>
           <p><strong>Fecha:</strong> {{ formatDate(detail.evento.fecha_evento) }}</p>
-          <p class="org-detail-desc" style="margin-top: 10px; color: #ccc;">{{ detail.evento.descripcion || 'Sin descripción adicional.' }}</p>
+          <p class="org-detail-desc">{{ detail.evento.descripcion || 'Sin descripción adicional.' }}</p>
         </div>
       </div>
 
-      <div class="admin-card" style="margin-top: 25px;">
-        <h3>Lista de Asistentes ({{ detail.asistentes.length }})</h3>
+      <div class="admin-card" style="margin-top:1.25rem;">
+        <h3>Asistentes ({{ detail.asistentes.length }})</h3>
         @if (!detail.asistentes.length) {
-          <p class="org-muted" style="margin-top: 10px;">Nadie ha marcado asistencia para este evento aún.</p>
+          <p class="org-muted" style="margin-top:0.75rem;">Nadie ha confirmado asistencia aún.</p>
         } @else {
-          <div style="max-height: 300px; overflow-y: auto; margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+          <div class="org-attendee-list">
             @for (a of detail.asistentes; track a._id) {
-              <div class="user-row" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 6px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <div class="avatar sm" style="width: 32px; height: 32px; border-radius: 50%; background: var(--color-primary, #00f2fe); color: #121212; display: flex; align-items: center; justify-content: center; font-weight: bold;">
-                    {{ a.nombre_completo ? a.nombre_completo.toString().charAt(0) : a.username.toString().charAt(0) }}
+              <div class="org-attendee-row">
+                <div class="org-attendee-main">
+                  <div class="avatar sm has-photo">
+                    <img [src]="profilePhoto(a)" alt="">
+                    <span>{{ (a.nombre_completo || a.username).charAt(0).toUpperCase() }}</span>
                   </div>
                   <div>
-                    <strong style="display: block; font-size: 0.9rem;">{{ a.nombre_completo || a.username }}</strong>
-                    <small style="color: #888;">&commat;{{ a.username }}</small>
+                    <strong>{{ a.nombre_completo || a.username }}</strong>
+                    <small>&#64;{{ a.username }}</small>
                   </div>
                 </div>
-                <small style="color: #666;">{{ a.email }}</small>
+                <span class="org-attendee-email">{{ a.email }}</span>
               </div>
             }
           </div>

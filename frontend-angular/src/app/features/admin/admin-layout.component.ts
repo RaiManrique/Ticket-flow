@@ -19,6 +19,14 @@ export class AdminLayoutComponent {
   roleLabel = roleLabel;
   profilePhoto = profilePhoto;
 
+  photo(): string {
+    return profilePhoto(this.user);
+  }
+
+  initials(): string {
+    return (this.user.username || 'A').slice(0, 2).toUpperCase();
+  }
+
   logout(): void {
     this.auth.logout();
   }
