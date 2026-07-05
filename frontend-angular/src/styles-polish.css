@@ -1089,6 +1089,16 @@ a.link-btn:hover { text-decoration: underline; }
 
 .org-detail-panel { animation: fadeInUp 0.25s ease; }
 
+.admin-event-modal.ticket-modal {
+  z-index: 250;
+}
+
+.admin-event-detail-card {
+  width: min(760px, 96vw);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
 @media (max-width: 768px) {
   .admin-main { padding: 1rem 1rem 5rem; }
   .admin-sidebar { display: none; }
@@ -1096,5 +1106,201 @@ a.link-btn:hover { text-decoration: underline; }
   .admin-mobile-nav { display: flex; }
   .org-detail-panel { width: 100vw; }
   .metrics-grid--dashboard { grid-template-columns: repeat(2, 1fr); }
+  .org-welcome-banner { flex-direction: column; align-items: flex-start; }
+  .org-stats-bar { flex-direction: column; }
+}
+
+/* Organizer panel theme */
+.admin-body--organizer .admin-nav-btn.active {
+  background: rgba(6, 182, 212, 0.12);
+  color: #67e8f9;
+  box-shadow: inset 3px 0 0 var(--accent-blue);
+}
+
+.admin-body--organizer .metric-card.accent {
+  border-color: rgba(6, 182, 212, 0.4);
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.status-pill.organizer {
+  color: #67e8f9;
+  border-color: rgba(6, 182, 212, 0.45);
+  background: rgba(6, 182, 212, 0.1);
+}
+
+.org-sidebar-cta {
+  padding: 0.85rem;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(168, 85, 247, 0.08));
+  border: 1px solid var(--border);
+}
+
+.org-sidebar-cta p {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 0.65rem;
+  line-height: 1.4;
+}
+
+.org-welcome-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.25rem;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(168, 85, 247, 0.1));
+  border: 1px solid rgba(6, 182, 212, 0.25);
+}
+
+.org-welcome-kicker {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-blue);
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.org-welcome-banner h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+}
+
+.org-welcome-banner p {
+  color: var(--muted);
+  font-size: 0.92rem;
+  max-width: 520px;
+}
+
+.org-checklist {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border-strong);
+  background: rgba(255,255,255,0.02);
+}
+
+.org-checklist h3 { font-size: 0.95rem; margin-bottom: 0.75rem; }
+
+.org-checklist ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.org-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.org-checklist li span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.org-checklist li.done { color: var(--text); }
+
+.org-checklist li.done span {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+}
+
+.org-rank-row--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.org-rank-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.org-mini-stat {
+  font-size: 0.75rem;
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
+.org-tips-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.org-tips-list li {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.5;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--accent-blue);
+}
+
+.org-tips-list strong { color: var(--text); }
+
+.org-stats-bar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.org-stat-item {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.org-stat-item strong {
+  display: block;
+  font-size: 1.25rem;
+  margin-bottom: 0.15rem;
+}
+
+.org-stat-item span {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.org-stat-item--highlight {
+  border-color: rgba(6, 182, 212, 0.35);
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.org-stat-item--highlight strong {
+  font-size: 0.88rem;
+  color: var(--accent-blue);
+}
+
+.org-events-grid--organizer .org-event-card {
+  grid-template-columns: 140px 1fr;
+}
+
+.org-detail-actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
 }
 

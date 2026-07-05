@@ -59,4 +59,21 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   resumen() {
     return this.data?.resumen;
   }
+
+  organizerName(): string {
+    const u = this.auth.getUser();
+    return (u?.nombre_completo || u?.username || 'Organizador').split(' ')[0];
+  }
+
+  hasEvents(): boolean {
+    return (this.resumen()?.eventos || 0) > 0;
+  }
+
+  avgAsistentesLabel(): string {
+    const eventos = this.resumen()?.eventos || 0;
+    const asistentes = this.resumen()?.asistentes || 0;
+    if (!eventos) return 'Promedio por evento: 0';
+    const avg = Math.round((asistentes / eventos) * 10) / 10;
+    return `Promedio ${avg} por evento`;
+  }
 }

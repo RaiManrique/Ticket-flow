@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { SocialService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Publicacion, Comentario } from '../../../core/models/ticketflow.models';
@@ -20,6 +21,9 @@ export class UsuarioComunidadComponent implements OnInit {
   private readonly social = inject(SocialService);
   readonly auth = inject(AuthService);
   private readonly uploadService = inject(UploadService);
+  private readonly route = inject(ActivatedRoute);
+
+  readonly isStaff = ['admin', 'organizador'].includes(this.auth.getUser()?.rol ?? '');
 
   posts: Publicacion[] = [];
   text = '';
@@ -50,6 +54,12 @@ export class UsuarioComunidadComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.route.queryParams.subscribe((params) => {
+      const titulo = params['titulo'];
+      if (titulo && !this.text) {
+        this.text = `¡Nos vemos en ${titulo}! ¿Quién más asiste? 🎉`;
+      }
+    });
   }
 
   load(): void {

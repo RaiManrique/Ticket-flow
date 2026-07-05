@@ -38,6 +38,7 @@ export const routes: Routes = [
       { path: '', component: AdminDashboardComponent },
       { path: 'usuarios', component: AdminPanelComponent, data: { panel: 'usuarios' } },
       { path: 'eventos', component: AdminEventosComponent },
+      { path: 'comunidad', component: UsuarioComunidadComponent },
     ],
   },
   { path: '**', redirectTo: 'login' },

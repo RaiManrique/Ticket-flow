@@ -38,7 +38,7 @@ router.get("/dashboard", async (req, res) => {
       Evento.find(eventoScope)
         .sort({ fecha_evento: 1 })
         .limit(4)
-        .select("titulo ciudad fecha_evento estado categoria")
+        .select("titulo ciudad fecha_evento estado categoria asistentes")
         .lean(),
       Evento.find(eventoScope).select("asistentes").lean(),
     ]);
@@ -60,7 +60,10 @@ router.get("/dashboard", async (req, res) => {
         publicaciones: publicacionesCount,
         asistentes: asistentesCount,
       },
-      proximos_eventos: proximosEventos,
+      proximos_eventos: proximosEventos.map((e) => ({
+        ...e,
+        total_asistentes: e.asistentes?.length || 0,
+      })),
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

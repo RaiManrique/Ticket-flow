@@ -4,8 +4,8 @@
   }
 
   <div class="view-header">
-    <h2>Comunidad Live</h2>
-    <p>Comparte momentos y coordina con otros asistentes</p>
+    <h2>{{ isStaff ? 'Comunidad — vista organizador' : 'Comunidad Live' }}</h2>
+    <p>{{ isStaff ? 'Publica novedades y conecta con los asistentes de tus eventos' : 'Comparte momentos y coordina con otros asistentes' }}</p>
   </div>
 
   <div class="community-page">

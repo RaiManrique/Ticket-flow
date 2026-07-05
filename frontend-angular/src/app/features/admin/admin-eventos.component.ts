@@ -1,6 +1,7 @@
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AdminService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -21,9 +22,12 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
   private readonly admin = inject(AdminService);
   private readonly auth = inject(AuthService);
   private readonly uploadService = inject(UploadService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private sessionSub?: Subscription;
 
   eventos: Evento[] = [];
+  search = '';
   loading = true;
   error = '';
   success = '';
@@ -49,9 +53,14 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
   formatDate = formatDate;
   eventFlyer = eventFlyer;
   profilePhoto = profilePhoto;
+  readonly String = String;
 
   ngOnInit(): void {
     this.load();
+    this.route.queryParams.subscribe((params) => {
+      if (params['nuevo'] === '1') this.showCreateForm = true;
+      if (params['detalle']) this.openDetail(String(params['detalle']));
+    });
     this.sessionSub = this.auth.onSessionChange().subscribe(() => {
       this.closeDetail();
       this.load();
@@ -60,6 +69,7 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.sessionSub?.unsubscribe();
+    document.body.style.overflow = '';
   }
 
   load(): void {
@@ -100,17 +110,19 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
   }
 
   openDetail(id: string): void {
-    this.selectedId = id;
+    const eventId = String(id);
+    this.selectedId = eventId;
     this.detailLoading = true;
     this.detailError = '';
     this.detail = null;
-    this.admin.eventoDetalle(id).subscribe({
+    document.body.style.overflow = 'hidden';
+    this.admin.eventoDetalle(eventId).subscribe({
       next: (data) => {
         this.detail = data;
         this.detailLoading = false;
       },
       error: (err) => {
-        this.detailError = err.error?.error || err.message;
+        this.detailError = err.error?.error || err.message || 'No se pudo cargar el detalle';
         this.detailLoading = false;
       },
     });
@@ -120,6 +132,38 @@ export class AdminEventosComponent implements OnInit, OnDestroy {
     this.selectedId = null;
     this.detail = null;
     this.detailError = '';
+    document.body.style.overflow = '';
+    this.router.navigate([], { queryParams: { detalle: null }, queryParamsHandling: 'merge' });
+  }
+
+  filteredEventos(): Evento[] {
+    const q = this.search.trim().toLowerCase();
+    if (!q) return this.eventos;
+    return this.eventos.filter((e) =>
+      [e.titulo, e.ciudad, e.categoria, e.descripcion].some((v) => String(v || '').toLowerCase().includes(q))
+    );
+  }
+
+  totalAsistentes(): number {
+    return this.eventos.reduce((sum, e) => sum + (e.total_asistentes || e.asistentes?.length || 0), 0);
+  }
+
+  proximoEvento(): Evento | null {
+    const now = Date.now();
+    const futuros = this.eventos.filter((e) => new Date(e.fecha_evento).getTime() >= now);
+    return futuros.length ? futuros[0] : this.eventos[0] || null;
+  }
+
+  copyEventLink(evento: Evento): void {
+    const url = `${window.location.origin}/usuario/eventos?detalle=${evento._id}`;
+    navigator.clipboard?.writeText(url);
+    this.success = 'Enlace copiado al portapapeles';
+    setTimeout(() => (this.success = ''), 3000);
+  }
+
+  promoteInCommunity(evento: Evento): void {
+    this.closeDetail();
+    this.router.navigate(['/admin/comunidad'], { queryParams: { evento: evento._id, titulo: evento.titulo } });
   }
 
   onFileSelected(event: Event): void {

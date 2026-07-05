@@ -50,7 +50,9 @@ export interface AdminDashboardData {
     publicaciones: number;
     asistentes: number;
   };
-  proximos_eventos: Pick<Evento, '_id' | 'titulo' | 'ciudad' | 'fecha_evento' | 'estado' | 'categoria'>[];
+  proximos_eventos: (Pick<Evento, '_id' | 'titulo' | 'ciudad' | 'fecha_evento' | 'estado' | 'categoria'> & {
+    total_asistentes?: number;
+  })[];
 }
 
 export interface Publicacion {
