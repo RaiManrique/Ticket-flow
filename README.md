@@ -188,6 +188,7 @@ docker compose up -d --build web
 | `cd Ticket-flow: No such file` | Ya estas dentro del repo | Usa `cd` a la ruta real, ej. `cd Documents/GitHub/Ticket-flow` |
 | `npm run dev` en `frontend-angular` falla | Ese script no existe ahi | En frontend: `npm start`. En backend: `cd backend` → `npm run dev` |
 | Contraseña incorrecta | Typo o `.env` distinto | Default: `TicketFlow2026` para todas las cuentas demo |
+| **`Authentication failed` en API / Mongo** | `.env` con claves distintas a las de la carpeta `BD/` | Ver seccion **Mongo: credenciales desincronizadas** abajo |
 
 **Secuencia de rescate rapida** (cuando nada funciona):
 
@@ -219,12 +220,46 @@ docker compose up -d --build
 
 La primera vez crea la carpeta `BD/`, ejecuta `init-mongo.js` (esquema + datos demo) y `z-init-app-user.sh`.
 
-Opcional — personalizar contraseñas o puertos:
+Opcional — crear `.env` (recomendado para todo el equipo):
 
 ```powershell
 Copy-Item .env.example .env
-notepad .env
+# o: .\scripts\setup-env.ps1
 ```
+
+**No compartas tu `.env` por WhatsApp** — está en `.gitignore` a propósito. Usa los mismos valores de `.env.example` (desarrollo) o pide solo las claves de DigitalOcean si necesitas upload.
+
+### Mongo: credenciales desincronizadas
+
+Mongo guarda la contraseña del admin **solo la primera vez** que se crea la carpeta `BD/`. Si el `.env` no coincide, la API muestra `Authentication failed`.
+
+**Sintoma:** `docker logs TicketFlow-API` → `Error al iniciar la API: Authentication failed`
+
+**Causa habitual:** alguien creó `.env` con contraseñas distintas a las del `docker-compose` o a un `BD/` viejo.
+
+**Solucion A — equipo nuevo (borra datos locales, OK en dev):**
+
+```powershell
+docker compose down
+Remove-Item -Recurse -Force .\BD
+Copy-Item .env.example .env
+docker compose up -d --build
+curl http://127.0.0.1:3000/api/health
+```
+
+**Solucion B — sin borrar BD:** usa en `.env` la misma `MONGO_ROOT_PASSWORD` con la que se creó ese `BD/` (pregunta a quien lo inicializo).
+
+**Credenciales de desarrollo (por defecto en `.env.example` y `docker-compose.yml`):**
+
+| Variable | Valor dev |
+|----------|-----------|
+| `MONGO_ROOT_USER` | `ticketflow_admin` |
+| `MONGO_ROOT_PASSWORD` | `TicketFlow2026DevMongo!` |
+| `MONGO_APP_USER` | `ticketflow_app` |
+| `MONGO_APP_PASSWORD` | `TicketFlow2026DevApp!` |
+
+**Conectar con Compass / mongosh desde el host:** `mongodb://ticketflow_admin:TicketFlow2026DevMongo!@127.0.0.1:27018/ticketflow_social?authSource=admin`
+
 
 ### Verificar servicios
 
