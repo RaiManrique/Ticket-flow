@@ -58,6 +58,8 @@ services:
       MONGO_ROOT_USER: ${MONGO_ROOT_USER:-ticketflow_admin}
       MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-TicketFlow2026DevMongo!}
       MONGO_USE_APP_USER: ${MONGO_USE_APP_USER:-false}
+      MONGO_APP_USER: ${MONGO_APP_USER:-ticketflow_app}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:-TicketFlow2026DevApp!}
       DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-TicketFlow2026}
       JWT_SECRET: ${JWT_SECRET:-ticketflow-dev-secret-cambiar-en-produccion}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://127.0.0.1:8090,http://localhost:8090,http://127.0.0.1:4200,http://localhost:4200}

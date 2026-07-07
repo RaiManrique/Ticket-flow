@@ -7,7 +7,7 @@ set -e
 : "${MONGO_APP_USER:?Falta MONGO_APP_USER en .env}"
 : "${MONGO_APP_PASSWORD:?Falta MONGO_APP_PASSWORD en .env}"
 
-mongosh <<EOF
+mongosh -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin <<EOF
 db = db.getSiblingDB("admin");
 
 const appUser = "${MONGO_APP_USER}";
