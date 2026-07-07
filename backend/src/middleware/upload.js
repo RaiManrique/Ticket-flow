@@ -1,6 +1,6 @@
 const multer = require('multer');
 const multerS3 = require('multer-s3');
-const { S3Client } = require('@aws-sdk/client-s3');
+const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const path = require('path');
 
 const s3Config = new S3Client({
@@ -11,6 +11,22 @@ const s3Config = new S3Client({
     secretAccessKey: process.env.DO_SPACES_SECRET
   }
 });
+
+const deleteFileFromSpaces = async (fileUrl) => {
+  if (!fileUrl || !fileUrl.startsWith('http')) return;
+  try {
+    const urlObj = new URL(fileUrl);
+    const key = urlObj.pathname.substring(1); // remove leading slash
+    
+    await s3Config.send(new DeleteObjectCommand({
+      Bucket: process.env.DO_SPACES_BUCKET,
+      Key: key
+    }));
+    console.log(`Archivo eliminado de Spaces: ${key}`);
+  } catch (error) {
+    console.error("Error al eliminar archivo de Spaces:", error);
+  }
+};
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -34,4 +50,4 @@ const upload = multer({
   }
 });
 
-module.exports = { upload, s3Config };
+module.exports = { upload, s3Config, deleteFileFromSpaces };

@@ -2,6 +2,7 @@ const express = require("express");
 const { Publicacion, Comentario, Usuario } = require("../models");
 const { requireAuth, requireStaff } = require("../middleware/auth");
 const { requireObjectId } = require("../utils/validate");
+const { deleteFileFromSpaces } = require("../middleware/upload");
 
 const router = express.Router();
 
@@ -112,6 +113,13 @@ router.delete("/publicaciones/:id", requireAuth, async (req, res) => {
     }
 
     await Publicacion.findByIdAndDelete(req.params.id);
+
+    if (Array.isArray(pub.media_urls) && pub.media_urls.length > 0) {
+      for (const url of pub.media_urls) {
+        await deleteFileFromSpaces(url);
+      }
+    }
+
     res.json({ mensaje: "Publicacion eliminada correctamente" });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -253,6 +261,13 @@ router.delete("/publicaciones/:id/comentarios/:comentarioId", requireAuth, async
     }
 
     await Comentario.findByIdAndDelete(req.params.comentarioId);
+
+    if (Array.isArray(comentario.media_urls) && comentario.media_urls.length > 0) {
+      for (const url of comentario.media_urls) {
+        await deleteFileFromSpaces(url);
+      }
+    }
+
     res.json({ mensaje: "Comentario eliminado correctamente" });
   } catch (error) {
     res.status(error.status || 500).json({ error: error.message });

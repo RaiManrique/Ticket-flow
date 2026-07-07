@@ -2,6 +2,7 @@ const express = require("express");
 const { Evento } = require("../models");
 const { requireObjectId } = require("../utils/validate");
 const { requireAuth } = require("../middleware/auth");
+const { deleteFileFromSpaces } = require("../middleware/upload");
 
 const router = express.Router();
 
@@ -139,6 +140,11 @@ router.delete("/:id", requireAuth, async (req, res) => {
     }
 
     await Evento.findByIdAndDelete(req.params.id);
+    
+    if (evento.flyer_url) {
+      await deleteFileFromSpaces(evento.flyer_url);
+    }
+    
     res.json({ mensaje: "Evento eliminado correctamente" });
   } catch (error) {
     res.status(500).json({ error: error.message });
